@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { use, useState, useEffect } from "react";
 import {
   Box,
   Table,
@@ -16,193 +16,31 @@ import {
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 
-// 🔹 JSON estático con docentes
-const docentesData = [
-  {
-    id: 1,
-    apellidoP: "García",
-    apellidoM: "López",
-    nombres: "María",
-    birthday: "1980-01-20",
-    correo: "maria.garcia@escuela.com",
-    grupo: "A",
-    materia: "Matemáticas",
-  },
-  {
-    id: 2,
-    apellidoP: "Hernández",
-    apellidoM: "Martínez",
-    nombres: "José",
-    birthday: "1975-05-12",
-    correo: "jose.hm@escuela.com",
-    grupo: "B",
-    materia: "Historia",
-  },
-  {
-    id: 3,
-    apellidoP: "Ramírez",
-    apellidoM: "Díaz",
-    nombres: "Lucía",
-    birthday: "1990-08-05",
-    correo: "lucia.rdz@escuela.com",
-    grupo: "A",
-    materia: "Física",
-  },
-  {
-    id: 2,
-    apellidoP: "Hernández",
-    apellidoM: "Martínez",
-    nombres: "José",
-    birthday: "1975-05-12",
-    correo: "jose.hm@escuela.com",
-    grupo: "B",
-    materia: "Historia",
-  },
-  {
-    id: 3,
-    apellidoP: "Ramírez",
-    apellidoM: "Díaz",
-    nombres: "Lucía",
-    birthday: "1990-08-05",
-    correo: "lucia.rdz@escuela.com",
-    grupo: "A",
-    materia: "Física",
-  },
-  {
-    id: 2,
-    apellidoP: "Hernández",
-    apellidoM: "Martínez",
-    nombres: "José",
-    birthday: "1975-05-12",
-    correo: "jose.hm@escuela.com",
-    grupo: "B",
-    materia: "Historia",
-  },
-  {
-    id: 3,
-    apellidoP: "Ramírez",
-    apellidoM: "Díaz",
-    nombres: "Lucía",
-    birthday: "1990-08-05",
-    correo: "lucia.rdz@escuela.com",
-    grupo: "A",
-    materia: "Física",
-  },
-  {
-    id: 2,
-    apellidoP: "Hernández",
-    apellidoM: "Martínez",
-    nombres: "José",
-    birthday: "1975-05-12",
-    correo: "jose.hm@escuela.com",
-    grupo: "B",
-    materia: "Historia",
-  },
-  {
-    id: 3,
-    apellidoP: "Ramírez",
-    apellidoM: "Díaz",
-    nombres: "Lucía",
-    birthday: "1990-08-05",
-    correo: "lucia.rdz@escuela.com",
-    grupo: "A",
-    materia: "Física",
-  },
-  {
-    id: 2,
-    apellidoP: "Hernández",
-    apellidoM: "Martínez",
-    nombres: "José",
-    birthday: "1975-05-12",
-    correo: "jose.hm@escuela.com",
-    grupo: "B",
-    materia: "Historia",
-  },
-  {
-    id: 3,
-    apellidoP: "Ramírez",
-    apellidoM: "Díaz",
-    nombres: "Lucía",
-    birthday: "1990-08-05",
-    correo: "lucia.rdz@escuela.com",
-    grupo: "A",
-    materia: "Física",
-  },
-  {
-    id: 2,
-    apellidoP: "Hernández",
-    apellidoM: "Martínez",
-    nombres: "José",
-    birthday: "1975-05-12",
-    correo: "jose.hm@escuela.com",
-    grupo: "B",
-    materia: "Historia",
-  },
-  {
-    id: 3,
-    apellidoP: "Ramírez",
-    apellidoM: "Díaz",
-    nombres: "Lucía",
-    birthday: "1990-08-05",
-    correo: "lucia.rdz@escuela.com",
-    grupo: "A",
-    materia: "Física",
-  },
-  {
-    id: 2,
-    apellidoP: "Hernández",
-    apellidoM: "Martínez",
-    nombres: "José",
-    birthday: "1975-05-12",
-    correo: "jose.hm@escuela.com",
-    grupo: "B",
-    materia: "Historia",
-  },
-  {
-    id: 3,
-    apellidoP: "Ramírez",
-    apellidoM: "Díaz",
-    nombres: "Lucía",
-    birthday: "1990-08-05",
-    correo: "lucia.rdz@escuela.com",
-    grupo: "A",
-    materia: "Física",
-  },
-  {
-    id: 2,
-    apellidoP: "Hernández",
-    apellidoM: "Martínez",
-    nombres: "José",
-    birthday: "1975-05-12",
-    correo: "jose.hm@escuela.com",
-    grupo: "B",
-    materia: "Historia",
-  },
-  {
-    id: 3,
-    apellidoP: "Raddmírez",
-    apellidoM: "Díaz",
-    nombres: "Lucía",
-    birthday: "1990-08-05",
-    correo: "lucia.rdz@escuela.com",
-    grupo: "A",
-    materia: "Fí78ica123",
-  },
-];
-
 const headCells = [
   { id: "apellidoP", label: "Apellido Paterno" },
   { id: "apellidoM", label: "Apellido Materno" },
   { id: "nombres", label: "Nombres" },
   { id: "birthday", label: "Fecha Nac." },
   { id: "correo", label: "Correo" },
-  { id: "grupo", label: "Grupo" },
-  { id: "materia", label: "Materia" },
 ];
 
-//FIN DATOS ESTATICOS
+
 
 export default function Docentes() {
+
+  
+//Llamada a la API
+  const [docentesData, setdocentesData] = useState([]);
+  const apiUrl = import.meta.env.VITE_API_URL;
+
+  //La obtención de datos se hará en un useEffect
+  useEffect(() => {
+    fetch(`${apiUrl}/docente`)
+      .then((response) => response.json())
+      .then((docentesData) => setdocentesData(docentesData))
+      .catch((error) => console.error("Error fetching data:", error));
+  }, [apiUrl]);
+
   const [search, setSearch] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -221,17 +59,19 @@ export default function Docentes() {
   const handleClose = () => setAnchorEl(null);
 
   // aplicar filtros
-  const filteredData = docentesData.filter((docente) => {
-    const fullName = `${docente.apellidoP} ${docente.apellidoM} ${docente.nombres}`.toLowerCase();
-    return (
-      fullName.includes(search.toLowerCase()) &&
-      docente.apellidoP.toLowerCase().includes(filters.apellidoP.toLowerCase()) &&
-      docente.apellidoM.toLowerCase().includes(filters.apellidoM.toLowerCase()) &&
-      docente.correo.toLowerCase().includes(filters.correo.toLowerCase()) &&
-      docente.grupo.toLowerCase().includes(filters.grupo.toLowerCase()) &&
-      docente.materia.toLowerCase().includes(filters.materia.toLowerCase())
-    );
-  });
+ const filteredData = docentesData.filter((docente) => {
+  const fullName = `${docente.apellidop ?? ""} ${docente.apellidom ?? ""} ${docente.nombres ?? ""}`.toLowerCase();
+ 
+  return (
+    fullName.includes(search?.toLowerCase() ?? "") &&
+    (docente.apellidop?.toLowerCase() ?? "").includes(filters.apellidoP?.toLowerCase() ?? "") &&
+    (docente.apellidom?.toLowerCase() ?? "").includes(filters.apellidoM?.toLowerCase() ?? "") &&
+    (docente.correo?.toLowerCase() ?? "").includes(filters.correo?.toLowerCase() ?? "") &&
+    (docente.grupo?.toLowerCase() ?? "").includes(filters.grupo?.toLowerCase() ?? "") &&
+    (docente.materia?.toLowerCase() ?? "").includes(filters.materia?.toLowerCase() ?? "")
+  );
+});
+
 
   return (
     // Contenedor principal
@@ -256,11 +96,15 @@ export default function Docentes() {
             borderBottom: "1px solid #ddd",
           }}
         >
-          <Typography variant="h2" 
-          sx={{
-          color: "primary.main", 
-          fontSize: "2.5rem",
-          }}>Docentes</Typography>
+          <Typography
+            variant="h2"
+            sx={{
+              color: "primary.main",
+              fontSize: "2.5rem",
+            }}
+          >
+            Docentes
+          </Typography>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <TextField
@@ -291,9 +135,9 @@ export default function Docentes() {
                 fullWidth
                 label="Apellido P"
                 size="small"
-                value={filters.apellidoP}
+                value={filters.apellidop}
                 onChange={(e) =>
-                  setFilters({ ...filters, apellidoP: e.target.value })
+                  setFilters({ ...filters, apellidop: e.target.value })
                 }
                 sx={{ mb: 2 }}
               />
@@ -301,9 +145,9 @@ export default function Docentes() {
                 fullWidth
                 label="Apellido M"
                 size="small"
-                value={filters.apellidoM}
+                value={filters.apellidom}
                 onChange={(e) =>
-                  setFilters({ ...filters, apellidoM: e.target.value })
+                  setFilters({ ...filters, apellidom: e.target.value })
                 }
                 sx={{ mb: 2 }}
               />
@@ -317,32 +161,9 @@ export default function Docentes() {
                 }
                 sx={{ mb: 2 }}
               />
-              <TextField
-                fullWidth
-                label="Grupo"
-                size="small"
-                value={filters.grupo}
-                onChange={(e) =>
-                  setFilters({ ...filters, grupo: e.target.value })
-                }
-                sx={{ mb: 2 }}
-              />
-              <TextField
-                fullWidth
-                label="Materia"
-                size="small"
-                value={filters.materia}
-                onChange={(e) =>
-                  setFilters({ ...filters, materia: e.target.value })
-                }
-                sx={{ mb: 2 }}
-              />
+             
 
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={handleClose}
-              >
+              <Button fullWidth variant="contained" onClick={handleClose}>
                 Aplicar
               </Button>
             </Menu>
@@ -350,34 +171,43 @@ export default function Docentes() {
         </Box>
 
         {/* Tabla */}
-        <TableContainer sx={{ flexGrow: 1, width: 'auto' }}>
+        <TableContainer sx={{ flexGrow: 1, width: "auto" }}>
           <Table stickyHeader>
-            <TableHead  >
+            <TableHead>
               <TableRow>
                 {headCells.map((headCell) => (
-                  <TableCell key={headCell.id} 
-                  sx={{background:"#e5ecffff", fontSize:"1.15rem"}} >
+                  <TableCell
+                    key={headCell.id}
+                    sx={{ background: "#e5ecffff", fontSize: "1.15rem" }}
+                  >
                     {headCell.label}
                   </TableCell>
                 ))}
               </TableRow>
             </TableHead>
-            <TableBody sx={{fontSize:"0.95rem"}} >
+            <TableBody sx={{ fontSize: "0.95rem" }}>
               {filteredData.length > 0 ? (
                 filteredData.map((docente) => (
-                  <TableRow key={docente.id}>
-                    <TableCell >{docente.apellidoP}</TableCell>
-                    <TableCell>{docente.apellidoM}</TableCell>
+                  <TableRow key={docente.iddocente}
+                  onClick={() => console.log(`Clicked on docente ID: ${docente.iddocente}`)}
+                  sx={{ cursor: 'pointer' }}
+                  >
+                    <TableCell>{docente.apellidop}</TableCell>
+                    <TableCell>{docente.apellidom}</TableCell>
                     <TableCell>{docente.nombres}</TableCell>
                     <TableCell>{docente.birthday}</TableCell>
                     <TableCell>{docente.correo}</TableCell>
-                    <TableCell>{docente.grupo}</TableCell>
-                    <TableCell>{docente.materia}</TableCell>
+                    {/* <TableCell>{docente.grupo}</TableCell>
+                    <TableCell>{docente.materia}</TableCell>*/}
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{fontSize:"0.95rem"}}>
+                  <TableCell
+                    colSpan={7}
+                    align="center"
+                    sx={{ fontSize: "0.95rem" }}
+                  >
                     No se encontraron resultados
                   </TableCell>
                 </TableRow>
