@@ -1,5 +1,5 @@
-import { use, useState, useEffect } from "react";
-
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import {
   Box,
   Table,
@@ -19,64 +19,62 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import { useNavigate } from "react-router-dom";
 
 const headCells = [
-  { id: "apellidoP", label: "Apellido Paterno" },
-  { id: "apellidoM", label: "Apellido Materno" },
-  { id: "nombres", label: "Nombres" },
-  { id: "birthday", label: "Fecha Nac." },
-  { id: "correo", label: "Correo" },
+  { id: "clave", label: "Clave" },
+  { id: "asignatura", label: "Asignatura" },
 ];
 
-
-
-export default function Docentes() {
- const navigate = useNavigate();
-  
-//Llamada a la API
-  const [docentesData, setdocentesData] = useState([]);
+export default function Grupos() {
+  const navigate = useNavigate();
+  const { idgrupo } = useParams();
+  console.log(idgrupo);
+  // Llamada a la API
+  const [materiasData, setmateriasData] = useState([]);
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  //La obtención de datos se hará en un useEffect
   useEffect(() => {
-    fetch(`${apiUrl}/docente`)
+    fetch(`${apiUrl}/materias/grupo/${idgrupo}/2025`)
       .then((response) => response.json())
-      .then((docentesData) => setdocentesData(docentesData))
+      .then((data) => {
+        setmateriasData(Array.isArray(data.materias) ? data.materias : []);
+      })
       .catch((error) => console.error("Error fetching data:", error));
   }, [apiUrl]);
-
+  console.log(materiasData);
+  // estados para búsqueda y filtros
   const [search, setSearch] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
-
-  // estados para filtros
   const [filters, setFilters] = useState({
-    apellidoP: "",
-    apellidoM: "",
-    correo: "",
-    grupo: "",
-    materia: "",
+    clave: "",
+    asignatura: "",
   });
 
-  // abrir/cerrar menú de filtros
   const open = Boolean(anchorEl);
   const handleClick = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
 
-  // aplicar filtros
- const filteredData = docentesData.filter((docente) => {
-  const fullName = `${docente.apellidop ?? ""} ${docente.apellidom ?? ""} ${docente.nombres ?? ""}`.toLowerCase();
- 
-  return (
-    fullName.includes(search?.toLowerCase() ?? "") &&
-    (docente.apellidop?.toLowerCase() ?? "").includes(filters.apellidoP?.toLowerCase() ?? "") &&
-    (docente.apellidom?.toLowerCase() ?? "").includes(filters.apellidoM?.toLowerCase() ?? "") &&
-    (docente.correo?.toLowerCase() ?? "").includes(filters.correo?.toLowerCase() ?? "") &&
-    (docente.grupo?.toLowerCase() ?? "").includes(filters.grupo?.toLowerCase() ?? "") &&
-    (docente.materia?.toLowerCase() ?? "").includes(filters.materia?.toLowerCase() ?? "")
-  );
-});
+  // Filtrado de datos
+  const filteredData = materiasData.filter((materia) => {
+    return (
+      (search === "" ||
+        materia.clave.toString().toUpperCase().includes(search.toUpperCase()) ||
+        materia.asignatura
+          .toString()
+          .toUpperCase()
+          .includes(search.toUpperCase())) &&
+      (filters.clave === "" ||
+        materia.clave
+          .toString()
+          .toUpperCase()
+          .includes(filters.clave.toUpperCase())) &&
+      (filters.asignatura === "" ||
+        materia.asignatura
+          .toString()
+          .toUpperCase()
+          .includes(filters.asignatura.toUpperCase()))
+    );
+  });
 
-
   return (
-    // Contenedor principal
     <Box
       sx={{
         height: "89vh",
@@ -87,7 +85,7 @@ export default function Docentes() {
       }}
     >
       <Paper sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-        {/* Encabezado con título, búsqueda e icono de filtros */}
+        {/* Encabezado */}
         <Box
           sx={{
             display: "flex",
@@ -105,7 +103,7 @@ export default function Docentes() {
               fontSize: "2.5rem",
             }}
           >
-            Docentes
+            Materias Grupo {idgrupo}
           </Typography>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -133,37 +131,32 @@ export default function Docentes() {
               <Typography variant="subtitle1" gutterBottom>
                 Filtros
               </Typography>
+
+              {/* Input Clave */}
               <TextField
                 fullWidth
-                label="Apellido P"
+                label="Clave"
                 size="small"
-                value={filters.apellidop}
+                value={filters.clave} // usar el nombre correcto del estado
                 onChange={(e) =>
-                  setFilters({ ...filters, apellidop: e.target.value })
+                  setFilters({ ...filters, clave: e.target.value })
                 }
+                onKeyDown={(e) => e.stopPropagation()} // evita que la tecla cierre el menu
                 sx={{ mb: 2 }}
               />
+
+              {/* Input Asignatura */}
               <TextField
                 fullWidth
-                label="Apellido M"
+                label="Asignatura"
                 size="small"
-                value={filters.apellidom}
+                value={filters.asignatura} // usar el nombre correcto del estado
                 onChange={(e) =>
-                  setFilters({ ...filters, apellidom: e.target.value })
+                  setFilters({ ...filters, asignatura: e.target.value })
                 }
+                onKeyDown={(e) => e.stopPropagation()} // evita que la tecla cierre el menu
                 sx={{ mb: 2 }}
               />
-              <TextField
-                fullWidth
-                label="Correo"
-                size="small"
-                value={filters.correo}
-                onChange={(e) =>
-                  setFilters({ ...filters, correo: e.target.value })
-                }
-                sx={{ mb: 2 }}
-              />
-             
 
               <Button fullWidth variant="contained" onClick={handleClose}>
                 Aplicar
@@ -180,7 +173,7 @@ export default function Docentes() {
                 {headCells.map((headCell) => (
                   <TableCell
                     key={headCell.id}
-                    sx={{ background: "#e5ecffff", fontSize: "1.15rem" }}
+                    sx={{ background: "#e5ecff", fontSize: "1.15rem" }}
                   >
                     {headCell.label}
                   </TableCell>
@@ -189,24 +182,20 @@ export default function Docentes() {
             </TableHead>
             <TableBody sx={{ fontSize: "0.95rem" }}>
               {filteredData.length > 0 ? (
-                filteredData.map((docente) => (
-                  <TableRow key={docente.iddocente}
-                  onClick={() => navigate(`/docente/${docente.iddocente}`)}
-                  sx={{ cursor: 'pointer' }} hover
+                filteredData.map((materia) => (
+                  <TableRow
+                    key={materia.clave}
+                    hover
+                    sx={{ cursor: "pointer" }}
                   >
-                    <TableCell>{docente.apellidop}</TableCell>
-                    <TableCell>{docente.apellidom}</TableCell>
-                    <TableCell>{docente.nombres}</TableCell>
-                    <TableCell>{docente.birthday}</TableCell>
-                    <TableCell>{docente.correo}</TableCell>
-                    {/* <TableCell>{docente.grupo}</TableCell>
-                    <TableCell>{docente.materia}</TableCell>*/}
+                    <TableCell>{materia.clave}</TableCell>
+                    <TableCell>{materia.asignatura}</TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={headCells.length}
                     align="center"
                     sx={{ fontSize: "0.95rem" }}
                   >

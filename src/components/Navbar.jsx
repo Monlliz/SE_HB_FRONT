@@ -38,7 +38,7 @@ export default function Navbar({ links = [] }) {
         ? links
         : [
             { label: "INICIO", href: "/" },
-            { label: "ALUMNOS", href: "/alumnos" },
+            { label: "GRUPOS", href: "/grupos" },
             { label: "DOCENTES", href: "/docentes" },
             { label: "MATERIAS", href: "/materias" },
             { label: "REPORTES", href: "/reportes" },
