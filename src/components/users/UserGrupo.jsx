@@ -23,7 +23,7 @@ const headCells = [
   { id: "asignatura", label: "Asignatura" },
 ];
 
-export default function Grupos() {
+export default function UserGrupo() {
   const navigate = useNavigate();
   const { idgrupo } = useParams();
   console.log(idgrupo);
