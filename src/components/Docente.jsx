@@ -1,27 +1,39 @@
-import { useState, useEffect } from "react";
-import { Box, TextField, List, ListItem, ListItemText, Paper } from "@mui/material";
+import { useState, useEffect, useCallback } from "react";
+import {
+  Box,
+  TextField,
+  List,
+  ListItem,
+  ListItemText,
+  Paper,
+  Button,
+  IconButton,
+} from "@mui/material";
+import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import UserDocente from "./users/UserDocente";
-
-export default function Alumnos() {
+import NewDocente from "./modals/NewDocente";
+export default function Docente() {
   const apiUrl = import.meta.env.VITE_API_URL;
   const [search, setSearch] = useState("");
-  const [alumnos, setAlumnos] = useState([]);
+  const [Docente, setDocente] = useState([]);
   const [resultados, setResultados] = useState([]);
   const [selectedDocenteId, setSelectedDocenteId] = useState(null); // <- ID seleccionado
+  const [modalNewOpen, setModalNewOpen] = useState(false);
+  // Traemos todos los Docente una vez al cargar el componente
 
-  // Traemos todos los alumnos una vez al cargar el componente
   useEffect(() => {
-    const fetchAlumnos = async () => {
-      try {
-        const res = await fetch(`${apiUrl}/docente`);
-        const data = await res.json();
-        setAlumnos(data);
-      } catch (error) {
-        console.error("Error al cargar Docentes:", error);
-      }
-    };
-    fetchAlumnos();
-  }, []);
+    fetchDocente();
+  }, [apiUrl]);
+
+  const fetchDocente = useCallback(async () => {
+    try {
+      const res = await fetch(`${apiUrl}/docente`);
+      const data = await res.json();
+      setDocente(data);
+    } catch (error) {
+      console.error("Error al cargar Docentes:", error);
+    }
+  }, [apiUrl]);
 
   // Filtrado dinámico en front según search
   useEffect(() => {
@@ -29,18 +41,20 @@ export default function Alumnos() {
       setResultados([]);
       return;
     }
-
-    const filtered = alumnos.filter((alumno) =>
-      alumno.nombres.toLowerCase().includes(search.toLowerCase())
+    const filtered = Docente.filter((docente) =>
+      docente.nombres.toLowerCase().includes(search.toLowerCase())
     );
     setResultados(filtered);
-  }, [search, alumnos]);
+  }, [search, Docente]);
 
   // Función al hacer click en un docente
-  const handleClick = (alumno) => {
-    setSelectedDocenteId(alumno.iddocente
+  const handleClick = (docente) => {
+    setSelectedDocenteId(docente.iddocente); // Guardamos el ID
+    fetchDocente();
+  };
 
-    ); // Guardamos el ID
+  const handleAcceptNew = () => {
+    setModalNewOpen(false); // Cierra el modal
   };
 
   return (
@@ -77,7 +91,17 @@ export default function Alumnos() {
             borderRadius: 1,
           }}
         />
-
+        <IconButton
+          aria-label="PersonAddAlt1Icon"
+          onClick={() => setModalNewOpen(true)}
+        >
+          <PersonAddAlt1Icon />
+        </IconButton>
+        <NewDocente
+          open={modalNewOpen}
+          onClose={() => setModalNewOpen(false)}
+          onAccept={handleAcceptNew}
+        />
         <List
           sx={{
             width: "100%",
@@ -89,10 +113,10 @@ export default function Alumnos() {
           }}
         >
           {search && resultados.length > 0 ? (
-            resultados.map((alumno) => (
+            resultados.map((docente) => (
               <ListItem
-                key={alumno.iddocente}
-                onClick={() => handleClick(alumno)}
+                key={docente.iddocente}
+                onClick={() => handleClick(docente)}
                 sx={{
                   cursor: "pointer",
                   "&:hover": {
@@ -101,7 +125,7 @@ export default function Alumnos() {
                 }}
                 divider
               >
-                <ListItemText primary={alumno.nombres} />
+                <ListItemText primary={docente.nombres} />
               </ListItem>
             ))
           ) : search ? (
@@ -121,8 +145,8 @@ export default function Alumnos() {
         sx={{
           width: "80%",
           height: "100%",
-      
-          borderRadius:2,
+
+          borderRadius: 2,
           p: 2,
         }}
       >

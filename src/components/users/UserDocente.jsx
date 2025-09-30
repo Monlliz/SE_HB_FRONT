@@ -1,4 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+//los modales
+import NuevaMateriaDocente from "../modals/NuevaMateriaDocente.jsx";
+import EditDocente from "../modals/EditDocente.jsx";
 import {
   Box,
   Button,
@@ -9,49 +12,70 @@ import {
   TableCell,
   TableBody,
 } from "@mui/material";
-
+//Funcion principal
 export default function UserDocente({ id }) {
+  //Todos los estados necesarios
   const [docente, setDocente] = useState(null);
   const [materias, setMaterias] = useState([]);
   const [selectedMateriaClave, setSelectedMateriaClave] = useState(null);
+  const [modalMateriaOpen, setModalMateriaOpen] = useState(false);
+  const [modalEditOpen, setModalEditOpen] = useState(false);
+
+
+  //URL de la API
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  useEffect(() => {
+  //la Api pa' materias
+  const fetchMaterias = useCallback(async () => {
+    if (!id) return;
+    try {
+      const resMaterias = await fetch(`${apiUrl}/docente/materias/${id}`);
+      if (!resMaterias.ok) throw new Error("Error al cargar materias");
+      const dataMaterias = await resMaterias.json();
+      setMaterias(dataMaterias?.materias || []);
+    } catch (err) {
+      console.error(err);
+      setMaterias([]); // En caso de error, asegurar que materias es un array vacío
+    }
+  }, [id]);
+
+  // la Api pa' docentes
+  const fetchDocente = useCallback(async () => {
     if (!id) return;
 
-    const fetchData = async () => {
+    const fetchInitialData = async () => {
       try {
-        // Limpiar materias antes de fetch
-        setMaterias([]);
-        
-
-        // Fetch docente
         const resDocente = await fetch(`${apiUrl}/docente/${id}`);
         if (!resDocente.ok) throw new Error("Error al cargar docente");
         const dataDocente = await resDocente.json();
         setDocente(dataDocente);
 
-        // Fetch materias
-        const resMaterias = await fetch(`${apiUrl}/docente/materias/${id}`);
-        if (!resMaterias.ok) throw new Error("Error al cargar materias");
-        const dataMaterias = await resMaterias.json();
-
-        // Actualizamos materias, incluso si viene vacío
-        setMaterias(
-          (dataMaterias?.materias || []).map((m, index) => ({
-            id: index,
-            clave: m.clave,
-            nombre: m.nombre,
-          }))
-        );
+        // Llamamos a la función que obtiene las materias
+        fetchMaterias();
       } catch (err) {
         console.error(err);
-        setMaterias([]); 
       }
     };
 
-    fetchData();
-  }, [id]);
+    fetchInitialData();
+  }, [id, apiUrl, fetchMaterias]);
+
+  //El renderizado inicial
+  useEffect(() => {
+    fetchDocente();
+    fetchMaterias();
+  }, [fetchDocente, fetchMaterias]);
+
+  //Función para manejar el "Aceptar" del modal
+  const handleAcceptMateria = () => {
+    setModalMateriaOpen(false); // Cierra el modal
+    fetchMaterias(); // Vuelve a cargar las materias para que aparezca la nueva
+  };
+  const handleAcceptEdit = () => {
+    setModalEditOpen(false); // Cierra el modal
+    fetchDocente();
+  };
+
 
   if (!docente) {
     return <Typography>Cargando docente...</Typography>;
@@ -119,9 +143,20 @@ export default function UserDocente({ id }) {
         </Box>
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          <Button variant="contained" color="primary" size="small">
+          <Button
+            variant="contained"
+            color="primary"
+            size="small"
+            onClick={() => setModalEditOpen(true)}
+          >
             Editar
           </Button>
+          <EditDocente
+            open={modalEditOpen}
+            onClose={() => setModalEditOpen(false)}
+            onAccept={handleAcceptEdit}
+            docenteId={id}
+          />
           <Button variant="outlined" color="error" size="small">
             Desactivar
           </Button>
@@ -158,18 +193,18 @@ export default function UserDocente({ id }) {
           <Button
             variant="contained"
             color="primary"
-            onClick={() => console.log("Agregar materia", selectedMateriaClave)}
+            onClick={() => setModalMateriaOpen(true)}
           >
             Agregar
           </Button>
-          <Button
-            variant="outlined"
-            color="warning"
-            disabled={!selectedMateriaClave}
-            onClick={() => console.log("Editar materia", selectedMateriaClave)}
-          >
-            Editar
-          </Button>
+
+          <NuevaMateriaDocente
+            open={modalMateriaOpen}
+            onClose={() => setModalMateriaOpen(false)}
+            onAccept={handleAcceptMateria}
+            docenteId={id}
+          />
+
           <Button
             variant="outlined"
             color="error"
