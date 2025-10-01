@@ -10,15 +10,13 @@ import {
   CircularProgress,
   Typography,
 } from "@mui/material";
-
-//ES BORRADO LOGICO, EN LA BD SE PONE UNA FECHA FIN Y EN LA BUSQUEDA DE MATERIA SE IGNORAN LAS QUE TIENEN FECHA FIN
-function BorrarMateria({
+function DesactivarDocente({
   open,
   onClose,
   onAccept,
-  nombre,
+  nombres,
+  apellidop,
   docenteId,
-  clave,
 }) {
   const apiUrl = import.meta.env.VITE_API_URL;
   const [loading, setLoading] = useState(false);
@@ -29,7 +27,7 @@ function BorrarMateria({
    
 
     try {
-      const response = await fetch(`${apiUrl}/docente/materia/delete/${docenteId}/${clave}`, {
+      const response = await fetch(`${apiUrl}/docente/delete/${docenteId}`, {
         method: "put",
         headers: {
           "Content-Type": "application/json",
@@ -37,14 +35,14 @@ function BorrarMateria({
       });
 
       if (!response.ok) {
-        throw new Error("Error al eliminar la materia");
+        throw new Error("Error al Desactivar docente");
       }
 
-      alert("Materia eliminada con éxito");
+      alert("Docente desactivado con éxito");
       onAccept();
     } catch (err) {
       alert(`Error: ${err.message}`);
-      setApiError(err.message);
+
     } finally {
       setIsSubmitting(false);
     }
@@ -64,7 +62,7 @@ function BorrarMateria({
     return (
       <Typography>
         {" "}
-        Esta seguro de eliminar la materia {nombre} ?
+        Esta seguro de Desactivar al docente {nombres} {apellidop} ?
       </Typography>
     );
   };
@@ -94,4 +92,4 @@ function BorrarMateria({
   );
 }
 
-export default BorrarMateria;
+export default DesactivarDocente;

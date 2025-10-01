@@ -11,13 +11,13 @@ import {
   Typography,
 } from "@mui/material";
 
-//ES BORRADO LOGICO, EN LA BD SE PONE UNA FECHA FIN Y EN LA BUSQUEDA DE MATERIA SE IGNORAN LAS QUE TIENEN FECHA FIN
-function BorrarMateria({
+//ES BORRADO FISICO
+function BorrarMateriaGrupo({
   open,
   onClose,
   onAccept,
   nombre,
-  docenteId,
+  grupoId,
   clave,
 }) {
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -29,8 +29,8 @@ function BorrarMateria({
    
 
     try {
-      const response = await fetch(`${apiUrl}/docente/materia/delete/${docenteId}/${clave}`, {
-        method: "put",
+      const response = await fetch(`${apiUrl}/materias/grupo/${grupoId}/${clave}`, {
+        method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
@@ -71,7 +71,7 @@ function BorrarMateria({
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Desactivar Docente</DialogTitle>
+      <DialogTitle>ELIMINAR MATERIA</DialogTitle>
       <DialogContent>{renderContent()}</DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={isSubmitting}>
@@ -94,4 +94,4 @@ function BorrarMateria({
   );
 }
 
-export default BorrarMateria;
+export default BorrarMateriaGrupo;
