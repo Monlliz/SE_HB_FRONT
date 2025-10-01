@@ -53,6 +53,7 @@ export default function Docente() {
     fetchDocente();
   };
 
+  //Nuevo docente
   const handleAcceptNew = () => {
     setModalNewOpen(false); // Cierra el modal
   };

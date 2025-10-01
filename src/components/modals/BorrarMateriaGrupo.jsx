@@ -11,7 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 
-//ES BORRADO FISICO
+//ES BORRADO FISICO CUIDADO
 function BorrarMateriaGrupo({
   open,
   onClose,

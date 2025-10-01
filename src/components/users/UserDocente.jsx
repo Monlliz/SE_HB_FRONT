@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 //los modales
 import NuevaMateriaDocente from "../modals/NuevaMateriaDocente.jsx";
 import EditDocente from "../modals/EditDocente.jsx";
+import DesactivarDocente from "../modals/DesactivarDocente.jsx";
+import BorrarMateria from "../modals/BorrarMateria.jsx";
 import {
   Box,
   Button,
@@ -20,7 +22,8 @@ export default function UserDocente({ id }) {
   const [selectedMateriaClave, setSelectedMateriaClave] = useState(null);
   const [modalMateriaOpen, setModalMateriaOpen] = useState(false);
   const [modalEditOpen, setModalEditOpen] = useState(false);
-
+  const [modalDesactivarOpen, setModalDesactivarOpen] = useState(false);
+  const [modalBorrarMateriaOpen, setModalBorrarMateriaOpen] = useState(false);
 
   //URL de la API
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -29,6 +32,7 @@ export default function UserDocente({ id }) {
   const fetchMaterias = useCallback(async () => {
     if (!id) return;
     try {
+      setSelectedMateriaClave(null); 
       const resMaterias = await fetch(`${apiUrl}/docente/materias/${id}`);
       if (!resMaterias.ok) throw new Error("Error al cargar materias");
       const dataMaterias = await resMaterias.json();
@@ -66,11 +70,14 @@ export default function UserDocente({ id }) {
     fetchMaterias();
   }, [fetchDocente, fetchMaterias]);
 
-  //Función para manejar el "Aceptar" del modal
+  //Funciones aceptar modales
+
+  //Función para manejar el "Aceptar" del modal de agregar materia y borrar materia
   const handleAcceptMateria = () => {
     setModalMateriaOpen(false); // Cierra el modal
     fetchMaterias(); // Vuelve a cargar las materias para que aparezca la nueva
   };
+  //La uso tambien para desactivar docente.
   const handleAcceptEdit = () => {
     setModalEditOpen(false); // Cierra el modal
     fetchDocente();
@@ -157,9 +164,17 @@ export default function UserDocente({ id }) {
             onAccept={handleAcceptEdit}
             docenteId={id}
           />
-          <Button variant="outlined" color="error" size="small">
+          <Button variant="outlined" color="error" size="small"   onClick={() => setModalDesactivarOpen(true)}>
             Desactivar
           </Button>
+          <DesactivarDocente
+            open={modalDesactivarOpen}
+            onClose={() => setModalDesactivarOpen(false)}
+            onAccept={handleAcceptEdit}
+            docenteId={id}
+            nombres={docente.nombres}
+            apellidop={docente.apellidop}
+          />
         </Box>
       </Box>
 
@@ -210,11 +225,26 @@ export default function UserDocente({ id }) {
             color="error"
             disabled={!selectedMateriaClave}
             onClick={() =>
-              console.log("Eliminar materia", selectedMateriaClave)
+              setModalBorrarMateriaOpen(true)
             }
           >
             Eliminar
           </Button>
+          <BorrarMateria
+            open={modalBorrarMateriaOpen}
+            onClose={() => setModalBorrarMateriaOpen(false)}
+            onAccept={() => {
+              setSelectedMateriaClave(null);
+              fetchMaterias();
+              setModalBorrarMateriaOpen(false);
+            }}
+            docenteId={id}
+            clave={selectedMateriaClave}
+            nombre={
+              materias.find((m) => m.clave === selectedMateriaClave)?.nombre ||
+              ""
+            }
+          />
         </Box>
         <Box
           sx={{

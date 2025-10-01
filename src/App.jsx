@@ -2,9 +2,10 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Login from "./components/login.jsx";
 import Docente from "./components/Docente.jsx";
 import Layout from "./layouts/Layout.jsx";
-import UserDocente from "./components/users/UserDocente.jsx";
-import Grupo from "./components/Grupos.jsx";
-import UserGrupo from "./components/users/UserGrupo.jsx";
+import Grupo from "./components/Grupo.jsx";
+import Materias from "./components/Materias.jsx";
+
+
 import NotFound from "./components/NotFound.jsx";
 function App() {
   return (
@@ -18,8 +19,9 @@ function App() {
           {/*Rutas con navbar */}
           <Route path="/docentes" element={<Docente />} />
           <Route path="/grupos" element={<Grupo />} />
-          <Route path="/grupos/:idgrupo" element={<UserGrupo />} />
-          
+          <Route path="/materias" element={<Materias />} />
+          {/*<Route path="/grupos" element={<Grupo />} />*/}
+          {/* <Route path="/grupos/:idgrupo" element={<UserGrupo />} />*/}        
           {/*<Route path="/docente/:id" element={<UserDocente />} />*/}
           {/*<Route path="/alumno" element={<Alumno />}/>*/}
         </Route>
