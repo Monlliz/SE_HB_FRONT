@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../../../context/AuthContext";
 import {
   Button,
   Dialog,
@@ -10,15 +11,19 @@ import {
   CircularProgress,
   Typography,
 } from "@mui/material";
-function DesactivarDocente({
+import { fetchBorrarMateriaGrupo } from "../../services/materiasService";
+
+//ES BORRADO FISICO CUIDADO
+function BorrarMateriaGrupo({
   open,
   onClose,
   onAccept,
-  nombres,
-  apellidop,
-  docenteId,
+  nombre,
+  grupoId,
+  clave,
 }) {
-  const apiUrl = import.meta.env.VITE_API_URL;
+
+  const {token} = useAuth();
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -27,22 +32,16 @@ function DesactivarDocente({
    
 
     try {
-      const response = await fetch(`${apiUrl}/docente/delete/${docenteId}`, {
-        method: "put",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+       if (!token) {
+          throw new Error("Autorización rechazada. No se encontró el token.");
+        }
+        await fetchBorrarMateriaGrupo(token,grupoId,clave);
 
-      if (!response.ok) {
-        throw new Error("Error al Desactivar docente");
-      }
-
-      alert("Docente desactivado con éxito");
+      alert("Materia eliminada con éxito");
       onAccept();
     } catch (err) {
       alert(`Error: ${err.message}`);
-
+   
     } finally {
       setIsSubmitting(false);
     }
@@ -62,14 +61,14 @@ function DesactivarDocente({
     return (
       <Typography>
         {" "}
-        Esta seguro de Desactivar al docente {nombres} {apellidop} ?
+        Esta seguro de eliminar la materia {nombre} ?
       </Typography>
     );
   };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Desactivar Docente</DialogTitle>
+      <DialogTitle>ELIMINAR MATERIA</DialogTitle>
       <DialogContent>{renderContent()}</DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={isSubmitting}>
@@ -92,4 +91,4 @@ function DesactivarDocente({
   );
 }
 
-export default DesactivarDocente;
+export default BorrarMateriaGrupo;

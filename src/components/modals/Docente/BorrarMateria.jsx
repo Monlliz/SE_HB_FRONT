@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../../../context/AuthContext";
+import { fetchBorrarMateriaDocente } from "../../services/materiasService";
 import {
   Button,
   Dialog,
@@ -12,34 +14,20 @@ import {
 } from "@mui/material";
 
 //ES BORRADO LOGICO, EN LA BD SE PONE UNA FECHA FIN Y EN LA BUSQUEDA DE MATERIA SE IGNORAN LAS QUE TIENEN FECHA FIN
-function BorrarMateria({
-  open,
-  onClose,
-  onAccept,
-  nombre,
-  docenteId,
-  clave,
-}) {
-  const apiUrl = import.meta.env.VITE_API_URL;
+function BorrarMateria({ open, onClose, onAccept, nombre, docenteId, clave }) {
+  const { token } = useAuth();
+
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   const handleDelete = async () => {
-   
-
     try {
-      const response = await fetch(`${apiUrl}/docente/materia/delete/${docenteId}/${clave}`, {
-        method: "put",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al eliminar la materia");
+      if (!token) {
+        throw new Error("Autorización rechazada. No se encontró el token.");
       }
-
+     
+      await fetchBorrarMateriaDocente(token,docenteId, clave);
       alert("Materia eliminada con éxito");
       onAccept();
     } catch (err) {
@@ -62,10 +50,7 @@ function BorrarMateria({
       return <Box sx={{ color: "red", my: 2 }}>Error: {error}</Box>;
     }
     return (
-      <Typography>
-        {" "}
-        Esta seguro de eliminar la materia {nombre} ?
-      </Typography>
+      <Typography> Esta seguro de eliminar la materia {nombre} ?</Typography>
     );
   };
 

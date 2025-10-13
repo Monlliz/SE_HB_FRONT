@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../../../context/AuthContext";
+import { fetchDocenteGetOne, fetchDocenteActualizar } from "../../services/docenteService";
 import {
   Button,
   Dialog,
@@ -16,7 +18,7 @@ function EditDocente({ open, onClose, onAccept, docenteId }) {
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false); // Estado para el envío
   const [error, setError] = useState(null);
-
+  const { token } = useAuth();
   // Es mejor inicializar el estado del formulario como un objeto vacío
   const [formulario, setFormulario] = useState({});
 
@@ -26,12 +28,12 @@ function EditDocente({ open, onClose, onAccept, docenteId }) {
         setLoading(true);
         setError(null);
         try {
-          const response = await fetch(`${apiUrl}/docente/${docenteId}`);
-          if (!response.ok)
-            throw new Error("Error al cargar los datos del docente");
-          const data = await response.json();
+          if (!token) {
+            throw new Error("Autorización rechazada. No se encontró el token.");
+          }
+          const { docente } = await fetchDocenteGetOne(token, docenteId);
           // actualizamos el estado del formulario cuando llegan los datos
-          setFormulario(data);
+          setFormulario(docente);
         } catch (error) {
           setError(error.message);
         } finally {
@@ -55,25 +57,14 @@ function EditDocente({ open, onClose, onAccept, docenteId }) {
   const handleUpdate = async () => {
     setIsSubmitting(true);
     try {
-        const datosParaEnviar = {
-      nombres: formulario.nombres,
-      apellidop: formulario.apellidop,
-      apellidom: formulario.apellidom,
-      correo: formulario.correo,
-      birthday: formulario.birthday,
-    };
-      const response = await fetch(`${apiUrl}/docente/${docenteId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(datosParaEnviar),
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al actualizar el docente");
-      }
-
+      const datosParaEnviar = {
+        nombres: formulario.nombres,
+        apellidop: formulario.apellidop,
+        apellidom: formulario.apellidom,
+        correo: formulario.correo,
+        birthday: formulario.birthday,
+      };
+      await fetchDocenteActualizar(token,docenteId,datosParaEnviar);
       alert("Docente actualizado con éxito");
       onAccept(); // Llama a la función del padre para cerrar y/o refrescar
     } catch (err) {
@@ -84,7 +75,6 @@ function EditDocente({ open, onClose, onAccept, docenteId }) {
   };
 
   const renderContent = () => {
-  
     if (loading) {
       return (
         <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>

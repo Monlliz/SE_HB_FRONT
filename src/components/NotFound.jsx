@@ -1,6 +1,6 @@
 import { Box, Typography, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 
 export default function NotFound() {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ export default function NotFound() {
         p: 2
       }}
     >
-      <ErrorOutlineIcon sx={{ fontSize: 100, color: "#f44336" }} />
+      <SentimentVeryDissatisfiedIcon sx={{ fontSize: 100, color: "#f44336" }} />
       <Typography variant="h1" component="h1" sx={{ fontSize: 80, fontWeight: "bold", mt: 2 }}>
         404
       </Typography>

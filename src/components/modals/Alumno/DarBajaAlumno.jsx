@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../../../context/AuthContext";
+
+import {fetchAlumnoDeleteLogico} from "../../services/alumnosService.js"
 import {
   Button,
   Dialog,
@@ -10,41 +13,30 @@ import {
   CircularProgress,
   Typography,
 } from "@mui/material";
-
-//ES BORRADO FISICO CUIDADO
-function BorrarMateriaGrupo({
+function DesactivarDocente({
   open,
   onClose,
   onAccept,
-  nombre,
-  grupoId,
-  clave,
+  nombres,
+  apellidop,
+  matricula,
 }) {
-  const apiUrl = import.meta.env.VITE_API_URL;
+  const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   const handleDelete = async () => {
-   
-
     try {
-      const response = await fetch(`${apiUrl}/materias/grupo/${grupoId}/${clave}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al eliminar la materia");
+      if (!token) {
+        throw new Error("Autorización rechazada. No se encontró el token.");
       }
 
-      alert("Materia eliminada con éxito");
+      await fetchAlumnoDeleteLogico(token, matricula);
+      alert("Alumno dado de baja con éxito");
       onAccept();
     } catch (err) {
       alert(`Error: ${err.message}`);
-      setApiError(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -64,14 +56,14 @@ function BorrarMateriaGrupo({
     return (
       <Typography>
         {" "}
-        Esta seguro de eliminar la materia {nombre} ?
+        Esta seguro de Desactivar al Alumno {nombres} {apellidop} ?
       </Typography>
     );
   };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>ELIMINAR MATERIA</DialogTitle>
+      <DialogTitle>Baja a Alumno</DialogTitle>
       <DialogContent>{renderContent()}</DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={isSubmitting}>
@@ -94,4 +86,4 @@ function BorrarMateriaGrupo({
   );
 }
 
-export default BorrarMateriaGrupo;
+export default DesactivarDocente;

@@ -1,9 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 //los modales
-import NuevaMateriaDocente from "../modals/NuevaMateriaDocente.jsx";
-import EditDocente from "../modals/EditDocente.jsx";
-import DesactivarDocente from "../modals/DesactivarDocente.jsx";
-import BorrarMateria from "../modals/BorrarMateria.jsx";
+import NuevaMateriaDocente from "../modals/Docente/NuevaMateriaDocente.jsx";
+import EditDocente from "../modals/Docente/EditDocente.jsx";
+import DesactivarDocente from "../modals/Docente/DesactivarDocente.jsx";
+import BorrarMateria from "../modals/Docente/BorrarMateria.jsx";
+
+//import servicio
+import {
+  fetchDocenteGetOne,
+  fetchDocenteMaterias,
+} from "../services/docenteService.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 import {
   Box,
   Button,
@@ -14,7 +21,7 @@ import {
   TableCell,
   TableBody,
 } from "@mui/material";
-//Funcion principal
+//Funcion principal (El id es del docente)
 export default function UserDocente({ id }) {
   //Todos los estados necesarios
   const [docente, setDocente] = useState(null);
@@ -27,16 +34,19 @@ export default function UserDocente({ id }) {
 
   //URL de la API
   const apiUrl = import.meta.env.VITE_API_URL;
-
+  const { token } = useAuth();
   //la Api pa' materias
   const fetchMaterias = useCallback(async () => {
     if (!id) return;
     try {
-      setSelectedMateriaClave(null); 
-      const resMaterias = await fetch(`${apiUrl}/docente/materias/${id}`);
-      if (!resMaterias.ok) throw new Error("Error al cargar materias");
-      const dataMaterias = await resMaterias.json();
-      setMaterias(dataMaterias?.materias || []);
+      if (!token) {
+        throw new Error("Autorización rechazada. No se encontró el token.");
+      }
+      setSelectedMateriaClave(null);
+
+      const { materias } = await fetchDocenteMaterias(token, id);
+
+      setMaterias(materias.materias || []);
     } catch (err) {
       console.error(err);
       setMaterias([]); // En caso de error, asegurar que materias es un array vacío
@@ -49,11 +59,12 @@ export default function UserDocente({ id }) {
 
     const fetchInitialData = async () => {
       try {
-        const resDocente = await fetch(`${apiUrl}/docente/${id}`);
-        if (!resDocente.ok) throw new Error("Error al cargar docente");
-        const dataDocente = await resDocente.json();
-        setDocente(dataDocente);
-
+        if (!token) {
+          throw new Error("Autorización rechazada. No se encontró el token.");
+        }
+        //LLamamos al servicio
+        const { docente } = await fetchDocenteGetOne(token, id);
+        setDocente(docente);
         // Llamamos a la función que obtiene las materias
         fetchMaterias();
       } catch (err) {
@@ -82,7 +93,6 @@ export default function UserDocente({ id }) {
     setModalEditOpen(false); // Cierra el modal
     fetchDocente();
   };
-
 
   if (!docente) {
     return <Typography>Cargando docente...</Typography>;
@@ -164,7 +174,12 @@ export default function UserDocente({ id }) {
             onAccept={handleAcceptEdit}
             docenteId={id}
           />
-          <Button variant="outlined" color="error" size="small"   onClick={() => setModalDesactivarOpen(true)}>
+          <Button
+            variant="outlined"
+            color="error"
+            size="small"
+            onClick={() => setModalDesactivarOpen(true)}
+          >
             Desactivar
           </Button>
           <DesactivarDocente
@@ -224,9 +239,7 @@ export default function UserDocente({ id }) {
             variant="outlined"
             color="error"
             disabled={!selectedMateriaClave}
-            onClick={() =>
-              setModalBorrarMateriaOpen(true)
-            }
+            onClick={() => setModalBorrarMateriaOpen(true)}
           >
             Eliminar
           </Button>

@@ -1,35 +1,36 @@
 /**
- * @file Docente.jsx
- * @description Componente para buscar, visualizar y añadir nuevos docentes.
+ * @file alumno.jsx
+ * @description Componente para buscar, visualizar y añadir nuevos alumnos.
  */
-
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
-import { fetchDocenteGet } from "./services/docenteService.js";
+import { fetchAlumnoGet } from "./services/alumnosService.js";
 import {
   Box, TextField, List, ListItem, ListItemText, Paper, IconButton,Tooltip
 } from "@mui/material";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import UserDocente from "./users/UserDocente"; // Componente 'Detalle'
-import NewDocente from "./modals/Docente/NewDocente"; // Modal para crear docente
+import UserAlumno from "./users/UserAlumno.jsx";
+import PostAlumno from "./modals/Alumno/PostAlumno.jsx";
+import NewDocente from "./modals/Docente/NewDocente"; // Modal para crear alumno
 
 /**
- * Componente principal que gestiona la interfaz de docentes.
+ * Componente principal que gestiona la interfaz de alumnos.
  * @returns {JSX.Element}
  */
-export default function Docente() {
+export default function alumno() {
   // --- ESTADOS Y CONTEXTO ---
 
   const { token } = useAuth();
   /** @state {string} search - Almacena el término de búsqueda introducido por el usuario. */
   const [search, setSearch] = useState("");
-  /** @state {Array} docentes - Almacena la lista completa de docentes obtenida de la API. (Nota: por convención, debería llamarse 'docentes' en minúscula). */
-  const [docentes, setDocentes] = useState([]);
-  /** @state {Array} resultados - Almacena la lista filtrada de docentes que se muestra en la interfaz. */
+  /** @state {Array} alumnos - Almacena la lista completa de alumnos obtenida de la API. (Nota: por convención, debería llamarse 'alumnos' en minúscula). */
+  const [alumnos, setAlumnos] = useState([]);
+  /** @state {Array} resultados - Almacena la lista filtrada de alumnos que se muestra en la interfaz. */
   const [resultados, setResultados] = useState([]);
-  /** @state {string|null} selectedDocenteId - Guarda el ID del docente seleccionado para mostrar sus detalles. */
-  const [selectedDocenteId, setSelectedDocenteId] = useState(null);
-  /** @state {boolean} modalNewOpen - Controla la visibilidad del modal para añadir un nuevo docente. */
+  /** @state {string|null} selectedAlumnosId - Guarda el ID del alumno seleccionado para mostrar sus detalles. */
+  const [selectedAlumnosId, setSelectedAlumnosId] = useState("");
+  /** @state {boolean} modalNewOpen - Controla la visibilidad del modal para añadir un nuevo alumno. */
   const [modalNewOpen, setModalNewOpen] = useState(false);
   /** @state {boolean} loading - Indica si se están cargando los datos de la API. */
   const [loading, setLoading] = useState(false);
@@ -40,18 +41,18 @@ export default function Docente() {
 
   /**
    * @callback
-   * Carga la lista completa de docentes desde la API.
+   * Carga la lista completa de alumnos desde la API.
    * `useCallback` evita que esta función se recree en cada render, optimizando su uso en `useEffect`.
    */
-  const fetchDocente = useCallback(async () => {
+  const fetchAlumno = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       if (!token) throw new Error("Autorización rechazada. No se encontró el token.");
-      const data = await fetchDocenteGet(token);
-      setDocentes(data.docentes);
+      const data = await fetchAlumnoGet(token);
+      setAlumnos(data.alumnos);
     } catch (error) {
-      console.error("Error al cargar Docentes:", error);
+      console.error("Error al cargar alumnos:", error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -60,15 +61,15 @@ export default function Docente() {
 
   /**
    * @effect
-   * Llama a `fetchDocente` una vez cuando el componente se monta para obtener los datos iniciales.
+   * Llama a `fetchAlumno` una vez cuando el componente se monta para obtener los datos iniciales.
    */
   useEffect(() => {
-    fetchDocente();
-  }, [fetchDocente]);
+    fetchAlumno();
+  }, [fetchAlumno]);
 
   /**
    * @effect
-   * Filtra la lista de docentes cada vez que el término de búsqueda (`search`) o la lista maestra (`docentes`) cambian.
+   * Filtra la lista de alumnos cada vez que el término de búsqueda (`search`) o la lista maestra (`alumnos`) cambian.
    */
   useEffect(() => {
     // Si no hay texto de búsqueda, la lista de resultados se vacía.
@@ -76,32 +77,33 @@ export default function Docente() {
       setResultados([]);
       return;
     }
-    // Filtra la lista de docentes si existe y el término de búsqueda no está vacío.
-    const filtered = (docentes ?? []).filter((docente) => {
-      const nombres = docente?.nombres ?? "";
+    // Filtra la lista de alumnos si existe y el término de búsqueda no está vacío.
+    const filtered = (alumnos ?? []).filter((alumno) => {
+      const nombres = alumno?.nombres ?? "";
       return nombres.toLowerCase().includes(search.toLowerCase());
     });
     setResultados(filtered);
-  }, [search, docentes]);
+  }, [search, alumnos]);
 
   // --- MANEJADORES DE EVENTOS ---
 
   /**
-   * Se ejecuta al hacer clic en un docente de la lista.
-   * @param {Object} docente - El objeto del docente seleccionado.
+   * Se ejecuta al hacer clic en un alumno de la lista.
+   * @param {Object} alumno - El objeto del alumno seleccionado.
    */
-  const handleClick = (docente) => {
-    setSelectedDocenteId(docente.iddocente);
-    // La llamada a fetchDocente() aquí es innecesaria y se ha eliminado.
+  const handleClick = (alumno) => {
+    setSelectedAlumnosId(alumno.matricula);
+  
+    // La llamada a fetchAlumno() aquí es innecesaria y se ha eliminado.
   };
 
   /**
-   * Se ejecuta después de que el modal de "Nuevo Docente" se cierra con éxito.
-   * Vuelve a cargar la lista de docentes para incluir el nuevo registro.
+   * Se ejecuta después de que el modal de "Nuevo alumno" se cierra con éxito.
+   * Vuelve a cargar la lista de alumnos para incluir el nuevo registro.
    */
   const handleAcceptNew = () => {
     setModalNewOpen(false); // Cierra el modal.
-    fetchDocente(); // Actualiza la lista de docentes.
+    fetchAlumno(); // Actualiza la lista de alumnos.
   };
 
   // --- RENDERIZADO DEL COMPONENTE ---
@@ -118,15 +120,15 @@ export default function Docente() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <Tooltip title="Añadir Nuevo Docente">
+          <Tooltip title="Añadir Nuevo alumno">
             <IconButton onClick={() => setModalNewOpen(true)} sx={{ ml: 1 }}>
               <PersonAddAlt1Icon />
             </IconButton>
           </Tooltip>
         </Box>
 
-        {/* Modal para crear un nuevo docente */}
-        <NewDocente
+        {/* Modal para crear un nuevo alumno */}
+        <PostAlumno
           open={modalNewOpen}
           onClose={() => setModalNewOpen(false)}
           onAccept={handleAcceptNew}
@@ -137,19 +139,19 @@ export default function Docente() {
           {error && <ListItem><ListItemText primary={error} sx={{ color: "red" }} /></ListItem>}
           {!loading && !error && (
             search && resultados.length > 0 ? (
-              resultados.map((docente) => (
+              resultados.map((alumno) => (
                 <ListItem
-                  key={docente.iddocente}
-                  onClick={() => handleClick(docente)}
-                  selected={selectedDocenteId === docente.iddocente}
+                  key={alumno.matricula}
+                  onClick={() => handleClick(alumno)}
+                  selected={selectedAlumnosId === alumno.matricula}
                   sx={{ cursor: "pointer", "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.04)" } }}
                   divider
                 >
-                  <ListItemText primary={docente.nombres} secondary={`${docente.apellidop} ${docente.apellidom}`} />
+                  <ListItemText primary={alumno.nombres} secondary={`${alumno.apellidop} ${alumno.apellidom}`} />
                 </ListItem>
               ))
             ) : search ? (
-              <ListItem><ListItemText primary="No se encontraron docentes" /></ListItem>
+              <ListItem><ListItemText primary="No se encontraron alumnos" /></ListItem>
             ) : (
               <ListItem><ListItemText primary="Escribe un nombre para buscar..." /></ListItem>
             )
@@ -157,13 +159,13 @@ export default function Docente() {
         </List>
       </Paper>
 
-      {/* Panel Derecho (80%): Detalles del Docente (Detalle) */}
+      {/* Panel Derecho (80%): Detalles del alumno (Detalle) */}
       <Box sx={{ width: "80%", height: "100%", p: 2 }}>
-        {selectedDocenteId ? (
-          <UserDocente id={selectedDocenteId} />
+        {selectedAlumnosId ? (
+          <UserAlumno matricula={selectedAlumnosId} />
         ) : (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <p>Selecciona un docente de la lista para ver sus detalles.</p>
+            <p>Selecciona un alumno de la lista para ver sus detalles.</p>
           </Box>
         )}
       </Box>

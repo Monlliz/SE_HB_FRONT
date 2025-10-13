@@ -1,7 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 // Modales de materias
-import NuevaMateriaGrupo from "../modals/NuevaMateriaGrupo.jsx";
-import BorrarMateriaGrupo from "../modals/BorrarMateriaGrupo.jsx";
+import NuevaMateriaGrupo from "../modals/Grupo/NuevaMateriaGrupo.jsx";
+import BorrarMateriaGrupo from "../modals/Grupo/BorrarMateriaGrupo.jsx";
+
+//Servicios (apis)
+import { fetchMateriasGrupo } from "../services/materiasService.js";
+
+//Iconos
+import ListAltIcon from "@mui/icons-material/ListAlt";
+import ChecklistIcon from "@mui/icons-material/Checklist";
 import {
   Box,
   Button,
@@ -11,6 +19,7 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  IconButton,
 } from "@mui/material";
 
 // El nombre del componente era UserGrupo, lo que sugiere que el `id` es de un grupo.
@@ -18,25 +27,53 @@ export default function UserGrupo({ id }) {
   // Estados necesarios solo para materias
   const [materias, setMaterias] = useState([]);
   const [selectedMateriaClave, setSelectedMateriaClave] = useState(null);
+  const [selectedMateriaNombre, setSelectedMateriaNombre] = useState(null);
   const [modalMateriaOpen, setModalMateriaOpen] = useState(false);
   const [modalBorrarMateriaOpen, setModalBorrarMateriaOpen] = useState(false);
   const [loading, setLoading] = useState(true); // Estado de carga para la tabla
 
   // URL de la API
   const apiUrl = import.meta.env.VITE_API_URL;
+  // Inicializa el hook
+  const navigate = useNavigate();
+
+  // Función que se ejecutará al hacer clic en el botón asistencia
+  const handleNavigateToLista = () => {
+    // 1. Encuentra el nombre de la materia seleccionada
+    const materiaSeleccionada = materias.find(
+      (m) => m.clave === selectedMateriaClave
+    );
+
+    if (!materiaSeleccionada) {
+      setSelectedMateriaClave(null);
+    }
+
+    // 2. Prepara los datos que quieres enviar
+    const datosParaEnviar = {
+      grupoId: id,
+      materiaNombre: [],
+      year: new Date().getFullYear(),
+    };
+
+    // 3. Navega a la nueva ruta, pasando los datos en el `state`
+    navigate("/listaAsistencia", { state: datosParaEnviar });
+  };
 
   // Función para obtener las materias del grupo
   const fetchMaterias = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
+      const token = localStorage.getItem("token"); // Obtiene el token
+      if (!token) {
+        throw new Error("Autorización rechazada. No se encontró el token.");
+      }
       setSelectedMateriaClave(null);
+      setSelectedMateriaNombre(null);
       // Usamos el año actual dinámicamente
       const anioActual = new Date().getFullYear();
-      const resMaterias = await fetch(`${apiUrl}/materias/grupo/${id}/${anioActual}`);
-      if (!resMaterias.ok) throw new Error("Error al cargar materias");
-      const dataMaterias = await resMaterias.json();
-      setMaterias(dataMaterias?.materias || []);
+      const {materias} = await fetchMateriasGrupo(token,id,anioActual);
+      setMaterias(materias.materias);
     } catch (err) {
       console.error(err);
       setMaterias([]);
@@ -55,7 +92,7 @@ export default function UserGrupo({ id }) {
     setModalMateriaOpen(false);
     fetchMaterias();
   };
-  
+
   // Función para manejar el "Aceptar" del modal de borrar materia
   const handleAcceptBorrar = () => {
     setModalBorrarMateriaOpen(false);
@@ -103,6 +140,13 @@ export default function UserGrupo({ id }) {
         >
           Eliminar
         </Button>
+
+        <IconButton aria-label="lista" onClick={handleNavigateToLista}>
+          <ListAltIcon />
+        </IconButton>
+        <IconButton aria-label="actividades" disabled={!selectedMateriaClave}>
+          <ChecklistIcon />
+        </IconButton>
       </Box>
 
       {/* Tabla de Materias */}
@@ -133,11 +177,14 @@ export default function UserGrupo({ id }) {
                   key={m.clave}
                   hover
                   selected={m.clave === selectedMateriaClave}
-                  onClick={() => setSelectedMateriaClave(m.clave)}
+                  onClick={() => {
+                    setSelectedMateriaClave(m.clave);
+                    setSelectedMateriaNombre(m.asignatura);
+                  }}
                   sx={{ cursor: "pointer" }}
                 >
                   <TableCell>{m.clave}</TableCell>
-                  <TableCell>{m.asignatura}</TableCell> 
+                  <TableCell>{m.asignatura}</TableCell>
                 </TableRow>
               ))
             )}
@@ -160,7 +207,8 @@ export default function UserGrupo({ id }) {
         grupoId={id}
         clave={selectedMateriaClave}
         nombre={
-          materias.find((m) => m.clave === selectedMateriaClave)?.asignatura || ""
+          materias.find((m) => m.clave === selectedMateriaClave)?.asignatura ||
+          ""
         }
       />
     </Box>

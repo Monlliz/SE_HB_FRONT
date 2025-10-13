@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../../../context/AuthContext";
+import { fetchMateriasGet } from "../../services/materiasService";
+import { fetchDocenteMateriasPost } from "../../services/docenteService";
 import {
   Button,
   Dialog,
@@ -19,19 +22,20 @@ function NuevaMateriaDocente({ open, onClose, onAccept, docenteId }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const apiUrl = import.meta.env.VITE_API_URL;
-
+  const { token } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
       const fetchMaterias = async () => {
+        if (!token) {
+          throw new Error("Autorización rechazada. No se encontró el token.");
+        }
         setLoading(true);
         setError(null);
         try {
-          const response = await fetch(`${apiUrl}/materias`);
-          if (!response.ok) throw new Error("Error al cargar materias");
-          const data = await response.json();
-          setMaterias(data);
+          const { materias } = await fetchMateriasGet(token);
+          setMaterias(materias);
         } catch (error) {
           setError(error.message);
         } finally {
@@ -52,19 +56,7 @@ function NuevaMateriaDocente({ open, onClose, onAccept, docenteId }) {
 
     try {
       // Preparamos los datos para enviar
-      const response = await fetch(
-        `${apiUrl}/docente/materia/${docenteId}/${materiaSeleccionada}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al guardar la asignación");
-      }
+      await fetchDocenteMateriasPost(token, docenteId, materiaSeleccionada);
       // Si todo sale bien, ejecutamos la función `onAccept` del padre
       onAccept(materiaSeleccionada);
       alert("Materia asignada correctamente");
@@ -76,7 +68,6 @@ function NuevaMateriaDocente({ open, onClose, onAccept, docenteId }) {
     }
   };
 
-  
   const renderContent = () => {
     // Renderizado condicional basado en el estado de la llamada
     if (loading) {

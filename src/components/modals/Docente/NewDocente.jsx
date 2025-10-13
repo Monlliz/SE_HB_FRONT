@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../../../context/AuthContext";
+import { fetchDocentePost } from "../../services/docenteService";
 import {
   Button,
   Dialog,
@@ -11,8 +13,10 @@ import {
   TextField,
 } from "@mui/material";
 
+
 function NewDocente({ open, onClose, onAccept }) {
   const apiUrl = import.meta.env.VITE_API_URL;
+  const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState(null); // Estado para errores de API
@@ -25,6 +29,7 @@ function NewDocente({ open, onClose, onAccept }) {
     if (!open) {
       // Resetea el estado del formulario y de los errores a su valor inicial
       setFormulario({});
+      setApiError(null);
       setErrors({});
     }
   }, [open]); // Este efecto se ejecutará cada vez que el valor de 'open' cambie
@@ -60,14 +65,17 @@ function NewDocente({ open, onClose, onAccept }) {
         newErrors[field] = "Este campo es requerido";
       }
     });
-    if (formulario.correo && !formulario.correo.endsWith('@colegioherbart.edu.mx')) {
-     
-      newErrors.correo = "El correo debe pertenecer al dominio @colegioherbart.edu.mx";
+    if (
+      formulario.correo &&
+      !formulario.correo.endsWith("@colegioherbart.edu.mx")
+    ) {
+      newErrors.correo =
+        "El correo debe pertenecer al dominio @colegioherbart.edu.mx";
     }
     setErrors(newErrors);
     // La función devuelve `true` si no hay errores, y `false` si los hay.
     return Object.keys(newErrors).length === 0;
-  };//Fin de funcion de validación
+  }; //Fin de funcion de validación
 
   const handleUpdate = async () => {
     if (!validateForm()) {
@@ -78,6 +86,9 @@ function NewDocente({ open, onClose, onAccept }) {
     setApiError(null); // Limpiar errores de API previos
 
     try {
+      if (!token) {
+        throw new Error("Autorización rechazada. No se encontró el token.");
+      }
       const datosParaEnviar = {
         nombres: formulario.nombres,
         apellidop: formulario.apellidop,
@@ -85,17 +96,8 @@ function NewDocente({ open, onClose, onAccept }) {
         correo: formulario.correo,
         birthday: formulario.birthday,
       };
-      const response = await fetch(`${apiUrl}/docente`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(datosParaEnviar),
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al ingresar un nuevo docente");
-      }
+     
+      await fetchDocentePost(token,datosParaEnviar);
 
       alert("Docente ingresado con éxito");
       onAccept();
