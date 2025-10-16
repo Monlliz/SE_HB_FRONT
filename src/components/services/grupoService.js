@@ -41,3 +41,25 @@ export const fetchGrupoMateriaPost = async (
     throw new Error("Error en fetchGrupoMateriaPost", err.message);
   }
 };
+
+
+export const fetchGrupoCambio = async (token,grupoId1,grupoId2) =>{
+   try {
+    const response = await fetch(
+  
+      `${apiUrl}/grupo/${grupoId1}/${grupoId2}`,
+      {
+        method: "PUT",
+        headers: {
+          "x-auth-token": token,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Error al cambiar de grupo");
+    }
+  } catch (err) {
+    throw new Error("Error en fetchGrupoCambio", err.message);
+  }
+};

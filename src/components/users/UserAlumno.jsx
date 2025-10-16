@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 //los modales
 import EditAlumno from "../modals/Alumno/EditAlumno.jsx";
 import DarBajaAlumno from "../modals/Alumno/DarBajaAlumno.jsx";
@@ -26,7 +27,6 @@ import {
 export default function UserDocente({ matricula }) {
   //Todos los estados necesarios
   // Estado para guardar los datos que vendrían de la API
-
   const [alumno, setAlumno] = useState(null);
   const [selectedMateriaClave, setSelectedMateriaClave] = useState(null);
   const [modalIncidenteOpen, setModalIncidenteOpen] = useState(false);
@@ -35,12 +35,12 @@ export default function UserDocente({ matricula }) {
   const [modalBorrarMateriaOpen, setModalBorrarMateriaOpen] = useState(false);
   const [incidente, setIncidentes] = useState([]);
 
-
-
-const fetchIncidente = async()=>{
-  const {incidentes} = await fetchIncidenteGet(token,matricula);
-  setIncidentes(incidentes);
-}
+  //Para la navegacion a Reportes
+   const navigate = useNavigate();
+  const fetchIncidente = async () => {
+    const { incidentes } = await fetchIncidenteGet(token, matricula);
+    setIncidentes(incidentes);
+  };
   // Estado para guardar los IDs de las filas seleccionadas
   const [selected, setSelected] = useState([]);
 
@@ -56,7 +56,22 @@ const fetchIncidente = async()=>{
       newSelected = selected.filter((selectedId) => selectedId !== id);
     }
     setSelected(newSelected);
+    setSelectedMateriaClave(newSelected.length >= 5);
   };
+
+  const handleNavigateToReporte = ()=>{
+     const incidentesSeleccionados = incidente.filter(item => selected.includes(item.id));
+
+  const datosParaEnviar = {
+      R_MATRICULA: matricula,
+      R_NOMBRE : alumno.nombres,
+      R_APELLIDOP: alumno.apellidop,
+      R_APELLIDM:alumno.apellidom,
+      R_INCIDENTES:incidentesSeleccionados 
+    };
+    console.log(datosParaEnviar);
+        navigate("/reporte", { state: datosParaEnviar });
+  }
 
   const isSelected = (id) => selected.indexOf(id) !== -1;
 
@@ -80,7 +95,7 @@ const fetchIncidente = async()=>{
         console.error(err);
       }
     };
-fetchIncidente();
+    fetchIncidente();
     fetchInitialData();
   }, [matricula, apiUrl]);
 
@@ -154,8 +169,8 @@ fetchIncidente();
           <Typography variant="body1" color="text.secondary">
             Correo: {alumno.correo}
           </Typography>
-          <Typography variant="body1" color="text.secondary">
-            {alumno.perfil} {alumno.grupo} {alumno.ingles}
+          <Typography variant="body2" color="text.secondary">
+           {alumno.grupo}  {alumno.perfil}  {alumno.ingles}
           </Typography>
           <Typography
             sx={{
@@ -241,12 +256,12 @@ fetchIncidente();
             onClose={() => setModalIncidenteOpen(false)}
             onAccept={handleAcceptEdit}
             matricula={matricula}
-         
           />
           <Button
             variant="outlined"
             color="error"
             disabled={!selectedMateriaClave}
+            onClick={handleNavigateToReporte}
           >
             Generar reporte
           </Button>
@@ -255,7 +270,7 @@ fetchIncidente();
         <Box
           sx={{
             display: "flex",
-            height: "60%",
+            // height: "60%", // Considera si esta altura es fija o puede ser más flexible
             width: "100%",
             justifyContent: "center",
             borderRadius: 2,
@@ -266,15 +281,21 @@ fetchIncidente();
           }}
         >
           {incidente.length === 0 ? (
-            // Si no hay incidentes, muestra este mensaje
             <Paper sx={{ width: "100%", padding: 4, textAlign: "center" }}>
               <Typography variant="h6" color="text.secondary">
                 No hay incidentes para mostrar.
               </Typography>
             </Paper>
           ) : (
-            <Paper sx={{ width: "100%" }}>
-              {/* Toolbar que muestra cuántos elementos están seleccionados */}
+            // Para que el layout funcione bien, hacemos que el Paper use flexbox en columna
+            <Paper
+              sx={{
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                height: "40vh",
+              }}
+            >
               <Toolbar>
                 {selected.length > 0 ? (
                   <Typography
@@ -291,8 +312,10 @@ fetchIncidente();
                 )}
               </Toolbar>
 
-              <TableContainer>
-                <Table>
+
+              <TableContainer sx={{ overflow: "auto" }}>
+  
+                <Table stickyHeader aria-label="sticky table">
                   <TableHead>
                     <TableRow>
                       <TableCell padding="checkbox" />
@@ -309,11 +332,10 @@ fetchIncidente();
                         <TableRow
                           key={incidente.id}
                           hover
-                          // El onClick en TableRow hace que toda la fila sea clickeable
                           onClick={(event) => handleClick(event, incidente.id)}
                           role="checkbox"
                           aria-checked={isItemSelected}
-                          selected={isItemSelected} // Aplica el estilo de "seleccionado"
+                          selected={isItemSelected}
                           sx={{ cursor: "pointer" }}
                         >
                           <TableCell padding="checkbox">
@@ -325,7 +347,6 @@ fetchIncidente();
                           <TableCell>{incidente.solicitante}</TableCell>
                           <TableCell>{incidente.motivo_incidencia}</TableCell>
                           <TableCell>
-                            {/* Formateamos la fecha para que sea más legible */}
                             {new Date(incidente.fecha).toLocaleDateString(
                               "es-MX",
                               {

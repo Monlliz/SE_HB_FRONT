@@ -6,7 +6,14 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { fetchAlumnoGet } from "./services/alumnosService.js";
 import {
-  Box, TextField, List, ListItem, ListItemText, Paper, IconButton,Tooltip
+  Box,
+  TextField,
+  List,
+  ListItem,
+  ListItemText,
+  Paper,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import UserDocente from "./users/UserDocente"; // Componente 'Detalle'
@@ -48,7 +55,8 @@ export default function alumno() {
     setLoading(true);
     setError(null);
     try {
-      if (!token) throw new Error("Autorización rechazada. No se encontró el token.");
+      if (!token)
+        throw new Error("Autorización rechazada. No se encontró el token.");
       const data = await fetchAlumnoGet(token);
       setAlumnos(data.alumnos);
     } catch (error) {
@@ -79,8 +87,18 @@ export default function alumno() {
     }
     // Filtra la lista de alumnos si existe y el término de búsqueda no está vacío.
     const filtered = (alumnos ?? []).filter((alumno) => {
+      // Obtenemos todos los campos de forma segura
       const nombres = alumno?.nombres ?? "";
-      return nombres.toLowerCase().includes(search.toLowerCase());
+      const apellidoP = alumno?.apellidop ?? "";
+      const apellidoM = alumno?.apellidom ?? "";
+
+      // Creamos un solo string con el nombre completo para buscar
+      const nombreCompleto = `${nombres} ${apellidoP} ${apellidoM}`;
+
+      // Convertimos todo a minúsculas para una búsqueda sin distinción de mayúsculas/minúsculas
+      const busquedaNormalizada = search.toLowerCase();
+
+      return nombreCompleto.toLowerCase().includes(busquedaNormalizada);
     });
     setResultados(filtered);
   }, [search, alumnos]);
@@ -93,7 +111,7 @@ export default function alumno() {
    */
   const handleClick = (alumno) => {
     setSelectedAlumnosId(alumno.matricula);
-  
+
     // La llamada a fetchAlumno() aquí es innecesaria y se ha eliminado.
   };
 
@@ -109,10 +127,25 @@ export default function alumno() {
   // --- RENDERIZADO DEL COMPONENTE ---
 
   return (
-    <Box sx={{ display: "flex", width: "100%", height: "calc(100vh - 80px)", marginTop: "40px" }}>
+    <Box
+      sx={{
+        display: "flex",
+        width: "100%",
+        height: "calc(100vh - 80px)",
+        marginTop: "40px",
+      }}
+    >
       {/* Panel Izquierdo (20%): Búsqueda y Lista (Maestro) */}
-      <Paper sx={{ width: "20%", height: "100%", display: "flex", flexDirection: "column", p: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+      <Paper
+        sx={{
+          width: "20%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          p: 2,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
           <TextField
             fullWidth
             variant="outlined"
@@ -135,27 +168,45 @@ export default function alumno() {
         />
 
         <List sx={{ width: "100%", flexGrow: 1, overflowY: "auto" }}>
-          {loading && <ListItem><ListItemText primary="Cargando..." /></ListItem>}
-          {error && <ListItem><ListItemText primary={error} sx={{ color: "red" }} /></ListItem>}
-          {!loading && !error && (
-            search && resultados.length > 0 ? (
+          {loading && (
+            <ListItem>
+              <ListItemText primary="Cargando..." />
+            </ListItem>
+          )}
+          {error && (
+            <ListItem>
+              <ListItemText primary={error} sx={{ color: "red" }} />
+            </ListItem>
+          )}
+          {!loading &&
+            !error &&
+            (search && resultados.length > 0 ? (
               resultados.map((alumno) => (
                 <ListItem
                   key={alumno.matricula}
                   onClick={() => handleClick(alumno)}
                   selected={selectedAlumnosId === alumno.matricula}
-                  sx={{ cursor: "pointer", "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.04)" } }}
+                  sx={{
+                    cursor: "pointer",
+                    "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.04)" },
+                  }}
                   divider
                 >
-                  <ListItemText primary={alumno.nombres} secondary={`${alumno.apellidop} ${alumno.apellidom}`} />
+                  <ListItemText
+                    primary={alumno.nombres}
+                    secondary={`${alumno.apellidop} ${alumno.apellidom}`}
+                  />
                 </ListItem>
               ))
             ) : search ? (
-              <ListItem><ListItemText primary="No se encontraron alumnos" /></ListItem>
+              <ListItem>
+                <ListItemText primary="No se encontraron alumnos" />
+              </ListItem>
             ) : (
-              <ListItem><ListItemText primary="Escribe un nombre para buscar..." /></ListItem>
-            )
-          )}
+              <ListItem>
+                <ListItemText primary="Escribe un nombre para buscar..." />
+              </ListItem>
+            ))}
         </List>
       </Paper>
 
@@ -164,7 +215,14 @@ export default function alumno() {
         {selectedAlumnosId ? (
           <UserAlumno matricula={selectedAlumnosId} />
         ) : (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "100%",
+            }}
+          >
             <p>Selecciona un alumno de la lista para ver sus detalles.</p>
           </Box>
         )}

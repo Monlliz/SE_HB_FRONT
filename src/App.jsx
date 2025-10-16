@@ -5,7 +5,9 @@ import Grupo from "./components/Grupo.jsx";
 import Materias from "./components/Materias.jsx";
 import ListaAsistencia from "./components/ListaAsistencia.jsx";
 import NotFound from "./components/NotFound.jsx";
-import Alumno from "./components/Alumno.jsx"
+import Alumno from "./components/Alumno.jsx";
+import ReportePDF from "./components/ReportePDF.jsx";
+import ListaAsistenciaMateria from "./components/ListaAsistenciaMateria.jsx";
 import { ProtectedRoute } from "./components/ProtectedRoute.jsx";
 
 function App() {
@@ -15,16 +17,18 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Login />} />
 
-    <Route element={<ProtectedRoute />}>
-            {/* Todas las rutas aquí adentro usarán el Layout y requerirán login */}
-            <Route path="/docentes" element={<Docente />} />
-            <Route path="/grupos" element={<Grupo />} />
-            <Route path="/materias" element={<Materias />} />
-             <Route path="/alumnos" element={<Alumno />} />
-            <Route path="/listaAsistencia" element={<ListaAsistencia />} />
-            {/*Mas rutas protegidas aquí */}
-          </Route>
-      
+      <Route element={<ProtectedRoute />}>
+        {/* Todas las rutas aquí adentro usarán el Layout y requerirán login */}
+        <Route path="/docentes" element={<Docente />} />
+        <Route path="/grupos" element={<Grupo />} />
+        <Route path="/materias" element={<Materias />} />
+        <Route path="/alumnos" element={<Alumno />} />
+        <Route path="/listaAsistencia" element={<ListaAsistencia />} />
+         <Route path="/listaAsistenciamateria" element={<ListaAsistenciaMateria />} />
+        <Route path="/Reporte" element={<ReportePDF />} />
+        {/*Mas rutas protegidas aquí */}
+      </Route>
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

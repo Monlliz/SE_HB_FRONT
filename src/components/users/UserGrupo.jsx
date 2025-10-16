@@ -3,13 +3,14 @@ import { useNavigate } from "react-router-dom";
 // Modales de materias
 import NuevaMateriaGrupo from "../modals/Grupo/NuevaMateriaGrupo.jsx";
 import BorrarMateriaGrupo from "../modals/Grupo/BorrarMateriaGrupo.jsx";
-
+import CambiarAlumnosGrupo from "../modals/Grupo/CambiarAlumnosGrupo.jsx";
 //Servicios (apis)
 import { fetchMateriasGrupo } from "../services/materiasService.js";
 
 //Iconos
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import ChecklistIcon from "@mui/icons-material/Checklist";
+import GroupIcon from "@mui/icons-material/Group";
 import {
   Box,
   Button,
@@ -28,6 +29,7 @@ export default function UserGrupo({ id }) {
   const [materias, setMaterias] = useState([]);
   const [selectedMateriaClave, setSelectedMateriaClave] = useState(null);
   const [selectedMateriaNombre, setSelectedMateriaNombre] = useState(null);
+  const [modalGrupoCambio, setModalGrupoCambio] = useState(false);
   const [modalMateriaOpen, setModalMateriaOpen] = useState(false);
   const [modalBorrarMateriaOpen, setModalBorrarMateriaOpen] = useState(false);
   const [loading, setLoading] = useState(true); // Estado de carga para la tabla
@@ -43,20 +45,36 @@ export default function UserGrupo({ id }) {
     const materiaSeleccionada = materias.find(
       (m) => m.clave === selectedMateriaClave
     );
-
     if (!materiaSeleccionada) {
       setSelectedMateriaClave(null);
     }
-
     // 2. Prepara los datos que quieres enviar
     const datosParaEnviar = {
       grupoId: id,
       materiaNombre: [],
       year: new Date().getFullYear(),
     };
-
     // 3. Navega a la nueva ruta, pasando los datos en el `state`
     navigate("/listaAsistencia", { state: datosParaEnviar });
+  };
+
+  const handleNavigateToListaMateria = () => {
+    // 1. Encuentra el nombre de la materia seleccionada
+    const materiaSeleccionada = materias.find(
+      (m) => m.clave === selectedMateriaClave
+    );
+    if (!materiaSeleccionada) {
+      setSelectedMateriaClave(null);
+    }
+    // 2. Prepara los datos que quieres enviar
+    const datosParaEnviar = {
+      grupoId: id,
+      materiaClave: selectedMateriaClave,
+      year: new Date().getFullYear(),
+      nombreMateria: materias.find((m) => m.clave === selectedMateriaClave)
+        ?.asignatura,
+    };
+    navigate("/listaAsistenciamateria", { state: datosParaEnviar });
   };
 
   // Función para obtener las materias del grupo
@@ -72,7 +90,7 @@ export default function UserGrupo({ id }) {
       setSelectedMateriaNombre(null);
       // Usamos el año actual dinámicamente
       const anioActual = new Date().getFullYear();
-      const {materias} = await fetchMateriasGrupo(token,id,anioActual);
+      const { materias } = await fetchMateriasGrupo(token, id, anioActual);
       setMaterias(materias.materias);
     } catch (err) {
       console.error(err);
@@ -112,9 +130,35 @@ export default function UserGrupo({ id }) {
         flexDirection: "column",
       }}
     >
+      <Box
+        sx={{
+          height: "10%",
+          display: "flex",
+          p: 2,
+          alignItems: "center",
+          gap: 2,
+          flexShrink: 0, // Evita que esta caja se encoja
+        }}
+      >
+        <Typography variant="h5" fontWeight="bold">
+          Grupo - {id}
+        </Typography>
+
+        <IconButton aria-label="lista" onClick={handleNavigateToLista}>
+          <ListAltIcon />
+        </IconButton>
+
+        <IconButton
+          aria-label="lista"
+          onClick={() => setModalGrupoCambio(true)}
+        >
+          <GroupIcon />
+        </IconButton>
+      </Box>
       {/* Controles de Materias */}
       <Box
         sx={{
+          height: "10%",
           display: "flex",
           p: 2,
           alignItems: "center",
@@ -141,7 +185,11 @@ export default function UserGrupo({ id }) {
           Eliminar
         </Button>
 
-        <IconButton aria-label="lista" onClick={handleNavigateToLista}>
+        <IconButton
+          aria-label="lista"
+          disabled={!selectedMateriaClave}
+          onClick={handleNavigateToListaMateria}
+        >
           <ListAltIcon />
         </IconButton>
         <IconButton aria-label="actividades" disabled={!selectedMateriaClave}>
@@ -210,6 +258,13 @@ export default function UserGrupo({ id }) {
           materias.find((m) => m.clave === selectedMateriaClave)?.asignatura ||
           ""
         }
+      />
+
+      <CambiarAlumnosGrupo
+        open={modalGrupoCambio}
+        onClose={() => setModalGrupoCambio(false)}
+        onAccept={()=>{setModalGrupoCambio(false)}}
+        grupoId={id}
       />
     </Box>
   );

@@ -5,7 +5,7 @@
 
 // Importaciones de React, hooks y componentes.
 import { useState, useEffect, useCallback } from "react";
-import UserGrupo from "./users/userGrupo.jsx"; // Componente 'Detalle' que muestra la info de un grupo.
+import UserGrupo from "./users/UserGrupo.jsx"; // Componente 'Detalle' que muestra la info de un grupo.
 import { useAuth } from "../context/AuthContext.jsx"; // Contexto para la autenticación.
 import { fetchGrupoGet } from "./services/grupoService.js"; // Servicio para la llamada a la API.
 import {

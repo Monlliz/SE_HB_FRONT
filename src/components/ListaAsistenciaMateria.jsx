@@ -1,5 +1,5 @@
 /**
- * @file ListaAsistencia.jsx
+ * @file ListaAsistenciaMateria.jsx
  * @description Componente para visualizar y registrar la asistencia de un grupo de estudiantes.
  */
 
@@ -20,7 +20,7 @@ import InfoIcon from "@mui/icons-material/Info";
 
 // Importación del modal y de los servicios de la API.
 import NuevaAsistencia from "./modals/Grupo/NuevaAsistencia";
-import { fetchDatosAsistencia, fetchPostAsistencia } from "./services/asistenciaService.js";
+import { fetchDatosAsistenciaMateria, fetchPostAsistenciaMateria } from "./services/asistenciaService.js";
 
 /**
  * Componente funcional para renderizar un ícono basado en el estado de la asistencia.
@@ -63,7 +63,7 @@ const IconoEstatus = ({ estatus }) => {
  * Componente principal que construye y gestiona la lista de asistencia.
  * @returns {JSX.Element}
  */
-const ListaAsistencia = () => {
+const ListaAsistenciaMateria = () => {
   // --- HOOKS Y CONTEXTO ---
 
   /** Hook para obtener el token de autenticación del contexto global. */
@@ -72,7 +72,7 @@ const ListaAsistencia = () => {
   /** Hook para acceder al 'state' pasado a través de la navegación de React Router. */
   const location = useLocation();
   // Extrae el ID del grupo y otros datos. El objeto vacío previene errores si 'state' es nulo.
-  const { grupoId, year } = location.state || {};
+  const { grupoId,materiaClave, nombreMateria, year } = location.state || {};
 
   // --- ESTADOS DEL COMPONENTE ---
 
@@ -106,9 +106,11 @@ const ListaAsistencia = () => {
     try {
       if (!token) throw new Error("Autorización rechazada. No se encontró el token.");
 
-      const data = await fetchDatosAsistencia(grupoId, token);
+      const data = await fetchDatosAsistenciaMateria(grupoId, materiaClave,token);
       setEstudiantes(data.estudiantes);
+
       setAsistencias(data.asistencias);
+      console.log(asistencias);
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -161,7 +163,7 @@ const ListaAsistencia = () => {
   const handleSaveAsistencia = async (estatusAsistencia) => {
     setIsSaving(true);
     try {
-      await fetchPostAsistencia(token, grupoId, estatusAsistencia);
+      await fetchPostAsistenciaMateria(token, grupoId,materiaClave, estatusAsistencia);
       alert("Asistencia guardada con éxito"); // Opcional: Reemplazar con Snackbar/Toast.
       setModalOpen(false);
       cargarDatos(); // Vuelve a cargar los datos para reflejar los cambios.
@@ -191,8 +193,8 @@ const ListaAsistencia = () => {
       {/* Encabezado con título y botón para agregar nueva asistencia */}
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
         <Box>
-          <Typography variant="h4">Asistencia General Grupo {grupoId}</Typography>
-          <Typography variant="subtitle1" color="text.secondary">  Año {year}</Typography>
+          <Typography variant="h5">Asistencia - {nombreMateria}</Typography>
+          <Typography variant="subtitle1" color="text.secondary">Grupo {grupoId} - Año {year}</Typography>
         </Box>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => setModalOpen(true)}>
           Nueva Entrada de Lista
@@ -257,4 +259,4 @@ const ListaAsistencia = () => {
   );
 };
 
-export default ListaAsistencia;
+export default ListaAsistenciaMateria;
