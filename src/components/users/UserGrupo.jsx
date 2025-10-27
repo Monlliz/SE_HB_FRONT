@@ -77,6 +77,26 @@ export default function UserGrupo({ id }) {
     navigate("/listaAsistenciamateria", { state: datosParaEnviar });
   };
 
+  const handleNavigateToCalifacacionesParcilaes = () => {
+    // 1. Encuentra el nombre de la materia seleccionada
+    const materiaSeleccionada = materias.find(
+      (m) => m.clave === selectedMateriaClave
+    );
+    if (!materiaSeleccionada) {
+      setSelectedMateriaClave(null);
+    }
+    // 2. Prepara los datos que quieres enviar
+    const datosParaEnviar = {
+      grupoId: id,
+      materiaClave: selectedMateriaClave,
+      year: new Date().getFullYear(),
+      nombreMateria: materias.find((m) => m.clave === selectedMateriaClave)
+        ?.asignatura,
+    };
+    console.log(datosParaEnviar);
+    navigate("/rubros", { state: datosParaEnviar });
+  };
+
   // Función para obtener las materias del grupo
   const fetchMaterias = useCallback(async () => {
     if (!id) return;
@@ -192,7 +212,8 @@ export default function UserGrupo({ id }) {
         >
           <ListAltIcon />
         </IconButton>
-        <IconButton aria-label="actividades" disabled={!selectedMateriaClave}>
+        <IconButton aria-label="actividades" disabled={!selectedMateriaClave}
+        onClick={handleNavigateToCalifacacionesParcilaes}>
           <ChecklistIcon />
         </IconButton>
       </Box>

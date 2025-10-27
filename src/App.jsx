@@ -8,6 +8,7 @@ import NotFound from "./components/NotFound.jsx";
 import Alumno from "./components/Alumno.jsx";
 import ReportePDF from "./components/ReportePDF.jsx";
 import ListaAsistenciaMateria from "./components/ListaAsistenciaMateria.jsx";
+import Rubros from "./components/Rubros.jsx"
 import { ProtectedRoute } from "./components/ProtectedRoute.jsx";
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
         <Route path="/listaAsistencia" element={<ListaAsistencia />} />
          <Route path="/listaAsistenciamateria" element={<ListaAsistenciaMateria />} />
         <Route path="/Reporte" element={<ReportePDF />} />
+        <Route path="/Rubros" element= {<Rubros/> } />
         {/*Mas rutas protegidas aquí */}
       </Route>
 

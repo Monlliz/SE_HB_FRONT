@@ -46,7 +46,7 @@ export default function Navbar({ links = [] }) {
     ? links
     : [
         { label: "INICIO", href: "/" },
-        { label: "ALUMNOS", href: "/alumnos" },
+        { label: "ESTUDIANTES", href: "/alumnos" },
         { label: "GRUPOS", href: "/grupos" },
         { label: "MATERIAS", href: "/materias" },
         { label: "DOCENTES", href: "/docentes" },

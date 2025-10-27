@@ -51,9 +51,10 @@ export default function Grupo() {
     setError(null);
     try {
       if (!token) throw new Error("Autorización rechazada. No se encontró el token.");
-      
       const { grupos } = await fetchGrupoGet(token);
-      setGrupos(grupos);
+      const idGrupoOcultar = "EG";
+      const gruposFiltrados = grupos.filter(grupo => grupo.idgrupo !== idGrupoOcultar);
+      setGrupos(gruposFiltrados);
     } catch (error) {
       console.error("Error fetching data:", error);
       setError(error);

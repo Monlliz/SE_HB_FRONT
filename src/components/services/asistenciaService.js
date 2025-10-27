@@ -1,7 +1,7 @@
 const apiUrl = import.meta.env.VITE_API_URL;
 
 //se usa en la vista asistencia
-export const fetchDatosAsistencia = async (grupoId, token) => {
+export const fetchDatosAsistencia = async (grupoId,year,mes, token) => {
   
   try {
     // Usamos Promise.all para ejecutar ambas peticiones al mismo tiempo
@@ -9,7 +9,7 @@ export const fetchDatosAsistencia = async (grupoId, token) => {
       fetch(`${apiUrl}/alumnos/grupo/${grupoId}`, {
         headers: { "x-auth-token": token },
       }),
-      fetch(`${apiUrl}/asistencia/${grupoId}`, {
+      fetch(`${apiUrl}/asistencia/${grupoId}/${year}/${mes}`, {
         headers: { "x-auth-token": token },
       }),
     ]);
@@ -56,7 +56,7 @@ export const fetchPostAsistencia = async (
 };
 
 //Asistencia por Materia
-export const fetchDatosAsistenciaMateria = async (grupoId,clave, token) => {
+export const fetchDatosAsistenciaMateria = async (grupoId,clave,year,mes, token) => {
   
   try {
     // Usamos Promise.all para ejecutar ambas peticiones al mismo tiempo
@@ -64,7 +64,7 @@ export const fetchDatosAsistenciaMateria = async (grupoId,clave, token) => {
       fetch(`${apiUrl}/alumnos/grupo/${grupoId}`, {
         headers: { "x-auth-token": token },
       }),
-      fetch(`${apiUrl}/asistencia/materia/${grupoId}/${clave}`, {
+      fetch(`${apiUrl}/asistencia/materia/${grupoId}/${clave}/${year}/${mes}`, {
         headers: { "x-auth-token": token },
       }),
     ]);
@@ -108,3 +108,5 @@ export const fetchPostAsistenciaMateria = async (
     alert(`Error: ${err.message}`);
   }
 };
+
+

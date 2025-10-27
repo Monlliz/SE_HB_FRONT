@@ -9,8 +9,23 @@ import { useLocation } from "react-router-dom"; // Hook para acceder a datos de 
 import { useAuth } from "../context/AuthContext.jsx";
 // Importaciones de componentes y iconos de Material-UI.
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, CircularProgress, Typography, Box, Tooltip, Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  CircularProgress,
+  Typography,
+  Box,
+  Tooltip,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Stack,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -20,7 +35,10 @@ import InfoIcon from "@mui/icons-material/Info";
 
 // Importación del modal y de los servicios de la API.
 import NuevaAsistencia from "./modals/Grupo/NuevaAsistencia";
-import { fetchDatosAsistenciaMateria, fetchPostAsistenciaMateria } from "./services/asistenciaService.js";
+import {
+  fetchDatosAsistenciaMateria,
+  fetchPostAsistenciaMateria,
+} from "./services/asistenciaService.js";
 
 /**
  * Componente funcional para renderizar un ícono basado en el estado de la asistencia.
@@ -72,7 +90,7 @@ const ListaAsistenciaMateria = () => {
   /** Hook para acceder al 'state' pasado a través de la navegación de React Router. */
   const location = useLocation();
   // Extrae el ID del grupo y otros datos. El objeto vacío previene errores si 'state' es nulo.
-  const { grupoId,materiaClave, nombreMateria, year } = location.state || {};
+  const { grupoId, materiaClave, nombreMateria, year } = location.state || {};
 
   // --- ESTADOS DEL COMPONENTE ---
 
@@ -89,6 +107,9 @@ const ListaAsistenciaMateria = () => {
   /** @state {boolean} isSaving - Indica si se está guardando una nueva asistencia. */
   const [isSaving, setIsSaving] = useState(false);
 
+  //  Estados para controlar el año y mes seleccionados
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // getMonth() es 0-11, sumamos 1
   // --- LÓGICA DE DATOS ---
 
   /**
@@ -104,9 +125,16 @@ const ListaAsistenciaMateria = () => {
     }
     setLoading(true);
     try {
-      if (!token) throw new Error("Autorización rechazada. No se encontró el token.");
+      if (!token)
+        throw new Error("Autorización rechazada. No se encontró el token.");
 
-      const data = await fetchDatosAsistenciaMateria(grupoId, materiaClave,token);
+      const data = await fetchDatosAsistenciaMateria(
+        grupoId,
+        materiaClave,
+        selectedYear,
+        selectedMonth,
+        token
+      );
       setEstudiantes(data.estudiantes);
 
       setAsistencias(data.asistencias);
@@ -118,7 +146,7 @@ const ListaAsistenciaMateria = () => {
     } finally {
       setLoading(false);
     }
-  }, [grupoId, token]);
+  }, [grupoId, token, selectedYear, selectedMonth]);
 
   /**
    * @effect
@@ -163,7 +191,12 @@ const ListaAsistenciaMateria = () => {
   const handleSaveAsistencia = async (estatusAsistencia) => {
     setIsSaving(true);
     try {
-      await fetchPostAsistenciaMateria(token, grupoId,materiaClave, estatusAsistencia);
+      await fetchPostAsistenciaMateria(
+        token,
+        grupoId,
+        materiaClave,
+        estatusAsistencia
+      );
       alert("Asistencia guardada con éxito"); // Opcional: Reemplazar con Snackbar/Toast.
       setModalOpen(false);
       cargarDatos(); // Vuelve a cargar los datos para reflejar los cambios.
@@ -178,27 +211,94 @@ const ListaAsistenciaMateria = () => {
   // --- RENDERIZADO CONDICIONAL ---
 
   // Muestra un spinner mientras se cargan los datos.
-  if (loading) return (
-    <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}><CircularProgress /></Box>
-  );
+  if (loading)
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
 
   // Muestra un mensaje de error si algo falló.
-  if (error) return (
-    <Typography color="error" align="center" sx={{ my: 4 }}>{error}</Typography>
-  );
+  if (error)
+    return (
+      <Typography color="error" align="center" sx={{ my: 4 }}>
+        {error}
+      </Typography>
+    );
 
   // --- RENDERIZADO PRINCIPAL ---
   return (
-    <Box sx={{ p: 3, height: "calc(100vh - 64px)", display: "flex", flexDirection: "column", marginTop: "50px" }}>
+    <Box
+      sx={{
+        p: 3,
+        height: "calc(100vh - 64px)",
+        display: "flex",
+        flexDirection: "column",
+        marginTop: "50px",
+      }}
+    >
       {/* Encabezado con título y botón para agregar nueva asistencia */}
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
         <Box>
-          <Typography variant="h5">Asistencia - {nombreMateria}</Typography>
-          <Typography variant="subtitle1" color="text.secondary">Grupo {grupoId} - Año {year}</Typography>
+          <Typography variant="h4">Asistencia - {nombreMateria}</Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            Grupo {grupoId}
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            {/* Título dinámico que refleja la selección */}
+            Mostrando:{" "}
+            {new Date(selectedYear, selectedMonth - 1).toLocaleString("es-MX", {
+              month: "long",
+              year: "numeric",
+            })}
+          </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setModalOpen(true)}>
-          Nueva Entrada de Lista
-        </Button>
+        <Stack direction="row" spacing={2} alignItems="center">
+          {/* Selector de Año */}
+          <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
+            <InputLabel>Año</InputLabel>
+            <Select
+              value={selectedYear}
+              label="Año"
+              onChange={(e) => setSelectedYear(e.target.value)}
+            >
+              {/* Genera los últimos  años dinámicamente */}
+              {[0, 1, 2, 3].map((offset) => {
+                const year = new Date().getFullYear() - offset;
+                return (
+                  <MenuItem key={year} value={year}>
+                    {year}
+                  </MenuItem>
+                );
+              })}
+            </Select>
+          </FormControl>
+
+          {/* Selector de Mes */}
+          <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
+            <InputLabel>Mes</InputLabel>
+            <Select
+              value={selectedMonth}
+              label="Mes"
+              onChange={(e) => setSelectedMonth(e.target.value)}
+            >
+              {/* Genera los 12 meses */}
+              {Array.from({ length: 12 }, (_, i) => (
+                <MenuItem key={i + 1} value={i + 1}>
+                  {new Date(0, i).toLocaleString("es-MX", { month: "long" })}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setModalOpen(true)}
+          >
+            Nueva Entrada
+          </Button>
+        </Stack>
       </Box>
 
       {/* Vista condicional: mensaje si no hay estudiantes, o la tabla si los hay */}
@@ -214,11 +314,20 @@ const ListaAsistenciaMateria = () => {
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: "bold", minWidth: 250 }}>Nombre del Estudiante</TableCell>
+                <TableCell sx={{ fontWeight: "bold", minWidth: 250 }}>
+                  Nombre del Estudiante
+                </TableCell>
                 {/* Genera una columna por cada fecha única */}
                 {fechasUnicas.map((fecha) => (
-                  <TableCell key={fecha} align="center" sx={{ fontWeight: "bold" }}>
-                    {new Date(fecha + "T00:00:00").toLocaleDateString("es-MX", { day: "2-digit", month: "short" })}
+                  <TableCell
+                    key={fecha}
+                    align="center"
+                    sx={{ fontWeight: "bold" }}
+                  >
+                    {new Date(fecha + "T00:00:00").toLocaleDateString("es-MX", {
+                      day: "2-digit",
+                      month: "short",
+                    })}
                   </TableCell>
                 ))}
               </TableRow>
@@ -233,9 +342,13 @@ const ListaAsistenciaMateria = () => {
                   {/* Para cada estudiante, genera una celda por cada fecha */}
                   {fechasUnicas.map((fecha) => {
                     // Busca el estado de asistencia en el mapa pre-calculado. ¡Muy eficiente!
-                    const estatus = asistenciaMap[fecha]?.[estudiante.matricula];
+                    const estatus =
+                      asistenciaMap[fecha]?.[estudiante.matricula];
                     return (
-                      <TableCell key={`${estudiante.matricula}-${fecha}`} align="center">
+                      <TableCell
+                        key={`${estudiante.matricula}-${fecha}`}
+                        align="center"
+                      >
                         <IconoEstatus estatus={estatus} />
                       </TableCell>
                     );

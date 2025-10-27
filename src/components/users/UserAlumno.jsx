@@ -276,7 +276,7 @@ export default function UserDocente({ matricula }) {
             borderRadius: 2,
             p: 2,
             alignItems: "center",
-            justifyContent: "flex-start",
+
             gap: 2,
           }}
         >

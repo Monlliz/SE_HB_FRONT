@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
-
-import { fetchGrupoCambio } from "../../services/grupoService";
+ 
+import { fetchGrupoCambio,fetchGrupoGet } from "../../services/grupoService";
 import {
   Button,
   Dialog,
@@ -23,10 +23,7 @@ function CambiarAlumnosGrupo({ open, onClose, onAccept, grupoId }) {
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [formulario, setFormulario] = useState({
-  grupo: '', 
-
-});
+  const [formulario, setFormulario] = useState({grupo: '', });
 const handleChange = (event) => {
   const { name, value } = event.target;
   setFormulario(prevState => ({
@@ -49,6 +46,7 @@ const handleChange = (event) => {
       { value: "5B", label: "5B" },
       { value: "6A", label: "6A" },
       { value: "6B", label: "6B" },
+      { value: "EG", label: "EG" },
     ],
   };
   const handlePut = async () => {
