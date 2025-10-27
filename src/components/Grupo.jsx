@@ -104,7 +104,7 @@ export default function Grupo() {
 
   return (
     <Box
-      sx={{ display: "flex", width: "100%", height: "calc(100vh - 80px)", marginTop: "40px" }}
+      sx={{ display: "flex", width: "100%", height: "calc(100vh - 80px)"}}
     >
       {/* Panel Izquierdo (20%): Búsqueda y Lista de Grupos (Maestro) */}
       <Paper

@@ -107,7 +107,7 @@ export default function Docente() {
   // --- RENDERIZADO DEL COMPONENTE ---
 
   return (
-    <Box sx={{ display: "flex", width: "100%", height: "calc(100vh - 80px)", marginTop: "40px" }}>
+    <Box sx={{ display: "flex", width: "100%", height: "calc(100vh - 80px)"}}>
       {/* Panel Izquierdo (20%): Búsqueda y Lista (Maestro) */}
       <Paper sx={{ width: "20%", height: "100%", display: "flex", flexDirection: "column", p: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
