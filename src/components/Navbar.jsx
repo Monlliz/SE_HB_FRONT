@@ -1,11 +1,11 @@
 import React from "react";
 import PropTypes from "prop-types";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   AppBar,
   Toolbar,
   IconButton,
-  Typography,
   Box,
   Button,
   Drawer,
@@ -13,19 +13,13 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
-  InputBase,
   Avatar,
-  Menu,
-  MenuItem,
   useTheme,
+  ListItemIcon,
   useMediaQuery,
 } from "@mui/material";
 
-import {
-  Menu as MenuIcon,
-  Search as SearchIcon,
-  User as UserIcon,
-} from "lucide-react";
+import { Menu as MenuIcon, User as UserIcon, House as HomeIcon, Users as GroupIcon, GraduationCap as TeacherIcon, BookOpenText as SubjectIcon, ShieldAlert as ReportIcon } from "lucide-react";
 
 export default function Navbar({ links = [] }) {
   const { logout } = useAuth();
@@ -36,39 +30,50 @@ export default function Navbar({ links = [] }) {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const userMenuOpen = Boolean(anchorEl);
 
+
+
   const handleDrawerToggle = () => setDrawerOpen((v) => !v);
   const handleUserClick = (e) => {
+    setAnchorEl(e.currentTarget);
     logout();
   };
   const handleUserClose = () => setAnchorEl(null);
 
+  // Obtener la ruta actual
+  const location = useLocation();
+  const currentPath = location.pathname;
+
   const navLinks = links.length
     ? links
     : [
-        { label: "INICIO", href: "/" },
-        { label: "ALUMNOS", href: "/alumnos" },
-        { label: "GRUPOS", href: "/grupos" },
-        { label: "MATERIAS", href: "/materias" },
-        { label: "DOCENTES", href: "/docentes" },
-      ];
+      { label: "INICIO", href: "/", icon: <HomeIcon /> },
+      { label: "ALUMNOS", href: "/alumnos" },
+      { label: "GRUPOS", href: "/grupos", icon: <GroupIcon /> },
+      { label: "MATERIAS", href: "/materias", icon: <SubjectIcon /> },
+      { label: "DOCENTES", href: "/docentes", icon: <TeacherIcon /> },
+    ];
 
   return (
     <>
       <AppBar
         position="fixed"
-        color="transparent"
-        elevation={1}
         sx={{
-          background:
-            "linear-gradient(35deg, #a1bdfaff 0%, #3e5aa0 50%, #15264d 100%)",
-          width: "100%",
-          height: { xs: "9%" },
-        }}
-      >
+          backgroundColor: '#f4fdffff',
+          width: { xs: '100%', md: "88%" },
+          top: { xs: 0, md: "2%" },
+          left: '50%',
+          transform: 'translateX(-50%)',
+          justifyContent: "center",
+          height: { xs: "7%", md: "9%" },
+          boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)',
+          borderRadius: { xs: 0, md: 1.5 },
+          paddingX: 0
+
+        }} >
         <Toolbar
           sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: { xs: "60%", sm: "40%", md: "15%", } }}>
             {isMobile && (
               <IconButton
                 onClick={handleDrawerToggle}
@@ -81,25 +86,20 @@ export default function Navbar({ links = [] }) {
             )}
 
             {/* Logo + Title */}
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                cursor: "pointer",
-              }}
-            >
-              <Box
-                component="img"
-                src="/img/herbart-logo.avif"
-                sx={{
-                  width: "60%",
-                  height: "9%",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              />
-            </Box>
+            {!isMobile && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, cursor: "pointer" }}>
+                <Box
+                  component="img"
+                  src="/img/herbart-logo.avif"
+                  sx={{
+                    width: "100%",
+                    height: "9%",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                />
+              </Box>
+            )}
           </Box>
 
           {/* Center nav (desktop) */}
@@ -107,9 +107,10 @@ export default function Navbar({ links = [] }) {
             <Box
               sx={{
                 display: "flex",
-                gap: 1,
                 alignItems: "center",
                 justifyContent: "center",
+                p: 0,
+                width: "100%"
               }}
             >
               {navLinks.map((link) => (
@@ -118,18 +119,26 @@ export default function Navbar({ links = [] }) {
                   href={link.href}
                   variant="text"
                   sx={{
-                    color: "background.paper",
+                    color: "primary.dark",
                     textTransform: "none",
-                    fontWeight: 700,
+                    fontWeight: 400,
                     fontSize: 18,
-                    px: 2,
-                    "&:hover": {
-                      bgcolor: "transparent",
-                      color: "primary.main",
-                    },
+                    p: 2,
+                    height: "6vh",
+                    fontFamily: 'Poppins, sans-serif',
+                    marginX: 1,
+                    "&:hover": { color: "background.paper", bgcolor: "primary.main" },
+                    // Resaltar el botón si la ruta coincide con el href
+                    ...(currentPath === link.href && { bgcolor: "primary.main", color: "background.paper" }),
                   }}
                 >
-                  {link.label}
+                  <Box sx={{
+                    display: 'flex', alignItems: 'center', gap: 1.5,
+
+                  }}>
+                    {link.icon}
+                    <span>{link.label}</span>
+                  </Box>
                 </Button>
               ))}
             </Box>
@@ -161,7 +170,7 @@ export default function Navbar({ links = [] }) {
               onClick={handleUserClick}
               aria-controls={userMenuOpen ? "user-menu" : undefined}
             >
-              <Avatar sx={{ width: 36, height: 36, bgcolor: "primary.dark" }}>
+              <Avatar sx={{ width: "36", height: "36", bgcolor: "primary.dark", p: 0.5 }}>
                 <UserIcon size={16} />
               </Avatar>
             </IconButton>
@@ -185,15 +194,67 @@ export default function Navbar({ links = [] }) {
       {/* Mobile Drawer */}
       <Drawer anchor="left" open={drawerOpen} onClose={handleDrawerToggle}>
         <Box
-          sx={{ width: 260 }}
+          sx={{
+            width: { xs: "70vw", sm: "40vw" },
+            backgroundColor: "#f4fdffff",
+            height: "100vh"
+          }}
           role="presentation"
           onClick={handleDrawerToggle}
         >
-          <List>
+          {/* Logo interno*/}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, cursor: "pointer" }}>
+            <Box
+              component="img"
+              src="/img/herbart-logo.avif"
+              sx={{
+                width: "80%",
+                paddingTop: "10%",
+                paddingLeft: "4%",
+                paddingBottom: "4%",
+                height: "8%",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            />
+          </Box>
+          <List
+            sx={{
+              fontFamily: 'Poppins',
+              color: "primary.dark",
+              fontWeight: 500,
+              textTransform: "none",
+              fontSize: 18,
+            }}>
             {navLinks.map((item) => (
               <ListItem key={item.label} disablePadding>
-                <ListItemButton component="a" href={item.href}>
-                  <ListItemText primary={item.label} />
+                <ListItemButton component="a"
+                  href={item.href}
+                  sx={{
+                    //borders
+                    borderWidth: 1,
+                    borderColor: "primary.light",
+                    borderStyle: "solid",
+                    //spacing
+                    p: { xs: 0.5, sm: 1 },
+                    paddingLeft: { xs: 2, sm: 4 },
+                    borderRadius: 5,
+                    //size
+                    margin: { xs: "2%", sm: "2.5%" },
+                    marginX: { xs: "8%", sm: "10%" },
+                    //Colores
+                    ...(currentPath === item.href && { bgcolor: "primary.main", color: "background.paper" })
+                  }}>
+                  <ListItemIcon sx={{
+                    // Esto hace que el icono herede el color del texto (blanco cuando está activo)
+                    color: 'inherit'
+                  }}>
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.label}
+
+                  />
                 </ListItemButton>
               </ListItem>
             ))}

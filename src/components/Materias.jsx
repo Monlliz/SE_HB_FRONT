@@ -144,7 +144,6 @@ export default function Materias() {
       sx={{
         height: "89vh",
         width: "96.6vw",
-        marginTop: "8vh",
         p: 0,
         overflow: "hidden",
       }}

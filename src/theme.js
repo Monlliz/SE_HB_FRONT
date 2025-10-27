@@ -20,11 +20,11 @@ import { header } from 'motion/react-client';
 //Fin fuentes 
 
 const theme = createTheme({
-    palette: {
+   palette: {
         primary: {
             main: "#1f3971",
             light: "#3e5aa0",
-            dark: "#15264d",
+            dark: "#052659",
             contrastText: "#ffffff",
         },
         secondary: {

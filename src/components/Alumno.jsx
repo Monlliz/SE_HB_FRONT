@@ -132,7 +132,6 @@ export default function alumno() {
         display: "flex",
         width: "100%",
         height: "calc(100vh - 80px)",
-        marginTop: "40px",
       }}
     >
       {/* Panel Izquierdo (20%): Búsqueda y Lista (Maestro) */}
