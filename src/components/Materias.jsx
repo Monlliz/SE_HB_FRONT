@@ -37,6 +37,7 @@ const headCells = [
   { id: "clave", label: "Clave" }, // Cambiado 'clave' por 'Clave' para mejor visualización
   { id: "asignatura", label: "Asignatura" },
   { id: "semestre", label: "Semestre" },
+  { id: "perfil", label: "pefil" },
   { id: "year", label: "Año" },
 ];
 
@@ -233,7 +234,8 @@ export default function Materias() {
                     <TableCell>{materia.clave}</TableCell>
                     <TableCell>{materia.asignatura}</TableCell>
                     <TableCell>{materia.semestre}</TableCell>
-                    <TableCell>{materia.year}</TableCell> {/* Corregido: 'yearm' a 'year' */}
+                    <TableCell>{materia.perfil_id}</TableCell>
+                    <TableCell>{materia.yearm}</TableCell> {/* Corregido: 'yearm' a 'year' */}
                   </TableRow>
                 ))
               ) : (
