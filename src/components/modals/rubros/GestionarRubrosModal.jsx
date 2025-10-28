@@ -21,6 +21,7 @@ function GestionarRubrosModal({
   onClose,
   rubrosActuales,
   materiaClave,
+  nombreMateria,
   token,
   onGuardar,
 }) {
@@ -109,7 +110,7 @@ function GestionarRubrosModal({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Gestionar Rúbros de {materiaClave}</DialogTitle>
+      <DialogTitle>Gestionar Rúbros de {nombreMateria}</DialogTitle>
       <DialogContent>
         {/* --- LISTA DE RÚBROS EDITABLES --- */}
         <Stack spacing={2} sx={{ mt: 2 }}>

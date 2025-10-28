@@ -46,11 +46,11 @@ export default function Navbar({ links = [] }) {
   const navLinks = links.length
     ? links
     : [
-        { label: "INICIO", href: "/" },
-        { label: "ESTUDIANTES", href: "/alumnos" },
-        { label: "GRUPOS", href: "/grupos" },
-        { label: "MATERIAS", href: "/materias" },
-        { label: "DOCENTES", href: "/docentes" },
+        { label: "INICIO", href: "/inicio", icon: <HomeIcon /> },
+        { label: "ESTUDIANTES", href: "/alumnos"   },
+        { label: "GRUPOS", href: "/grupos", icon: <GroupIcon /> },
+        { label: "MATERIAS", href: "/materias", icon: <SubjectIcon /> },
+        { label: "DOCENTES", href: "/docentes", icon: <TeacherIcon /> },
       ];
 
   return (
@@ -92,8 +92,8 @@ export default function Navbar({ links = [] }) {
                   component="img"
                   src="/img/herbart-logo.avif"
                   sx={{
-                    width: "100%",
-                    height: "9%",
+                    width: "130%",
+                 
                     justifyContent: "center",
                     alignItems: "center",
                   }}

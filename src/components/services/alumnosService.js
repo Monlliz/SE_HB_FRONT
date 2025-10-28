@@ -110,3 +110,30 @@ export const fetchAlumnoPost = async (token, datosParaEnviar) => {
     throw error;
   }
 };
+
+
+export const fetchAlumnoGrupoGet = async (token,grupoId) => {
+  try {
+    const resAlumnos = await fetch(`${apiUrl}/alumnos/grupo/${grupoId}`, {
+      headers: {
+        "x-auth-token": token,
+      },
+    });
+
+    if (!resAlumnos.ok) {
+      if (resAlumnos.status === 401) {
+        throw new Error(
+          "Autorización rechazada. Por favor, inicia sesión de nuevo."
+        );
+      }
+
+      throw new Error("Error al cargar los datos del servidor.");
+    }
+
+    const alumnos = await resAlumnos.json();
+    return { alumnos: alumnos || [] };
+  } catch (error) {
+    console.error("Error en el servicio fetchAlumnoGrupoGet:", error.message);
+    throw error;
+  }
+};
