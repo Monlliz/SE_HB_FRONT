@@ -1,15 +1,18 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
-import { CssBaseline, ThemeProvider } from '@mui/material'
-import theme from './theme.js'
+// En tu archivo: src/main.jsx
+import CssBaseline from "@mui/material/CssBaseline";
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter as Router } from "react-router-dom"; // Renombrado como Router
+import { AuthProvider } from "./context/AuthContext";
+import App from "./App";
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <ThemeProvider theme={theme}>
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <Router>
+      <AuthProvider>
         <CssBaseline />
         <App />
-    </ThemeProvider>
-  </StrictMode>,
-)
+      </AuthProvider>
+    </Router>
+  </React.StrictMode>
+);
