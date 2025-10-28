@@ -37,7 +37,7 @@ const headCells = [
   { id: "clave", label: "Clave" }, // Cambiado 'clave' por 'Clave' para mejor visualización
   { id: "asignatura", label: "Asignatura" },
   { id: "semestre", label: "Semestre" },
-  { id: "perfil", label: "pefil" },
+  { id: "perfil", label: "Perfil" },
   { id: "year", label: "Año" },
 ];
 
