@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Login from "./components/login.jsx";
+import Login from "./components/Login.jsx";
 import Docente from "./components/Docente.jsx";
 import Grupo from "./components/Grupo.jsx";
 import Materias from "./components/Materias.jsx";
