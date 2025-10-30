@@ -142,8 +142,8 @@ export default function Materias() {
   return (
     <Box
       sx={{
-        height: "89vh",
-        width: "96.6vw",
+        //height: "89vh",
+        //width: "96.6vw",
         p: 0,
         overflow: "hidden",
       }}

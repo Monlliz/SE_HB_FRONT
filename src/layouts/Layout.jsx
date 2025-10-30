@@ -22,7 +22,7 @@ export default function Layout() {
         // Aquí defines los estilos para diferentes tamaños de pantalla
         paddingTop: { 
           xs: '8%', // Para pantallas extra pequeñas (móvil)
-          sm: '3%',  // Para pantallas pequeñas (tabletas)
+          sm: '6%',  // Para pantallas pequeñas (tabletas)
           md: '2.5%',  // desktop
         }
       }}

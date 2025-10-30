@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
     setToken(data.token);
     //DATA USER TIENE NOMBRE, CORREO Y ROL
     setUser(data.user);
-    navigate("/docentes"); // Redirige al dashboard o a la página principal
+    navigate("/inicio"); // Redirige al dashboard o a la página principal
   };
 
   const logout = () => {

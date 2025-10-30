@@ -2,6 +2,7 @@ import React from "react";
 import PropTypes from "prop-types";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { Link } from "react-router-dom";
 import {
   AppBar,
   Toolbar,
@@ -42,11 +43,15 @@ export default function Navbar({ links = [] }) {
   // Obtener la ruta actual
   const location = useLocation();
   const currentPath = location.pathname;
+console.log(currentPath !== "/inicio");
+
+
+  
 
   const navLinks = links.length
     ? links
     : [
-        { label: "INICIO", href: "/" },
+        { label: "INICIO", href: "/inicio" },
         { label: "ESTUDIANTES", href: "/alumnos" },
         { label: "GRUPOS", href: "/grupos" },
         { label: "MATERIAS", href: "/materias" },
@@ -103,7 +108,7 @@ export default function Navbar({ links = [] }) {
           </Box>
 
           {/* Center nav (desktop) */}
-          {!isMobile && (
+          {!isMobile && (currentPath !== "/inicio")  &&  (
             <Box
               sx={{
                 display: "flex",
@@ -218,7 +223,8 @@ export default function Navbar({ links = [] }) {
               }}
             />
           </Box>
-          <List
+          { currentPath !== "/inicio" &&      
+            <List
             sx={{
               fontFamily: 'Poppins',
               color: "primary.dark",
@@ -228,8 +234,9 @@ export default function Navbar({ links = [] }) {
             }}>
             {navLinks.map((item) => (
               <ListItem key={item.label} disablePadding>
-                <ListItemButton component="a"
-                  href={item.href}
+                <ListItemButton 
+                  component={Link} 
+                  to={item.href}
                   sx={{
                     //borders
                     borderWidth: 1,
@@ -259,6 +266,7 @@ export default function Navbar({ links = [] }) {
               </ListItem>
             ))}
           </List>
+          }
         </Box>
       </Drawer>
     </>
