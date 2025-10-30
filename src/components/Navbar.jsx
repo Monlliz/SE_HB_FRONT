@@ -20,7 +20,7 @@ import {
   useMediaQuery,
 } from "@mui/material";
 
-import { Menu as MenuIcon, User as UserIcon, House as HomeIcon, Users as GroupIcon, GraduationCap as TeacherIcon, BookOpenText as SubjectIcon, ShieldAlert as ReportIcon } from "lucide-react";
+import { Menu as MenuIcon, User as UserIcon, House as HomeIcon, Users as GroupIcon, GraduationCap as StudentIcon, BookOpenText as SubjectIcon,  Presentation as TeacherIcon } from "lucide-react";
 
 export default function Navbar({ links = [] }) {
   const { logout } = useAuth();
@@ -52,7 +52,7 @@ console.log(currentPath !== "/inicio");
     ? links
     : [
         { label: "INICIO", href: "/inicio", icon: <HomeIcon /> },
-        { label: "ESTUDIANTES", href: "/alumnos"   },
+        { label: "ESTUDIANTES", href: "/alumnos", icon: <StudentIcon />   },
         { label: "GRUPOS", href: "/grupos", icon: <GroupIcon /> },
         { label: "MATERIAS", href: "/materias", icon: <SubjectIcon /> },
         { label: "DOCENTES", href: "/docentes", icon: <TeacherIcon /> },

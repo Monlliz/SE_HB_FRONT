@@ -4,7 +4,7 @@ import {
     Home,
     GraduationCap,
     Users,
-    Book,
+    BookOpenText,
     Presentation
 } from 'lucide-react';
 
@@ -15,7 +15,7 @@ export const appIcons = {
     INICIO: <Home size={iconSize} />,
     ESTUDIANTES: <GraduationCap size={iconSize} />,
     GRUPOS: <Users size={iconSize} />,
-    MATERIAS: <Book size={iconSize} />,
+    MATERIAS: <BookOpenText size={iconSize} />,
     DOCENTES: <Presentation size={iconSize} />,
     DEFAULT: <GraduationCap size={iconSize} />
 };
