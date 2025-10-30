@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from "../context/AuthContext.jsx"; // Contexto para la autenticación.
+
 // Componentes de Material-UI
 import { Grid, Box, Typography, Paper, Card, CardActionArea, CardContent, IconButton, Badge, Tooltip } from '@mui/material';
 
@@ -52,7 +54,7 @@ const getDatosFecha = (date) => {
  * Usará un Badge para marcar los días importantes
  */
 // (La función getDatosFecha sigue igual que antes)
-    const name = JSON.parse( localStorage.getItem("user")).username;
+   
     
 /**
  * Componente de Día actualizado con Tooltip y Colores
@@ -113,6 +115,7 @@ function DiaConBadge(props) {
 function Dashboard() {
     // --- Añade el estado para la fecha seleccionada ---
     const [selectedDate, setSelectedDate] = useState(new Date());
+    const { user } = useAuth();
     // --- CÓDIGO PARA LA FECHA ACTUAL ---
     // 1. Obtener la fecha de hoy
     const today = new Date();
@@ -152,7 +155,7 @@ function Dashboard() {
                             }}
                         >
                             <Typography variant="h4" sx={{ color: 'white' }}>
-                                Hola, {name}
+                                Hola, {user.username}
                             </Typography>
 
                             {/* Placeholder para tu ilustración */}
