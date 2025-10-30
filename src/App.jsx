@@ -10,6 +10,7 @@ import ReportePDF from "./components/ReportePDF.jsx";
 import ListaAsistenciaMateria from "./components/ListaAsistenciaMateria.jsx";
 import Rubros from "./components/Rubros.jsx"
 import { ProtectedRoute } from "./components/ProtectedRoute.jsx";
+import Dashboard from "./components/Dashboard.jsx";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
          <Route path="/listaAsistenciamateria" element={<ListaAsistenciaMateria />} />
         <Route path="/Reporte" element={<ReportePDF />} />
         <Route path="/Rubros" element= {<Rubros/> } />
+        <Route path="/Inicio" element= {<Dashboard/> } />
         {/*Mas rutas protegidas aquí */}
       </Route>
 

@@ -15,12 +15,19 @@ import "@fontsource/work-sans/400.css";
 import "@fontsource/work-sans/500.css";
 import "@fontsource/work-sans/600.css";
 import "@fontsource/work-sans/700.css";
+
+//sofia
+import "@fontsource/sofia/400.css";
+// Gabriela
+import "@fontsource/gabriela/400.css";
+
+
 import { header } from 'motion/react-client';
 
 //Fin fuentes 
 
 const theme = createTheme({
-   palette: {
+    palette: {
         primary: {
             main: "#1f3971",
             light: "#3e5aa0",
@@ -29,13 +36,13 @@ const theme = createTheme({
         },
         secondary: {
             main: "#ffab46",
-            light: "#ffd194",
+            light: "#f4fdffff",
             dark: "#cc7f22",
             contrastText: "#1f1f1f",
         },
         background: {
-            default: "#f8f9fc", // Fondo general
-            paper: "#ffffff",   // Tarjetas
+            default: "#ffffff", // Fondo general
+            paper: "#f8f9fc",   // Tarjetas
         },
         text: {
             primary: "#1f1f1f",
@@ -47,6 +54,8 @@ const theme = createTheme({
         h1: { fontFamily: '"Poppins", sans-serif', fontWeight: 700 },
         h2: { fontFamily: '"Poppins", sans-serif', fontWeight: 600 },
         h3: { fontFamily: '"Work Sans", sans-serif', fontWeight: 600 },
+        h4: { fontFamily: '"Sofia", serif', fontWeight: 400, fontSize: "4.5rem"},
+        
         body1: { fontFamily: '"Inter", sans-serif', fontSize: "1rem" },
         body2: { fontFamily: '"Work Sans", sans-serif', fontSize: "0.9rem" },
     },
@@ -61,6 +70,7 @@ const theme = createTheme({
                     textTransform: "none",
                 },
             },
+            
         },
     }
 });
