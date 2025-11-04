@@ -8,9 +8,9 @@ import GestionarRubrosModal from "./modals/rubros/GestionarRubrosModal.jsx";
 import {
   fetchRubrosMateriaGet,
   syncCalificaciones_service,
-  fetchRubrosCalificacionesGet
+  fetchRubrosCalificacionesGet,
 } from "./services/rubroService.js";
-import { fetchAlumnoGrupoGet } from "./services/alumnosService.js";
+import { fetchAlumnoPerfilGet } from "./services/alumnosService.js";
 
 import {
   Table,
@@ -51,6 +51,8 @@ const GestionarRubros = () => {
   const location = useLocation();
   const {
     grupoId,
+    idNormalizado,
+    semestre,
     materiaClave,
     nombreMateria,
     year: initialYear,
@@ -109,8 +111,8 @@ const GestionarRubros = () => {
     const cargarAlumnos = async () => {
       // ... (tu lógica de loading y errores) ...
       try {
-        const data = await fetchAlumnoGrupoGet(token, grupoId);
-
+        const data = await fetchAlumnoPerfilGet(token, idNormalizado,semestre);
+        console.log("Datos de alumnos recibidos:", data);
         // --- INICIO DE LA TRANSFORMACIÓN ---
         // Mapeamos los datos recibidos para que coincidan
         // con lo que el componente espera ("alumno_matricula")
@@ -143,14 +145,14 @@ const GestionarRubros = () => {
       setSaveError(null);
 
       try {
-          const data = await fetchRubrosCalificacionesGet(
-        materiaClave,
-        parcial,
-        selectedYear,
-        token
-      );
-      setCalificaciones(data);
-     
+        const data = await fetchRubrosCalificacionesGet(
+          materiaClave,
+          parcial,
+          selectedYear,
+          token
+        );
+        setCalificaciones(data);
+
         // setOriginalCalificaciones(data); // --- NUEVO ---
       } catch (err) {
         console.error("Error cargando calificaciones:", err);

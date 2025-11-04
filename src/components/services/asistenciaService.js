@@ -110,3 +110,59 @@ export const fetchPostAsistenciaMateria = async (
 };
 
 
+//Para perfil
+export const fetchDatosAsistenciaMateriaPerfil = async (grupoId,idNormalizado,semestre,clave,year,mes, token) => {
+  
+  try {
+    // Usamos Promise.all para ejecutar ambas peticiones al mismo tiempo
+    const [resEstudiantes, resAsistencias] = await Promise.all([
+      //http://localhost:3000/alumnos/perfil/EA/5
+      fetch(`${apiUrl}/alumnos/perfil/${idNormalizado}/${semestre}`, {
+        headers: { "x-auth-token": token },
+      }),
+      fetch(`${apiUrl}/asistencia/materia/${grupoId}/${clave}/${year}/${mes}`, {
+        headers: { "x-auth-token": token },
+      }),
+    ]);
+    // Verificamos la respuesta de estudiantes
+    if (!resEstudiantes.ok) {
+      throw new Error("Error al obtener la lista de estudiantes.");
+    }
+    const estudiantes = await resEstudiantes.json();
+    // Verificamos la respuesta de asistencias (puede no haber registros y eso está bien)
+    let asistencias = [];
+    if (resAsistencias.ok) {
+      asistencias = await resAsistencias.json();
+    } else {
+      console.warn(
+        "No se encontraron registros de asistencia para este grupo."
+      );
+    }
+    // Devolvemos un objeto con ambos resultados
+    return { estudiantes: estudiantes || [], asistencias: asistencias || [] };
+  } catch (error) {
+    console.error("Error en el servicio de asistencia:", error);
+    // Relanzamos el error para que el componente que llama lo pueda manejar
+    throw new Error("Error al cargar los datos. Inténtalo de nuevo.");
+  }
+};
+
+export const fetchPostAsistenciaMateriaPerfi = async (
+  token,
+  grupoId,
+  clave,
+  estatusAsistencia
+) => {
+  try {
+    const response = await fetch(`${apiUrl}/asistencia/materia/${grupoId}/${clave}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-auth-token": token },
+      body: JSON.stringify(estatusAsistencia),
+    });
+    if (!response.ok) throw new Error("Error al guardar la asistencia");
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+};
+
+

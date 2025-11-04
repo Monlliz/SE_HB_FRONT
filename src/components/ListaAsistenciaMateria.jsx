@@ -240,7 +240,7 @@ const ListaAsistenciaMateria = () => {
       {/* Encabezado con título y botón para agregar nueva asistencia */}
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
         <Box>
-          <Typography variant="h4">Asistencia - {nombreMateria}</Typography>
+          <Typography variant="h5">Asistencia - {nombreMateria}</Typography>
           <Typography variant="subtitle1" color="text.secondary">
             Grupo {grupoId}
           </Typography>

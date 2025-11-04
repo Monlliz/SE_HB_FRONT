@@ -87,3 +87,26 @@ export const fetchBorrarMateriaGrupo = async (token, grupoId, clave) => {
     throw new Error("La respuesta de la red no fue exitosa");
   }
 };
+
+
+//PERFIL 
+//Obtener materias por grupo
+export const fetchMateriasPerfil = async (token, id, anioActual) => {
+  try {
+    const resMaterias = await fetch(
+      `${apiUrl}/materias/perfil/${id}/${anioActual}`,
+      {
+        headers: {
+          "x-auth-token": token,
+        },
+      }
+    );
+    if (!resMaterias.ok) throw new Error("Error al cargar materias");
+    const materias = await resMaterias.json();
+
+    return { materias: materias || [] };
+  } catch (error) {
+    console.error("Error en el servicio fetchMateriasPerfil:", error.message);
+    throw error;
+  }
+};
