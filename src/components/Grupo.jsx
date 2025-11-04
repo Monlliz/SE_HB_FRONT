@@ -6,7 +6,7 @@
 // Importaciones de React, hooks y componentes.
 import { useState, useEffect, useCallback } from "react";
 import UserGrupo from "./users/UserGrupo.jsx";
-import UserPerfil from "./users/userPerfil.jsx"; // (Asegúrate que la 'u' sea minúscula como tu import)
+import UserPerfil from "./users/UserPerfil.jsx"; 
 import { useAuth } from "../context/AuthContext.jsx";
 import { fetchGrupoGet, fetchPerfilGet } from "./services/grupoService.js";
 

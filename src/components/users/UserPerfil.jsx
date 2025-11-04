@@ -24,7 +24,7 @@ import {
 } from "@mui/material";
 
 // El nombre del componente era userPerfil, lo que sugiere que el `id` es de un grupo.
-export default function userPerfil({ id }) {
+export default function UserPerfil({ id }) {
   // Estados necesarios solo para materias
   const parts = id.split("-");
   const semestre = parts[0];
