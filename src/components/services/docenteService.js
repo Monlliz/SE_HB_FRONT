@@ -1,3 +1,5 @@
+import { id } from "date-fns/locale";
+
 const apiUrl = import.meta.env.VITE_API_URL;
 //se usa en src\components\Docente.jsx
 export const fetchDocenteGet = async (token) => {
@@ -133,11 +135,12 @@ export const fetchDocentePost = async (token, datosParaEnviar) => {
 export const fetchDocenteMateriasPost = async (
   token,
   docenteId,
-  materiaSeleccionada
+  materiaSeleccionada,
+  idGrupoOPerfil
 ) => {
   try {
     const response = await fetch(
-      `${apiUrl}/docente/materia/${docenteId}/${materiaSeleccionada}`,
+      `${apiUrl}/docente/materia/${docenteId}/${materiaSeleccionada}/${idGrupoOPerfil}`,
       {
         method: "POST",
         headers: {

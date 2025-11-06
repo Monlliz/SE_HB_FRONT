@@ -6,7 +6,7 @@
 // Importaciones de React, hooks y componentes.
 import { useState, useEffect, useCallback } from "react";
 import UserGrupo from "./users/UserGrupo.jsx";
-import UserPerfil from "./users/UserPerfil.jsx"; 
+import UserPerfil from "./users/UserPerfil.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { fetchGrupoGet, fetchPerfilGet } from "./services/grupoService.js";
 
@@ -18,16 +18,12 @@ import {
   ListItem,
   ListItemText,
   Paper,
-  CircularProgress, // Añadido para un mejor 'loading'
-  Typography,     // Añadido para un mejor 'loading'
+  CircularProgress,
+  Typography,
   ToggleButton,
   ToggleButtonGroup,
 } from "@mui/material";
 
-/**
- * Componente principal que gestiona la búsqueda y visualización de grupos.
- * @returns {JSX.Element}
- */
 export default function Grupo() {
   // --- ESTADOS Y CONTEXTO ---
   const { token } = useAuth();
@@ -51,21 +47,26 @@ export default function Grupo() {
     try {
       if (!token)
         throw new Error("Autorización rechazada. No se encontró el token.");
-      
+
       // Llamadas en paralelo para más eficiencia
       const [dataGrupos, dataPerfiles] = await Promise.all([
-         fetchGrupoGet(token),
-         fetchPerfilGet(token)
+        fetchGrupoGet(token),
+        fetchPerfilGet(token),
       ]);
-      
+
       const { grupos } = dataGrupos;
       const { perfiles } = dataPerfiles;
 
       const idGrupoOcultar = "EG";
 
-      // Bug del filtro de perfiles eliminado.
-      // Ahora guarda TODOS los perfiles que llegan de la API.
-      setPerfiles(perfiles);
+      const perfilesFiltrados = perfiles.filter((perfil) => {
+        const tieneNumero = /^\d+-/.test(perfil.idperfil); // verifica si inicia con número y guion
+        const esBC = perfil.idperfil.includes("BC");
+
+        return tieneNumero && !esBC;
+      });
+
+      setPerfiles(perfilesFiltrados);
 
       const gruposFiltrados = grupos.filter(
         (grupo) => grupo.idgrupo !== idGrupoOcultar
@@ -149,8 +150,6 @@ export default function Grupo() {
     setResultados(resultadosFinales);
   }, [search, Grupos, perfiles, filtroParidad]); // 'filtroParidad' es una dependencia
 
-
-
   // --- MANEJADORES DE EVENTOS ---
 
   const handleClick = (item) => {
@@ -196,7 +195,7 @@ export default function Grupo() {
           onChange={(e) => setSearch(e.target.value)}
           sx={{ mb: 2 }}
         />
-        
+
         {/* Botones de Filtro Pares/Impares */}
         <ToggleButtonGroup
           value={filtroParidad}
@@ -213,7 +212,11 @@ export default function Grupo() {
           <ToggleButton value="pares" aria-label="pares" sx={{ flexGrow: 1 }}>
             Par
           </ToggleButton>
-          <ToggleButton value="impares" aria-label="impares" sx={{ flexGrow: 1 }}>
+          <ToggleButton
+            value="impares"
+            aria-label="impares"
+            sx={{ flexGrow: 1 }}
+          >
             Impar
           </ToggleButton>
         </ToggleButtonGroup>
@@ -221,9 +224,19 @@ export default function Grupo() {
         <List sx={{ width: "100%", flexGrow: 1, overflowY: "auto" }}>
           {/* Muestra un spinner, un error, o la lista de resultados */}
           {loading ? (
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4, gap: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                py: 4,
+                gap: 2,
+              }}
+            >
               <CircularProgress />
-              <Typography variant="body2" color="text.secondary">Cargando...</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Cargando...
+              </Typography>
             </Box>
           ) : error ? (
             <ListItem>
@@ -260,7 +273,7 @@ export default function Grupo() {
       </Paper>
 
       {/* Panel Derecho (80%): Detalles del Grupo (Detalle) */}
-      <Box sx={{ width: "80%", height: "100%", p: 2, overflowY: 'auto' }}>
+      <Box sx={{ width: "80%", height: "100%", p: 2, overflowY: "auto" }}>
         {selectGrupo ? (
           <UserGrupo id={selectGrupo} />
         ) : selectPerfil ? (

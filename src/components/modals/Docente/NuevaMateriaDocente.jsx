@@ -1,65 +1,160 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import { fetchMateriasGet } from "../../services/materiasService";
 import { fetchDocenteMateriasPost } from "../../services/docenteService";
+import { fetchGrupoGet, fetchPerfilGet } from "../../services/grupoService.js"; // <-- Devuelta
 import {
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Box,
   CircularProgress,
+  Autocomplete,
+  TextField,
+  Radio, // <-- Nuevo
+  RadioGroup, // <-- Nuevo
+  FormControlLabel, // <-- Nuevo
+  FormControl, // <-- Devuelta
+  FormLabel, // <-- Nuevo
 } from "@mui/material";
 
 function NuevaMateriaDocente({ open, onClose, onAccept, docenteId }) {
-  const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
+  // Estados para Materias
+  const [materiaSeleccionada, setMateriaSeleccionada] = useState(null);
   const [materias, setMaterias] = useState([]);
+
+  // Estados para Grupos y Perfiles (reincorporados)
+  const [Grupos, setGrupos] = useState([]);
+  const [Perfiles, setPerfiles] = useState([]);
+  const [grupoSeleccionado, setGrupoSeleccionado] = useState(null);
+  const [perfilSeleccionado, setPerfilSeleccionado] = useState(null);
+
+  // Estado para controlar qué selector mostrar (grupo o perfil)
+  const [tipoAsociacion, setTipoAsociacion] = useState("grupo"); // 'grupo' o 'perfil'
+
+  // Estados de carga y error
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const apiUrl = import.meta.env.VITE_API_URL;
   const { token } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Función para cargar Grupos y Perfiles (reincorporada de tu código original)
+  const fetchGruposYPerfiles = useCallback(async () => {
+    try {
+      if (!token)
+        throw new Error("Autorización rechazada. No se encontró el token.");
+
+      const [dataGrupos, dataPerfiles] = await Promise.all([
+        fetchGrupoGet(token),
+        fetchPerfilGet(token),
+      ]);
+
+      const { grupos } = dataGrupos;
+      const { perfiles } = dataPerfiles;
+      const idGrupoOcultar = "EG";
+
+      const perfilesFiltrados = perfiles.filter((perfil) => {
+        const tieneNumero = /^\d+-/.test(perfil.idperfil);
+        const esBC = perfil.idperfil.includes("BC");
+        return tieneNumero && !esBC;
+      });
+      setPerfiles(perfilesFiltrados);
+
+      const gruposFiltrados = grupos.filter(
+        (grupo) => grupo.idgrupo !== idGrupoOcultar
+      );
+      setGrupos(gruposFiltrados);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      throw error; // Lanza el error para que sea capturado por el 'catch' principal
+    }
+  }, [token]);
+
+  // Función para cargar Materias
+  const fetchMaterias = useCallback(async () => {
+    try {
+      if (!token)
+        throw new Error("Autorización rechazada. No se encontró el token.");
+      const { materias } = await fetchMateriasGet(token);
+      setMaterias(materias);
+    } catch (error) {
+      console.error("Error fetching materias:", error);
+      throw error; // Lanza el error
+    }
+  }, [token]);
+
+  // useEffect principal para cargar todo al abrir
   useEffect(() => {
     if (open) {
-      const fetchMaterias = async () => {
-        if (!token) {
-          throw new Error("Autorización rechazada. No se encontró el token.");
-        }
-        setLoading(true);
-        setError(null);
+      // Resetea todos los estados al abrir
+      setMateriaSeleccionada(null);
+      setGrupoSeleccionado(null);
+      setPerfilSeleccionado(null);
+      setTipoAsociacion("grupo");
+      setLoading(true);
+      setError(null);
+
+      const loadAllData = async () => {
         try {
-          const { materias } = await fetchMateriasGet(token);
-          setMaterias(materias);
+          // Carga todo en paralelo
+          await Promise.all([fetchGruposYPerfiles(), fetchMaterias()]);
         } catch (error) {
           setError(error.message);
         } finally {
           setLoading(false);
         }
       };
-      fetchMaterias();
+
+      loadAllData();
     }
-  }, [open]);
+  }, [open, token, fetchGruposYPerfiles, fetchMaterias]); // Dependencias correctas
 
   const handleAcceptClick = async () => {
+    // --- Validación ---
     if (!materiaSeleccionada) {
       alert("Por favor, selecciona una materia.");
       return;
     }
 
-    setIsSubmitting(true); // Empezamos el envío
+    if (tipoAsociacion === "grupo" && !grupoSeleccionado) {
+      alert("Por favor, selecciona un grupo.");
+      return;
+    }
+
+    if (tipoAsociacion === "perfil" && !perfilSeleccionado) {
+      alert("Por favor, selecciona un perfil.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    // --- Preparación de datos ---
+    const datosParaEnviar = {
+      idDocente: docenteId,
+      claveMateria: materiaSeleccionada.clave,
+      idGrupo: tipoAsociacion === "grupo" ? grupoSeleccionado.idgrupo : null,
+      idPerfil:
+        tipoAsociacion === "perfil" ? perfilSeleccionado.idperfil : null,
+    };
+
+    const GrupoOPerfil =
+      tipoAsociacion === "grupo"
+        ? grupoSeleccionado.idgrupo
+        : perfilSeleccionado.idperfil;
+
+    console.log("Datos a enviar:", datosParaEnviar);
 
     try {
-      // Preparamos los datos para enviar
-      await fetchDocenteMateriasPost(token, docenteId, materiaSeleccionada);
-      // Si todo sale bien, ejecutamos la función `onAccept` del padre
-      onAccept(materiaSeleccionada);
-      alert("Materia asignada correctamente");
+      await fetchDocenteMateriasPost(
+        token,
+        docenteId,
+        materiaSeleccionada.clave,
+        GrupoOPerfil
+      );
+
+      onAccept(datosParaEnviar); // Envía el objeto completo al padre
     } catch (error) {
       console.error("Error en el envío:", error);
       alert(`Error: ${error.message}`);
@@ -69,7 +164,6 @@ function NuevaMateriaDocente({ open, onClose, onAccept, docenteId }) {
   };
 
   const renderContent = () => {
-    // Renderizado condicional basado en el estado de la llamada
     if (loading) {
       return (
         <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
@@ -81,38 +175,105 @@ function NuevaMateriaDocente({ open, onClose, onAccept, docenteId }) {
       return <Box sx={{ color: "red", my: 2 }}>Error: {error}</Box>;
     }
     return (
-      <FormControl fullWidth>
-        <InputLabel id="select-materia-label">Materia</InputLabel>
-        <Select
-          labelId="select-materia-label"
+      <>
+        {/* 1. Selector de Materia */}
+        <Autocomplete
+          options={materias}
+          getOptionLabel={(option) => option.asignatura || ""}
+          loading={loading}
+          renderInput={(params) => (
+            <TextField {...params} label="Buscar Materia" />
+          )}
           value={materiaSeleccionada}
-          label="Materia"
-          onChange={(e) => setMateriaSeleccionada(e.target.value)}
-        >
-          {materias.map((materia) => (
-            <MenuItem key={materia.clave} value={materia.clave}>
-              {materia.asignatura}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+          onChange={(event, newValue) => {
+            setMateriaSeleccionada(newValue);
+          }}
+          isOptionEqualToValue={(option, value) => option.clave === value.clave}
+          noOptionsText="No se encontraron materias"
+        />
+
+        {/* 2. Selector de Tipo de Asociación (Grupo o Perfil) */}
+        <FormControl component="fieldset" sx={{ mt: 3, mb: 1 }}>
+          <FormLabel component="legend">Asociar con:</FormLabel>
+          <RadioGroup
+            row
+            value={tipoAsociacion}
+            onChange={(e) => setTipoAsociacion(e.target.value)}
+          >
+            <FormControlLabel value="grupo" control={<Radio />} label="Grupo" />
+            <FormControlLabel
+              value="perfil"
+              control={<Radio />}
+              label="Perfil"
+            />
+          </RadioGroup>
+        </FormControl>
+
+        {/* 3. Selector condicional de Grupo */}
+        {tipoAsociacion === "grupo" && (
+          <Autocomplete
+            options={Grupos}
+            getOptionLabel={(option) => `${option.idgrupo}` || option.idgrupo} // Ajusta 'nombregrupo' si la prop se llama diferente
+            loading={loading}
+            renderInput={(params) => (
+              <TextField {...params} label="Buscar Grupo" />
+            )}
+            value={grupoSeleccionado}
+            onChange={(event, newValue) => {
+              setGrupoSeleccionado(newValue);
+              setPerfilSeleccionado(null); // Limpia la otra selección
+            }}
+            isOptionEqualToValue={(option, value) =>
+              option.idgrupo === value.idgrupo
+            }
+            noOptionsText="No se encontraron grupos"
+          />
+        )}
+
+        {/* 4. Selector condicional de Perfil */}
+        {tipoAsociacion === "perfil" && (
+          <Autocomplete
+            options={Perfiles}
+            getOptionLabel={(option) => option.idperfil || ""} // Los perfiles parecen no tener 'nombre'
+            loading={loading}
+            renderInput={(params) => (
+              <TextField {...params} label="Buscar Perfil" />
+            )}
+            value={perfilSeleccionado}
+            onChange={(event, newValue) => {
+              setPerfilSeleccionado(newValue);
+              setGrupoSeleccionado(null); // Limpia la otra selección
+            }}
+            isOptionEqualToValue={(option, value) =>
+              option.idperfil === value.idperfil
+            }
+            noOptionsText="No se encontraron perfiles"
+          />
+        )}
+      </>
     );
   };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Seleccionar materia a agregar</DialogTitle>
+      <DialogTitle>Asignar materia a docente</DialogTitle>
       <DialogContent>
         <Box sx={{ marginTop: 2 }}>{renderContent()}</Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
+        <Button onClick={onClose} disabled={isSubmitting}>
+          Cancelar
+        </Button>
         <Button
           onClick={handleAcceptClick}
           variant="contained"
-          disabled={loading || error}
+          disabled={loading || !!error || isSubmitting}
         >
-          Aceptar
+          {isSubmitting ? (
+            <CircularProgress size={24} color="inherit" />
+          ) : (
+            "Aceptar"
+          )}
         </Button>
       </DialogActions>
     </Dialog>
