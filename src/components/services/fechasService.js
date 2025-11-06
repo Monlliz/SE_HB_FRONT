@@ -25,3 +25,25 @@ export const fetchFechasGet = async (token) => {
     throw error;
   }
 };
+
+export const createEvent = async (token, datosParaEnviar) => {
+  try {
+    const response = await fetch(`${apiUrl}/fechas`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-auth-token": token,
+      },
+      body: JSON.stringify(datosParaEnviar),
+    });
+    if (!response.ok) {
+      throw new Error("Error al ingresar un nuevo evento");
+    }
+    
+    return response.json();
+    
+  } catch (error) {
+    console.error("Error en el servicio createEvent:", error.message);
+    throw error;
+  }
+};

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx"; // Contexto para la autenticación.
+import EventDetailsDialog from "./modals/Calendario/EventDetailsDialog.jsx";
 
 // Componentes de Material-UI
 import {
@@ -11,9 +12,7 @@ import {
   Card,
   CardActionArea,
   CardContent,
-  IconButton,
   Badge,
-  Tooltip,
 } from "@mui/material";
 
 // ¡Iconos de Lucide como pediste!
@@ -24,13 +23,18 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import { PickersDay } from "@mui/x-date-pickers/PickersDay";
+import { es } from "date-fns/locale";
+import { format } from "date-fns";
 
 // Importa los enlaces de navegación
 import { appLinks } from "../config/NavConfig.jsx";
-// --- fechas importantes aquí ---
-import { fechasImportantes } from "../config/dates.js";
+
 //Servicio de fechas
 import { fetchFechasGet } from "./services/fechasService.js";
+
+//tipos de eventos
+import { EVENT_TYPES } from "../data/eventTypes.jsx";
+import CalendarAddButton from "./modals/Calendario/CalendarAddButton.jsx";
 // Importa tu ilustración
 // import MyIllustration from './path/to/your/illustration.png';
 //Funcion para convertir a Title Case-------------------------------------
@@ -49,94 +53,95 @@ function toTitleCase(str) {
   return firstLetter + restOfString;
 }
 //-----------------------------------------------------------------------
-
-/**
- * Función helper para verificar si un día es importante (chequeo anual)
- */
-
-/**
- * Componente personalizado para renderizar cada día
- * Usará un Badge para marcar los días importantes
- */
-// (La función getDatosFecha sigue igual que antes)
-
-/**
- * Componente de Día actualizado con Tooltip y Colores
- */
-const getDatosFecha = (date, fechas) => {
+// Función para obtener los datos de la fecha
+const getDatosFechas = (date, fechas) => {
   // Asegurarnos de que fechas sea un array antes de usar .find()
   if (!Array.isArray(fechas)) {
     return undefined;
   }
 
-  // Comparamos el mes (0-11) + 1 con el mes de la API (1-12)
-  const mesActual = date.getMonth();
-  const diaActual = date.getDate();
+  return fechas.filter((fecha) => {
+    // Comparamos el mes (0-11) + 1 con el mes de la API (1-12)
+    const mesActual = date.getMonth();
+    const diaActual = date.getDate();
+    const yearActual = date.getFullYear();
 
-  return fechas.find(
-    (fecha) => fecha.mes === mesActual && fecha.dia === diaActual
-  );
+    // Caso 1: Evento específico (ej: "Reunión", tiene año, mes y día)
+    // Asumimos que tu API te da `ano` para estos eventos.
+    if (fecha.yearf) {
+      return (
+        fecha.yearf === yearActual &&
+        fecha.mes === mesActual &&
+        fecha.dia === diaActual
+      );
+    }
+    // Caso 2: Evento anual (ej: "Navidad", solo mes y día)
+    return fecha.mes === mesActual && fecha.dia === diaActual;
+  });
+
 };
 
+
 function DiaConBadge(props) {
-  const { day, outsideCurrentMonth, fechas, ...other } = props;
+  const { day, outsideCurrentMonth, fechas, onDayClick, ...other } = props;
 
   // 1. Obtenemos los datos de la fecha
+  const datosFechas = !outsideCurrentMonth ? getDatosFechas(day, fechas) : [];
+  const esImportante = datosFechas.length > 0;
 
-  const datosFecha = !outsideCurrentMonth ? getDatosFecha(day, fechas) : null;
-  const esImportante = !!datosFecha;
+  // 2. Color por defecto
+  let colorDelBadge = "#3f51b5"; // color 'primary' por defecto
 
-  let colorDelBadge = "primary";
   if (esImportante) {
-    switch (datosFecha.tipo) {
-      case "festivo":
-        colorDelBadge = "error";
-        break;
-      case "noLaborable":
-        colorDelBadge = "warning";
-        break;
-      case "evento":
-        colorDelBadge = "secondary";
-        break;
-      default:
-        colorDelBadge = "primary";
+    // Encontramos el tipo prioritario (manteniendo tu orden original)
+    const tipoPrioritario =
+      datosFechas.find(f => f.tipo === "festivo") ||
+      datosFechas.find(f => f.tipo === "noLaborable") ||
+      datosFechas[0];
+
+    // Buscamos el tipo dentro del JSON
+    // Buscamos en EVENT_TYPES por clave (objeto, no array)
+    const tipoConfig = EVENT_TYPES[tipoPrioritario.tipo?.toLowerCase()];
+
+    if (tipoConfig && tipoConfig.color) {
+      colorDelBadge = tipoConfig.color;
     }
   }
 
-  // 2. Creamos el componente base (Badge + PickersDay)
-  //    PickersDay DEBE recibir las props {...other} para funcionar
-  const diaRenderizado = (
+  // 2. Creamos el objeto `sx` para el Badge
+  const badgeSx = {
+    "& .MuiBadge-dot": {
+      backgroundColor: colorDelBadge,
+    },
+  };
+
+  // 4. Manejador de click
+  const handleClick = (e) => {
+    if (esImportante) {
+      e.preventDefault(); // Previene selección normal
+      onDayClick(day, datosFechas); // Abre el modal con los eventos
+    }
+  };
+
+  // 5. Render
+  return (
     <Badge
-      key={props.day.toString()}
+      key={day.toString()}
       overlap="circular"
-      color={colorDelBadge}
       variant={esImportante ? "dot" : undefined}
+      sx={esImportante ? badgeSx : {}}
     >
       <PickersDay
         {...other}
-        fechas={fechas}
         outsideCurrentMonth={outsideCurrentMonth}
         day={day}
+        onClick={handleClick}
       />
     </Badge>
   );
-
-  // 3. Si es importante, lo envolvemos en un Tooltip
-  //    Si no es importante, lo devolvemos tal cual.
-  if (esImportante) {
-    return (
-      <Tooltip title={datosFecha.etiqueta} arrow>
-        {/* El Tooltip envuelve al Badge. 
-                  MUI está diseñado para que esto funcione sin perder los clics.
-                */}
-        {diaRenderizado}
-      </Tooltip>
-    );
-  }
-
-  // Si no es importante, se devuelve sin Tooltip
-  return diaRenderizado;
 }
+
+//----------------------------------------------------------------
 function Dashboard() {
   // --- Añade el estado para la fecha seleccionada ---
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -144,7 +149,6 @@ function Dashboard() {
   const [fechas, setFechas] = useState([]);
   const [loading, setLoading] = useState(false);
   const { user, token } = useAuth();
-  console.log(user);
   const fetchFechas = useCallback(async () => {
     setLoading(true);
     try {
@@ -157,9 +161,36 @@ function Dashboard() {
     }
   }, [token]);
 
+
+  //--------Estados y funciones para el modal de detalles de fecha -----
+  // ======================================================================
+  // AÑADIR ESTADO PARA EL MODAL
+  // ======================================================================
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalEvents, setModalEvents] = useState([]);
+  const [modalDate, setModalDate] = useState(null);
+
+  //------------------------------------------------------------------------
   useEffect(() => {
     fetchFechas();
   }, [fetchFechas]);
+
+  // ======================================================================
+  // 2. AÑADIR MANEJADORES PARA EL MODAL
+  // ======================================================================
+  const handleDayClick = (day, events) => {
+    setModalDate(day);
+    setModalEvents(events);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    // Reseteamos por si acaso
+    setModalEvents([]);
+    setModalDate(null);
+  };
+  // ======================================================================
 
   //Validacion
   if (!user) {
@@ -193,8 +224,9 @@ function Dashboard() {
   // 4. Obtener el número del día (ej: 28)
   const dayOfMonth = today.getDate();
   // --- FIN DEL CÓDIGO DE FECHA ---
+
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
+    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
       <Box sx={{ flexGrow: 1, padding: 3, width: "100%" }}>
         <Grid
           container
@@ -267,14 +299,13 @@ function Dashboard() {
                 >
                   Calendario
                 </Typography>
-                <Box sx={{ color: "primary.main" }}>
-                  <CalendarDays />
-                </Box>
+              <CalendarAddButton onEventAdded={fetchFechas}/>
               </Box>
 
               <DateCalendar
                 // Conecta el estado
                 value={selectedDate}
+
                 onChange={(newDate) => setSelectedDate(newDate)}
                 // Usa el componente personalizado para renderizar los días
                 slots={{
@@ -283,6 +314,7 @@ function Dashboard() {
                 slotProps={{
                   day: {
                     fechas: fechas,
+                    onDayClick: handleDayClick, // Pasa la función para abrir el modal
                   },
                 }}
               />
@@ -396,6 +428,13 @@ function Dashboard() {
           </Grid>
         </Grid>
       </Box>
+      <EventDetailsDialog
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        date={modalDate}
+        events={modalEvents}
+      />
+     
     </LocalizationProvider>
   );
 }
