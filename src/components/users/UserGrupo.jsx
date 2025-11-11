@@ -11,6 +11,7 @@ import { fetchMateriasGrupo } from "../services/materiasService.js";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import GroupIcon from "@mui/icons-material/Group";
+import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
 import {
   Box,
   Button,
@@ -75,6 +76,26 @@ export default function UserGrupo({ id }) {
         ?.asignatura,
     };
     navigate("/listaAsistenciamateria", { state: datosParaEnviar });
+  };
+
+  const handleNavigateToActividades = () => {
+    // 1. Encuentra el nombre de la materia seleccionada
+    const materiaSeleccionada = materias.find(
+      (m) => m.clave === selectedMateriaClave
+    );
+    if (!materiaSeleccionada) {
+      setSelectedMateriaClave(null);
+    }
+    // 2. Prepara los datos que quieres enviar
+    const datosParaEnviar = {
+      grupoId: id,
+      materiaClave: selectedMateriaClave,
+      year: new Date().getFullYear(),
+      nombreMateria: materias.find((m) => m.clave === selectedMateriaClave)
+        ?.asignatura,
+    };
+    console.log(datosParaEnviar);
+    navigate("/trabajo", { state: datosParaEnviar });
   };
 
   const handleNavigateToCalifacacionesParcilaes = () => {
@@ -212,8 +233,18 @@ export default function UserGrupo({ id }) {
         >
           <ListAltIcon />
         </IconButton>
-        <IconButton aria-label="actividades" disabled={!selectedMateriaClave}
-        onClick={handleNavigateToCalifacacionesParcilaes}>
+        <IconButton
+          aria-label="actvidades"
+          disabled={!selectedMateriaClave}
+          onClick={handleNavigateToActividades}
+        >
+          <HistoryEduIcon />
+        </IconButton>
+        <IconButton
+          aria-label="calificaciones_parciales"
+          disabled={!selectedMateriaClave}
+          onClick={handleNavigateToCalifacacionesParcilaes}
+        >
           <ChecklistIcon />
         </IconButton>
       </Box>
@@ -284,7 +315,9 @@ export default function UserGrupo({ id }) {
       <CambiarAlumnosGrupo
         open={modalGrupoCambio}
         onClose={() => setModalGrupoCambio(false)}
-        onAccept={()=>{setModalGrupoCambio(false)}}
+        onAccept={() => {
+          setModalGrupoCambio(false);
+        }}
         grupoId={id}
       />
     </Box>

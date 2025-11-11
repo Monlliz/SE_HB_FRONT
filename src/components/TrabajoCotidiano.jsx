@@ -2,16 +2,17 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import GestionarRubrosModal from "./modals/Gestion/GestionarRubrosModal.jsx";
+import GestionTrabajos from "./modals/Gestion/GestionTrabajos.jsx";
 
 // Importa tus servicios reales
 import {
-  fetchRubrosMateriaGet,
-  syncCalificaciones_service,
-  fetchRubrosCalificacionesGet,
+  fetchRubrosTCGet,
+  syncCalificacionesTC_service,
+  fetchCalificacionesTCGet,
 } from "./services/rubroService.js";
-import { fetchAlumnoPerfilGet } from "./services/alumnosService.js";
+import { fetchAlumnoGrupoGet } from "./services/alumnosService.js";
 
+// Importaciones de MUI
 import {
   Table,
   TableBody,
@@ -30,14 +31,14 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  TextField, // --- NUEVO ---
-  IconButton, // --- NUEVO ---
-  Tooltip, // --- NUEVO ---
+  TextField,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
-import EditIcon from "@mui/icons-material/Edit"; // --- NUEVO ---
-import SaveIcon from "@mui/icons-material/Save"; // --- NUEVO ---
-import CancelIcon from "@mui/icons-material/Cancel"; // --- NUEVO ---
+import EditIcon from "@mui/icons-material/Edit";
+import SaveIcon from "@mui/icons-material/Save";
+import CancelIcon from "@mui/icons-material/Cancel";
 
 // Lógica para generar los años (ej. [2025, 2024, 2023])
 const currentYear = new Date().getFullYear();
@@ -46,13 +47,11 @@ const years = Array.from(new Array(3), (val, index) => currentYear - index);
 /**
  * Componente principal para gestionar calificaciones de un grupo.
  */
-const GestionarRubros = () => {
+const TrabajoCotidiano = () => {
   const { token } = useAuth();
   const location = useLocation();
   const {
     grupoId,
-    idNormalizado,
-    semestre,
     materiaClave,
     nombreMateria,
     year: initialYear,
@@ -62,7 +61,6 @@ const GestionarRubros = () => {
   const [rubros, setRubros] = useState([]); // Configuración de Rubros (Columnas)
   const [alumnos, setAlumnos] = useState([]); // Lista de Alumnos (Filas)
   const [calificaciones, setCalificaciones] = useState([]); // Notas
-  // --- NUEVO ---
   const [originalCalificaciones, setOriginalCalificaciones] = useState([]); // Para el botón "Cancelar"
 
   // --- ESTADOS DE FILTROS ---
@@ -79,9 +77,9 @@ const GestionarRubros = () => {
   const [modalAbierto, setModalAbierto] = useState(false);
 
   // --- ESTADOS DE EDICIÓN ---
-  const [isEditing, setIsEditing] = useState(false); // --- NUEVO ---
-  const [isSaving, setIsSaving] = useState(false); // --- NUEVO ---
-  const [saveError, setSaveError] = useState(null); // --- NUEVO ---
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
   // --- CARGA 1: RÚBROS (CONFIGURACIÓN DE COLUMNAS) ---
   const cargarRubros = useCallback(async () => {
@@ -93,14 +91,23 @@ const GestionarRubros = () => {
     setLoadingRubros(true);
     setErrorRubros(null);
     try {
-      const data = await fetchRubrosMateriaGet(materiaClave, token);
-      setRubros(data.rubros || []);
+      const datosEnviar = {
+        materiaClave,
+        idGrupo: grupoId,
+        parcial,
+        yearC: selectedYear,
+      };
+      console.log("Cargando rubros con:", datosEnviar);
+      const data = await fetchRubrosTCGet(datosEnviar, token);
+
+      setRubros(data || []);
+      // ------------------
     } catch (err) {
       setErrorRubros(err.message);
     } finally {
       setLoadingRubros(false);
     }
-  }, [materiaClave, token]);
+  }, [materiaClave, grupoId, parcial, selectedYear, token]); // Añadidas todas las dependencias
 
   useEffect(() => {
     cargarRubros();
@@ -111,18 +118,11 @@ const GestionarRubros = () => {
     const cargarAlumnos = async () => {
       // ... (tu lógica de loading y errores) ...
       try {
-        const data = await fetchAlumnoPerfilGet(token, idNormalizado,semestre);
-        console.log("Datos de alumnos recibidos:", data);
-        // --- INICIO DE LA TRANSFORMACIÓN ---
-        // Mapeamos los datos recibidos para que coincidan
-        // con lo que el componente espera ("alumno_matricula")
+        const data = await fetchAlumnoGrupoGet(token, grupoId);
         const alumnosNormalizados = (data.alumnos || []).map((a) => ({
           ...a,
           alumno_matricula: a.matricula,
         }));
-        // --- FIN DE LA TRANSFORMACIÓN ---
-
-        // Guardamos los datos normalizados en el estado
         setAlumnos(alumnosNormalizados);
       } catch (err) {
         setErrorAlumnos(err.message);
@@ -140,20 +140,24 @@ const GestionarRubros = () => {
 
       setLoadingCalificaciones(true);
       setErrorCalificaciones(null);
-      // --- NUEVO ---
-      setIsEditing(false); // Salir del modo edición al cambiar filtros
+      setIsEditing(false);
       setSaveError(null);
 
       try {
-        const data = await fetchRubrosCalificacionesGet(
+        const context = {
           materiaClave,
+          idGrupo: grupoId,
           parcial,
-          selectedYear,
-          token
-        );
+          yearC: selectedYear,
+        };
+        const data = await fetchCalificacionesTCGet(context, token);
+        console.log("Calificaciones cargadas:", data);
         setCalificaciones(data);
 
-        // setOriginalCalificaciones(data); // --- NUEVO ---
+        // --- CORRECCIÓN ---
+        // Descomentar para que "Cancelar" funcione
+        setOriginalCalificaciones(data);
+        // ------------------
       } catch (err) {
         console.error("Error cargando calificaciones:", err);
         setErrorCalificaciones(
@@ -170,6 +174,7 @@ const GestionarRubros = () => {
     }
   }, [
     materiaClave,
+    grupoId, // Añadida
     parcial,
     selectedYear,
     token,
@@ -179,7 +184,25 @@ const GestionarRubros = () => {
 
   // --- COMBINACIÓN DE DATOS (ALUMNOS + CALIFICACIONES) ---
   const datosTabla = useMemo(() => {
-    // 1. Crear un "mapa" de calificaciones para búsqueda rápida.
+    // --- CAMBIO 1 ---
+    // Esta función ahora devuelve los PUNTOS directos (1, 0, o la ponderación)
+    const getPuntosObtenidos = (valorString, rubroPonderacion) => {
+      switch (valorString) {
+        case "Si":
+          return 1;
+        case "No":
+          return 0;
+        case "J":
+          return 1;
+        case "R":
+          // "R" (Retardo) vale los puntos guardados en la ponderación
+          return Number(rubroPonderacion);
+        default:
+          return 0; // Si es null o "", no suma puntos
+      }
+    };
+
+    // El Map se crea igual (esto está bien)
     const califMap = new Map();
     for (const calif of calificaciones) {
       if (!califMap.has(calif.alumno_matricula)) {
@@ -187,32 +210,29 @@ const GestionarRubros = () => {
       }
       califMap
         .get(calif.alumno_matricula)
-        .set(calif.id_rubro, calif.calificacion);
+        .set(calif.idrubrotc, calif.calificacion);
     }
 
-    // 2. Mapear la lista de alumnos (fuente de verdad)
     return alumnos.map((alumno) => {
       const susCalificaciones =
         califMap.get(alumno.alumno_matricula) || new Map();
 
-      // --- Lógica de promedio MODIFICADA ---
-      let sumaPonderada = 0;
-      let ponderacionTotal = 0; // Para calcular promedio aunque falten notas
+      let sumaPuntosObtenidos = 0;
+
+      const totalPuntosPosibles = rubros.length;
 
       for (const rubro of rubros) {
-        const nota = susCalificaciones.get(rubro.id_rubro);
-        // Solo promediar si la nota existe (es un número)
-        if (nota !== null && nota !== undefined) {
-          sumaPonderada += nota * Number(rubro.ponderacion);
-          ponderacionTotal += Number(rubro.ponderacion);
-        }
+        const notaString = susCalificaciones.get(rubro.idrubrotc);
+
+        const puntos = getPuntosObtenidos(notaString, rubro.ponderacion);
+
+        sumaPuntosObtenidos += puntos;
       }
 
-      // Evitar división por cero si no hay notas ni rubros
       const promedio =
-        ponderacionTotal > 0 ? sumaPonderada / ponderacionTotal : 0;
-      // O si prefieres que el promedio sea sobre el 100% siempre:
-      // const promedio = sumaPonderada; // (ya que sumaPonderada es nota * ponderacion)
+        totalPuntosPosibles > 0
+          ? (sumaPuntosObtenidos / totalPuntosPosibles) * 10
+          : 0;
 
       return {
         ...alumno,
@@ -222,18 +242,14 @@ const GestionarRubros = () => {
     });
   }, [alumnos, calificaciones, rubros]);
 
-  // --- MANEJADORES DE EVENTOS ---
-
-  // --- NUEVO ---
   const handleEdit = () => {
     setIsEditing(true);
     setSaveError(null);
   };
 
-  // --- NUEVO ---
   const handleCancel = () => {
     setIsEditing(false);
-    setCalificaciones(originalCalificaciones); // Revierte a los datos originales
+    setCalificaciones(originalCalificaciones);
     setSaveError(null);
   };
 
@@ -241,20 +257,34 @@ const GestionarRubros = () => {
     setIsSaving(true);
     setSaveError(null);
 
-    // 1. Preparamos el OBJETO que el backend espera
+    const rubrosMap = new Map();
+    for (const rubro of rubros) {
+      rubrosMap.set(rubro.idrubrotc, rubro.ponderacion);
+    }
+    const calificacionesParaDB = calificaciones.map((calif) => {
+      const ponderacionDelRubro = rubrosMap.get(calif.idrubrotc) || 0;
+
+      const valorNumerico = getValorNumericoParaDB(
+        calif.calificacion,
+        ponderacionDelRubro
+      );
+
+      return {
+        ...calif,
+        calificacion: valorNumerico,
+      };
+    });
+
     const batchData = {
-      grades: calificaciones, // El array de calificaciones
-      idGrupo: grupoId,
-      parcial: parcial,
-      yearC: selectedYear,
+      grades: calificacionesParaDB,
     };
 
     try {
-      // 2. Enviamos el objeto 'batchData'
-      await syncCalificaciones_service(batchData, token);
+      await syncCalificacionesTC_service(batchData, token);
 
       setIsEditing(false);
       setIsSaving(false);
+
       setOriginalCalificaciones(calificaciones);
     } catch (err) {
       console.error("Error al guardar:", err);
@@ -263,38 +293,25 @@ const GestionarRubros = () => {
     }
   };
 
-  // --- NUEVO ---
   const handleGradeChange = (matricula, idRubro, valor) => {
-    // Validar y convertir el valor
-    const valorLimpio = valor.trim();
-    let valorNumerico;
-
-    if (valorLimpio === "") {
-      valorNumerico = null; // Permitir borrar la calificación
-    } else {
-      valorNumerico = parseFloat(valorLimpio);
-      // Validaciones
-      if (isNaN(valorNumerico)) return; // Ignorar si no es número
-      if (valorNumerico < 0) valorNumerico = 0;
-      if (valorNumerico > 10) valorNumerico = 10;
-    }
+    const valorFinal = valor === "" ? null : valor;
 
     setCalificaciones((prevCalificaciones) => {
       const newState = [...prevCalificaciones];
       const index = newState.findIndex(
         (c) =>
-          c.alumno_matricula === matricula && c.id_rubro === Number(idRubro)
+          c.alumno_matricula === matricula && c.idrubrotc === Number(idRubro)
       );
 
       if (index > -1) {
-        // Actualiza la calificación existente
-        newState[index] = { ...newState[index], calificacion: valorNumerico };
-      } else if (valorNumerico !== null) {
-        // Añade la nueva calificación (si no es null)
+        // Guarda el string (o null) directamente en el estado
+        newState[index] = { ...newState[index], calificacion: valorFinal };
+      } else if (valorFinal !== null) {
+        // O crea el nuevo registro con el string
         newState.push({
           alumno_matricula: matricula,
-          id_rubro: Number(idRubro),
-          calificacion: valorNumerico,
+          idrubrotc: Number(idRubro),
+          calificacion: valorFinal,
         });
       }
       return newState;
@@ -302,14 +319,28 @@ const GestionarRubros = () => {
   };
 
   // --- RENDERIZADO PRINCIPAL ---
-
-  // Estado de carga general (Rubros y Alumnos son esenciales)
   const isEssentialLoading = loadingRubros || loadingAlumnos;
   const canEdit =
     !isEssentialLoading &&
     !errorRubros &&
     !errorAlumnos &&
     datosTabla.length > 0;
+
+  //Calificaciones
+  const getValorNumericoParaDB = (valorString, ponderacion) => {
+    switch (valorString) {
+      case "Si":
+        return 1;
+      case "No":
+        return 0;
+      case "J":
+        return 1; // Justificante
+      case "R":
+        return Number(ponderacion); // <-- CORREGIDO: Usa la ponderación
+      default:
+        return null; // "Vacío" o cualquier otra cosa es null
+    }
+  };
 
   return (
     <Box
@@ -326,7 +357,7 @@ const GestionarRubros = () => {
           width: "100%",
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "flex-start", // Alinea verticalmente
+          alignItems: "flex-start",
           mb: 2,
           flexShrink: 0,
         }}
@@ -341,7 +372,7 @@ const GestionarRubros = () => {
             <FormControl
               size="small"
               sx={{ minWidth: 120 }}
-              disabled={isEditing} // --- MODIFICADO ---
+              disabled={isEditing}
             >
               <InputLabel id="parcial-select-label">Parcial</InputLabel>
               <Select
@@ -358,7 +389,7 @@ const GestionarRubros = () => {
           </Stack>
         </Box>
         <Stack direction="row" spacing={1} alignItems="flex-start">
-          {/* --- BLOQUE DE BOTONES MODIFICADO --- */}
+          {/* Bloque de botones de Edición/Guardado */}
           {isEditing ? (
             <>
               <Button
@@ -391,7 +422,7 @@ const GestionarRubros = () => {
               variant="contained"
               startIcon={<EditIcon />}
               onClick={handleEdit}
-              disabled={!canEdit || loadingCalificaciones} // No editar si no hay datos
+              disabled={!canEdit || loadingCalificaciones}
             >
               Editar Calificaciones
             </Button>
@@ -399,16 +430,15 @@ const GestionarRubros = () => {
 
           <Button
             variant="outlined"
-            startIcon={<SettingsIcon />}
             onClick={() => setModalAbierto(true)}
-            disabled={isEssentialLoading || isEditing} // No configurar si carga o edita
+            disabled={isEssentialLoading || isEditing}
           >
-            Gestionar Rúbros
+            + Actividad
           </Button>
         </Stack>
       </Box>
 
-      {/* --- NUEVO: Alerta de Error de Guardado --- */}
+      {/* Alerta de Error de Guardado */}
       {saveError && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {saveError}
@@ -437,9 +467,9 @@ const GestionarRubros = () => {
                     fontWeight: "bold",
                     minWidth: 200,
                     zIndex: 101,
-                    left: 0, // --- MODIFICADO ---
-                    position: "sticky", // --- MODIFICADO ---
-                    backgroundColor: "background.paper", // --- MODIFICADO ---
+                    left: 0,
+                    position: "sticky",
+                    backgroundColor: "background.paper",
                   }}
                 >
                   Nombre Alumno
@@ -456,7 +486,7 @@ const GestionarRubros = () => {
                 ) : (
                   rubros.map((rubro) => (
                     <TableCell
-                      key={rubro.id_rubro}
+                      key={rubro.idrubrotc}
                       align="center"
                       sx={{ fontWeight: "bold", minWidth: 150 }}
                     >
@@ -466,7 +496,13 @@ const GestionarRubros = () => {
                         display="block"
                         color="text.secondary"
                       >
-                        ({Number(rubro.ponderacion) * 100}%)
+                        {rubro.fecha_limite
+                          ? rubro.fecha_limite
+                              .split("T")[0]
+                              .split("-")
+                              .reverse()
+                              .join("-")
+                          : "-"}
                       </Typography>
                     </TableCell>
                   ))
@@ -532,38 +568,45 @@ const GestionarRubros = () => {
                         borderRight: "1px solid rgba(224, 224, 224, 1)",
                       }}
                     >
-                      {` ${alumno.apellidop} ${alumno.apellidom}`}
+                      {`${alumno.apellidop} ${alumno.apellidom} `}
                     </TableCell>
 
                     {rubros.map((rubro) => (
                       <TableCell
-                        key={`${alumno.alumno_matricula}-${rubro.id_rubro}`}
+                        // --- CORRECCIÓN ---
+                        key={`${alumno.alumno_matricula}-${rubro.idrubrotc}`}
                         align="center"
                       >
                         {isEditing ? (
-                          <TextField
-                            type="number"
-                            size="small"
-                            value={
-                              alumno.calificacionesMap.get(rubro.id_rubro) ?? ""
-                            }
-                            onChange={(e) =>
-                              handleGradeChange(
-                                alumno.alumno_matricula,
-                                rubro.id_rubro,
-                                e.target.value
-                              )
-                            }
-                            inputProps={{
-                              min: 0,
-                              max: 10,
-                              step: 0.1,
-                            }}
-                            sx={{ width: "90px" }}
-                            disabled={isSaving}
-                          />
+                          <FormControl size="small" sx={{ width: "120px" }}>
+                            <Select
+                              value={
+                                // Ahora el map.get() devuelve "Si", "No", "J", "R" o null
+                                // Usamos ?? "" para manejar el null y que coincida con el MenuItem vacío
+                                alumno.calificacionesMap.get(rubro.idrubrotc) ??
+                                ""
+                              }
+                              onChange={(e) =>
+                                handleGradeChange(
+                                  alumno.alumno_matricula,
+                                  rubro.idrubrotc,
+                                  e.target.value
+                                )
+                              }
+                              disabled={isSaving}
+                              displayEmpty
+                            >
+                              <MenuItem value="">
+                                <em>(Vacío)</em>
+                              </MenuItem>
+                              <MenuItem value={"Si"}>Si</MenuItem>
+                              <MenuItem value={"No"}>No</MenuItem>
+                              <MenuItem value={"J"}>Justificante</MenuItem>
+                              <MenuItem value={"R"}>Retardo</MenuItem>
+                            </Select>
+                          </FormControl>
                         ) : (
-                          alumno.calificacionesMap.get(rubro.id_rubro) ?? "-"
+                          alumno.calificacionesMap.get(rubro.idrubrotc) ?? "-"
                         )}
                       </TableCell>
                     ))}
@@ -576,7 +619,6 @@ const GestionarRubros = () => {
                           alumno.promedio >= 6 ? "success.main" : "error.main",
                       }}
                     >
-                      {/* --- MODIFICADO: Muestra "Calculando..." si se edita --- */}
                       {isEditing ? (
                         <Tooltip title="El promedio final se actualizará al guardar">
                           <span style={{ fontStyle: "italic", color: "gray" }}>
@@ -597,13 +639,19 @@ const GestionarRubros = () => {
 
       {/* Modal de Gestión de Rúbros */}
       {modalAbierto && (
-        <GestionarRubrosModal
+        <GestionTrabajos
           open={modalAbierto}
           onClose={() => setModalAbierto(false)}
           rubrosActuales={rubros}
-          materiaClave={materiaClave}
-          nombreMateria={materiaClave}
           token={token}
+          // --- CORRECCIONES ---
+          // Pasar las props dinámicas correctas
+          materiaClave={materiaClave}
+          nombreMateria={nombreMateria}
+          idGrupo={grupoId}
+          parcial={parcial}
+          yearC={selectedYear}
+          // --------------------
           onGuardar={() => {
             setModalAbierto(false);
             cargarRubros(); // Recarga la configuración de rubros
@@ -614,4 +662,4 @@ const GestionarRubros = () => {
   );
 };
 
-export default GestionarRubros;
+export default TrabajoCotidiano;

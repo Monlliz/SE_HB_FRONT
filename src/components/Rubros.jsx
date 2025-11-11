@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import GestionarRubrosModal from "./modals/rubros/GestionarRubrosModal.jsx";
+import GestionarRubrosModal from "./modals/Gestion/GestionarRubrosModal.jsx";
 
 // Importa tus servicios reales
 import {

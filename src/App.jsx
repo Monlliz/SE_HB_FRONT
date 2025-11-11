@@ -9,10 +9,11 @@ import Alumno from "./components/Alumno.jsx";
 import ReportePDF from "./components/ReportePDF.jsx";
 import ListaAsistenciaMateria from "./components/ListaAsistenciaMateria.jsx";
 import ListaAsistenciaMateriaPerfil from "./components/ListaAsistenciaMateriaPerfil.jsx";
-import Rubros from "./components/Rubros.jsx"
-import RubrosPerfil from "./components/RubrosPerfil.jsx"
-import { ProtectedRoute } from "./components/ProtectedRoute.jsx";
+import Rubros from "./components/Rubros.jsx";
+import RubrosPerfil from "./components/RubrosPerfil.jsx";
 import Dashboard from "./components/Dashboard.jsx";
+import TrabajoCotidiano from "./components/TrabajoCotidiano.jsx";
+import { ProtectedRoute } from "./components/ProtectedRoute.jsx";
 
 function App() {
   return (
@@ -27,13 +28,20 @@ function App() {
         <Route path="/grupos" element={<Grupo />} />
         <Route path="/materias" element={<Materias />} />
         <Route path="/alumnos" element={<Alumno />} />
+        <Route path="/trabajo" element={<TrabajoCotidiano />} />
         <Route path="/listaAsistencia" element={<ListaAsistencia />} />
-        <Route path="/listaAsistenciamateria" element={<ListaAsistenciaMateria />} />
-       <Route path="/listaAsistenciamateriaPerfil" element={<ListaAsistenciaMateriaPerfil />} />
+        <Route
+          path="/listaAsistenciamateria"
+          element={<ListaAsistenciaMateria />}
+        />
+        <Route
+          path="/listaAsistenciamateriaPerfil"
+          element={<ListaAsistenciaMateriaPerfil />}
+        />
         <Route path="/Reporte" element={<ReportePDF />} />
-        <Route path="/Rubros" element= {<Rubros/> } />
-         <Route path="/RubrosPerfil" element= {<RubrosPerfil/> } />
-        <Route path="/Inicio" element= {<Dashboard/> } />
+        <Route path="/Rubros" element={<Rubros />} />
+        <Route path="/RubrosPerfil" element={<RubrosPerfil />} />
+        <Route path="/Inicio" element={<Dashboard />} />
         {/*Mas rutas protegidas aquí */}
       </Route>
 
