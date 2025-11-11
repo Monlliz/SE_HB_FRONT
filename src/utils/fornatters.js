@@ -14,3 +14,8 @@ export function obtenerFechaFormateada() {
   const fechaFormateada = fechaActual.toLocaleDateString('es-MX', opciones);
   return capitalizarPrimeraLetra(fechaFormateada);
 }
+
+export function getFirstText (fullName) {
+  if (!fullName) return '';
+  return fullName.trim().split(' ')[0];
+};

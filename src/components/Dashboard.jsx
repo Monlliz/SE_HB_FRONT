@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx"; // Contexto para la autenticación.
 import EventDetailsDialog from "./modals/Calendario/EventDetailsDialog.jsx";
 import EventTicker from "./EventTicker.jsx";
-import {capitalizarPrimeraLetra} from '../utils/fornatters';
+import {capitalizarPrimeraLetra,getFirstText} from '../utils/fornatters';
 // Componentes de Material-UI
 import {
   Grid,
@@ -136,6 +136,8 @@ function Dashboard() {
   const [fechas, setFechas] = useState([]);
   const [loading, setLoading] = useState(false);
   const { user, token } = useAuth();
+  console.log(user);
+  
   const fetchFechas = useCallback(async () => {
     setLoading(true);
     try {
@@ -243,7 +245,7 @@ function Dashboard() {
               }}
             >
               <Typography variant="h4" sx={{ color: "white" }}>
-                Hola, {user.username}
+                Hola, {user.nombres != null ? capitalizarPrimeraLetra(getFirstText(user.nombres)) : capitalizarPrimeraLetra(getFirstText(user.username))}
               </Typography>
 
               {/* Placeholder para tu ilustración */}
