@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx"; // Contexto para la autenticación.
 import EventDetailsDialog from "./modals/Calendario/EventDetailsDialog.jsx";
-
+import EventTicker from "./EventTicker.jsx";
+import {capitalizarPrimeraLetra} from '../utils/fornatters';
 // Componentes de Material-UI
 import {
   Grid,
@@ -37,21 +38,7 @@ import { EVENT_TYPES } from "../data/eventTypes.jsx";
 import CalendarAddButton from "./modals/Calendario/CalendarAddButton.jsx";
 // Importa tu ilustración
 // import MyIllustration from './path/to/your/illustration.png';
-//Funcion para convertir a Title Case-------------------------------------
-function toTitleCase(str) {
-  if (!str) {
-    return ""; // Devuelve un string vacío si la entrada es nula o vacía
-  }
 
-  // 1. Toma el primer carácter y ponlo en mayúscula.
-  const firstLetter = str.charAt(0).toUpperCase();
-
-  // 2. Toma el resto del string (desde la posición 1) y ponlo en minúsculas.
-  const restOfString = str.slice(1).toLowerCase();
-
-  // 3. Únelos.
-  return firstLetter + restOfString;
-}
 //-----------------------------------------------------------------------
 // Función para obtener los datos de la fecha
 const getDatosFechas = (date, fechas) => {
@@ -215,15 +202,20 @@ function Dashboard() {
   // 2. Formatear el día de la semana (ej: "Martes")
   // Usamos 'es-MX' para español (puedes usar 'es' si prefieres)
   const dayFormatter = new Intl.DateTimeFormat("es-MX", { weekday: "long" });
-  const dayOfWeek = toTitleCase(dayFormatter.format(today));
+  const dayOfWeek = capitalizarPrimeraLetra(dayFormatter.format(today));
 
   // 3. Formatear el nombre del mes (ej: "Octubre")
   const monthFormatter = new Intl.DateTimeFormat("es-MX", { month: "long" });
-  const monthName = toTitleCase(monthFormatter.format(today));
+  const monthName = capitalizarPrimeraLetra(monthFormatter.format(today));
 
   // 4. Obtener el número del día (ej: 28)
   const dayOfMonth = today.getDate();
   // --- FIN DEL CÓDIGO DE FECHA ---
+
+
+  // Filtrar los eventos para hoy
+  const todaysEvents = loading ? [] : getDatosFechas(today, fechas);
+
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
@@ -244,7 +236,7 @@ function Dashboard() {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                backgroundColor: "primary.main", // Un azul claro
+                backgroundColor: "primary.main", 
                 borderRadius: "1rem",
                 boxShadow: "none",
                 //opacity: 0.9, // Control de transparencia general
@@ -274,7 +266,7 @@ function Dashboard() {
               </Box>
             </Paper>
           </Grid>
-
+         
           {/* ====== 2. Contenido Principal (3 columnas) ====== */}
 
           {/* --- Columna 1 (md={5}) --- */}
@@ -299,13 +291,18 @@ function Dashboard() {
                 >
                   Calendario
                 </Typography>
-              <CalendarAddButton onEventAdded={fetchFechas}/>
+                <CalendarAddButton onEventAdded={fetchFechas} />
               </Box>
 
               <DateCalendar
                 // Conecta el estado
                 value={selectedDate}
-
+                 sx={{
+                  // Apunta a la clase CSS del label del header
+                  ".MuiPickersCalendarHeader-label": {
+                    textTransform: "capitalize", // Pone la primera letra en mayúscula
+                  },
+                }}
                 onChange={(newDate) => setSelectedDate(newDate)}
                 // Usa el componente personalizado para renderizar los días
                 slots={{
@@ -320,28 +317,38 @@ function Dashboard() {
               />
             </Paper>
           </Grid>
+          
 
-          {/* --- Columna 2 (md={2}) --- */}
-          <Grid
+         {/* --- Columna 2 (Ticker Y Fecha) --- */}
+           <Grid
             item
             xs={12}
-            sm={2}
+            sm={4} 
+            md={4} 
             sx={{
               display: "flex",
+              flexDirection: "column", // <-- CAMBIO: Apila verticalmente
               alignItems: "center",
-              justifyContent: "center",
+              justifyContent: "flex-start", // <-- CAMBIO: Alinea arriba
+              gap: 10, // <-- CAMBIO: Añade espacio entre los items
             }}
           >
+            {/* --- 2a. BARRA DE NOTIFICACIONES (NUEVA POSICIÓN) --- */}
+            <Box sx={{ width: "100%" }}>
+              <EventTicker events={todaysEvents} />
+            </Box>
+
+            {/* --- 2b. Tarjeta de Fecha --- */}
             <Paper
               sx={{
                 padding: "2rem 1.5rem",
                 textAlign: "center",
                 backgroundColor: "primary.main",
-                // borderRadius: '16px', // Quita o comenta esta línea, clip-path lo sobrescribe en la parte inferior.
-                position: "relative", // Mantén esto si el Paper se mueve o tiene otros elementos posicionados
-                overflow: "hidden", // Asegura que el clip-path se aplique correctamente y no haya desbordamientos
+                position: "relative",
+                overflow: "hidden",
                 pb: "4rem",
                 clipPath: "polygon(0% 0%, 100% 0%, 100% 75%, 50% 100%, 0% 75%)",
+                width: "60%",
               }}
             >
               <Typography
@@ -382,7 +389,8 @@ function Dashboard() {
                 height: "50vh", // 1. Ocupa toda la altura
                 overflowY: "auto", // 2. Permite el scroll
                 flexWrap: "nowrap",
-
+                paddingBottom: '1.2rem ',
+                marginBottom: '1rem ',
                 // --- 3. TRUCO PARA OCULTAR LA BARRA DE SCROLL ---
                 // Para Webkit (Chrome, Safari, Edge)
                 "&::-webkit-scrollbar": {
@@ -417,7 +425,7 @@ function Dashboard() {
                           fontWeight="400"
                           color="primary.main"
                         >
-                          {toTitleCase(link.label)}
+                          {capitalizarPrimeraLetra(link.label)}
                         </Typography>
                       </CardContent>
                     </CardActionArea>
@@ -434,7 +442,7 @@ function Dashboard() {
         date={modalDate}
         events={modalEvents}
       />
-     
+
     </LocalizationProvider>
   );
 }

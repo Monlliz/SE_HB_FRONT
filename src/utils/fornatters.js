@@ -1,6 +1,6 @@
 export function capitalizarPrimeraLetra(cadena) {
   if (!cadena) return cadena;
-  return cadena[0].toUpperCase() + cadena.slice(1);
+  return cadena[0].toUpperCase() + cadena.slice(1).toLowerCase();
 }
 
 export function obtenerFechaFormateada() {
