@@ -88,8 +88,8 @@ function DiaConBadge(props) {
 
     // Buscamos el tipo dentro del JSON
     // Buscamos en EVENT_TYPES por clave (objeto, no array)
-    const tipoConfig = EVENT_TYPES[tipoPrioritario.tipo?.toLowerCase()];
-
+    const tipoConfig = EVENT_TYPES[tipoPrioritario.tipo];
+    
     if (tipoConfig && tipoConfig.color) {
       colorDelBadge = tipoConfig.color;
     }
@@ -136,7 +136,6 @@ function Dashboard() {
   const [fechas, setFechas] = useState([]);
   const [loading, setLoading] = useState(false);
   const { user, token } = useAuth();
-  console.log(user);
   
   const fetchFechas = useCallback(async () => {
     setLoading(true);
