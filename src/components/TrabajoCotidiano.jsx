@@ -133,6 +133,33 @@ const TrabajoCotidiano = () => {
     cargarAlumnos();
   }, [grupoId, token]);
 
+  //Adaptar la función para obtener el string desde el valor numérico
+  const getStringFromValor = (valorNumerico, ponderacionRubro) => {
+    // Si la BD trae null, lo mantenemos como null (el select mostrará "Vacío")
+    if (valorNumerico === null || valorNumerico === undefined) {
+      return null;
+    }
+
+    const valor = Number(valorNumerico);
+    const ponderacion = Number(ponderacionRubro);
+
+    if (valor === 1) {
+      // Asumimos que 1 siempre es "Si" al cargar.
+      // "J" (Justificante) también se guarda como 1, pero es una entrada manual.
+      return "Si";
+    }
+    if (valor === 0) {
+      return "No";
+    }
+    // Si el valor numérico es IGUAL a la ponderación del rubro, es un "Retardo"
+    if (ponderacion > 0 && valor === ponderacion) {
+      return "R";
+    }
+
+    // Fallback para valores inesperados (o nulos que no se capturaron)
+    return null;
+  };
+
   // --- CARGA 3: CALIFICACIONES (BASADO EN FILTROS) ---
   useEffect(() => {
     const cargarCalificaciones = async () => {
@@ -143,6 +170,12 @@ const TrabajoCotidiano = () => {
       setIsEditing(false);
       setSaveError(null);
 
+      // 1. Necesitas los rubros para saber la ponderación del "Retardo"
+      const rubrosMap = new Map();
+      for (const rubro of rubros) {
+        rubrosMap.set(rubro.idrubrotc, rubro.ponderacion);
+      }
+
       try {
         const context = {
           materiaClave,
@@ -150,14 +183,29 @@ const TrabajoCotidiano = () => {
           parcial,
           yearC: selectedYear,
         };
+        // data aquí es un array con calificaciones numéricas (ej: {..., calificacion: 1})
         const data = await fetchCalificacionesTCGet(context, token);
-        console.log("Calificaciones cargadas:", data);
-        setCalificaciones(data);
+        console.log("Calificaciones numéricas cargadas:", data);
 
-        // --- CORRECCIÓN ---
-        // Descomentar para que "Cancelar" funcione
-        setOriginalCalificaciones(data);
-        // ------------------
+        // 2. Transforma los datos numéricos a strings ("Si", "No", "R")
+        const calificacionesTransformadas = data.map((calif) => {
+          // Busca la ponderación de este rubro específico
+          const ponderacion = rubrosMap.get(calif.idrubrotc) || 0;
+          return {
+            ...calif,
+            // Reemplaza el valor numérico (1, 0, 0.5) por el string ("Si", "No", "R")
+            calificacion: getStringFromValor(calif.calificacion, ponderacion),
+          };
+        });
+
+        console.log(
+          "Calificaciones transformadas a string:",
+          calificacionesTransformadas
+        );
+
+        // 3. Guarda los datos transformados (strings) en el estado
+        setCalificaciones(calificacionesTransformadas);
+        setOriginalCalificaciones(calificacionesTransformadas); // Guardar la versión transformada
       } catch (err) {
         console.error("Error cargando calificaciones:", err);
         setErrorCalificaciones(
@@ -174,13 +222,14 @@ const TrabajoCotidiano = () => {
     }
   }, [
     materiaClave,
-    grupoId, // Añadida
+    grupoId,
     parcial,
     selectedYear,
     token,
     loadingRubros,
     loadingAlumnos,
-  ]); // Dependencias
+    rubros, // <--- 4. AÑADIR 'rubros' A LAS DEPENDENCIAS
+  ]);
 
   // --- COMBINACIÓN DE DATOS (ALUMNOS + CALIFICACIONES) ---
   const datosTabla = useMemo(() => {
