@@ -12,8 +12,11 @@ import {
   View,
   StyleSheet,
   Image,
+  
+  PDFDownloadLink,
 } from "@react-pdf/renderer";
-import { Box, Typography } from "@mui/material"; // Añadí Typography para el mensaje de error
+import { Box, Typography,Button,CircularProgress } from "@mui/material";
+import DownloadIcon from "@mui/icons-material/Download";
 import logo from "../assets/images/herbart_logo.jpg";
 
 // La definición de estilos no cambia
@@ -109,9 +112,7 @@ const MiDocumentoPDF = ({ datos }) => {
 
         {/* Usamos los datos recibidos en las props */}
         <View style={styles.infoSection}>
-          <Text style={styles.text}>
-            Alumno:
-          </Text>
+          <Text style={styles.text}>Alumno:</Text>
           <Text
             style={{
               ...styles.text,
@@ -153,15 +154,12 @@ const MiDocumentoPDF = ({ datos }) => {
 
               {/* 4. Descripción en un párrafo separado */}
               <Text style={styles.incidenteDescripcion}>
-                
-             {`Solicitado por: ${incidente.solicitante}\nDescripción: ${incidente.descripcion}`}
-          
+                {`Solicitado por: ${incidente.solicitante}\nDescripción: ${incidente.descripcion}`}
               </Text>
             </View>
           ))}
         </View>
-        
-         
+
         <View style={{ marginTop: 10 }}>
           <Text style={styles.text}>
             Se le solicita atentamente que atienda las incidencias presentadas
@@ -185,21 +183,20 @@ const MiDocumentoPDF = ({ datos }) => {
 // 3. MODIFICAMOS 'ReportePDF' para que obtenga los datos y los pase
 const ReportePDF = () => {
   const location = useLocation();
-  const datosReporte = location.state; // Obtenemos los datos enviados
+  const datosReporte = location.state;
 
-  // Verificación: si no hay datos, muestra un mensaje
   if (!datosReporte) {
     return (
       <Box sx={{ p: 4, textAlign: "center" }}>
         <Typography variant="h6">
           No hay datos para generar el reporte.
         </Typography>
-        <Typography>
-          Por favor, regresa y selecciona los datos del alumno.
-        </Typography>
       </Box>
     );
   }
+
+  // Detectar si es móvil (una forma sencilla)
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   return (
     <Box
@@ -207,14 +204,52 @@ const ReportePDF = () => {
         display: "flex",
         flexDirection: "column",
         width: "100%",
-        height: "calc(100vh - 8vh)", // Ajusta la altura
+        height: "calc(100vh - 8vh)",
         marginTop: "8vh",
+        alignItems: "center", // Centrar contenido
       }}
     >
-      <PDFViewer width="100%" height="100%">
-        {/* Pasamos los datos obtenidos al componente del PDF */}
-        <MiDocumentoPDF datos={datosReporte} />
-      </PDFViewer>
+
+      <Box sx={{ my: 2 }}>
+        <PDFDownloadLink
+          document={<MiDocumentoPDF datos={datosReporte} />}
+          fileName={`Reporte_${datosReporte.R_MATRICULA}.pdf`}
+          style={{ textDecoration: "none" }}
+        >
+          {({ blob, url, loading, error }) => (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={
+                loading ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  <DownloadIcon />
+                )
+              }
+              disabled={loading}
+            >
+              {loading ? "Generando PDF..." : "Descargar Reporte PDF"}
+            </Button>
+          )}
+        </PDFDownloadLink>
+      </Box>
+
+      {/* VISUALIZADOR: Solo lo mostramos si NO es móvil para evitar errores visuales */}
+      {!isMobile ? (
+        <PDFViewer width="100%" height="100%">
+          <MiDocumentoPDF datos={datosReporte} />
+        </PDFViewer>
+      ) : (
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ px: 3, textAlign: "center" }}
+        >
+          La vista previa no está disponible en dispositivos móviles. Por favor,
+          utiliza el botón de arriba para descargar el archivo.
+        </Typography>
+      )}
     </Box>
   );
 };
