@@ -10,7 +10,7 @@ import {
   syncCalificacionesTC_service,
   fetchCalificacionesTCGet,
 } from "./services/rubroService.js";
-import { fetchAlumnoGrupoGet } from "./services/alumnosService.js";
+import { fetchAlumnoPerfilGet } from "./services/alumnosService.js";
 
 // Importaciones de MUI
 import {
@@ -52,6 +52,8 @@ const TrabajoCotidiano = () => {
   const location = useLocation();
   const {
     grupoId,
+    idNormalizado,
+    semestre,
     materiaClave,
     nombreMateria,
     year: initialYear,
@@ -118,7 +120,7 @@ const TrabajoCotidiano = () => {
     const cargarAlumnos = async () => {
       // ... (tu lógica de loading y errores) ...
       try {
-        const data = await fetchAlumnoGrupoGet(token, grupoId);
+        const data = await fetchAlumnoPerfilGet(token, idNormalizado, semestre);
         const alumnosNormalizados = (data.alumnos || []).map((a) => ({
           ...a,
           alumno_matricula: a.matricula,

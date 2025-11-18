@@ -13,6 +13,7 @@ import Rubros from "./components/Rubros.jsx";
 import RubrosPerfil from "./components/RubrosPerfil.jsx";
 import Dashboard from "./components/Dashboard.jsx";
 import TrabajoCotidiano from "./components/TrabajoCotidiano.jsx";
+import TrabajoCotidianoP from "./components/TrabajoCotidianoPerfil.jsx"
 import { ProtectedRoute } from "./components/ProtectedRoute.jsx";
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
         <Route path="/materias" element={<Materias />} />
         <Route path="/alumnos" element={<Alumno />} />
         <Route path="/trabajo" element={<TrabajoCotidiano />} />
+         <Route path="/trabajoperfil" element={<TrabajoCotidianoP />} />
         <Route path="/listaAsistencia" element={<ListaAsistencia />} />
         <Route
           path="/listaAsistenciamateria"

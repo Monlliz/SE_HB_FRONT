@@ -223,7 +223,7 @@ const ListaAsistencia = () => {
         height: "calc(100vh - 64px)",
         display: "flex",
         flexDirection: "column",
-        marginTop: "50px",
+       
       }}
     >
       {/* Encabezado con título y botón para agregar nueva asistencia */}

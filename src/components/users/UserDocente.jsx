@@ -1,10 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 //los modales
 import NuevaMateriaDocente from "../modals/Docente/NuevaMateriaDocente.jsx";
 import EditDocente from "../modals/Docente/EditDocente.jsx";
 import DesactivarDocente from "../modals/Docente/DesactivarDocente.jsx";
 import BorrarMateria from "../modals/Docente/BorrarMateria.jsx";
-
+//iconos
+import ListAltIcon from "@mui/icons-material/ListAlt";
+import ChecklistIcon from "@mui/icons-material/Checklist";
+import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 //import servicio
 import {
   fetchDocenteGetOne,
@@ -20,6 +24,7 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  IconButton,
 } from "@mui/material";
 //Funcion principal (El id es del docente)
 export default function UserDocente({ id }) {
@@ -31,7 +36,7 @@ export default function UserDocente({ id }) {
   const [modalEditOpen, setModalEditOpen] = useState(false);
   const [modalDesactivarOpen, setModalDesactivarOpen] = useState(false);
   const [modalBorrarMateriaOpen, setModalBorrarMateriaOpen] = useState(false);
-
+  const navigate = useNavigate();
   //URL de la API
   const apiUrl = import.meta.env.VITE_API_URL;
   const { token } = useAuth();
@@ -97,6 +102,49 @@ export default function UserDocente({ id }) {
   if (!docente) {
     return <Typography>Cargando docente...</Typography>;
   }
+
+  //Navegacion a otras rutas
+
+  const procesarNavegacion = (materia, rutaSimple, rutaPerfil) => {
+    // Datos base que siempre van
+    const baseData = {
+      grupoId: materia.grupo,
+      materiaClave: materia.clave,
+      year: new Date().getFullYear(),
+      nombreMateria: materia.nombre || materia.asignatura,
+    };
+
+    if (materia.grupo.length < 3) {
+      navigate(rutaSimple, { state: baseData });
+    } else {
+      const [semestre, idNormalizado] = materia.grupo.split("-"); // Desestructuración limpia
+
+      const perfilData = {
+        ...baseData,
+        semestre: semestre,
+        idNormalizado: idNormalizado,
+      };
+
+      navigate(rutaPerfil, { state: perfilData });
+    }
+  };
+
+  const handleNavigateToListaMateria = (materia) => {
+    procesarNavegacion(
+      materia,
+      "/listaAsistenciamateria",
+      "/listaAsistenciamateriaPerfil"
+    );
+  };
+
+  const handleNavigateToCalifacacionesParcilaes = (materia) => {
+    procesarNavegacion(materia, "/rubros", "/rubrosperfil");
+  };
+
+
+  const handleNavigateToActividades = (materia) => {
+    procesarNavegacion(materia, "/trabajo", "/trabajoperfil");
+  };
 
   return (
     <Box
@@ -277,6 +325,9 @@ export default function UserDocente({ id }) {
               <TableRow>
                 <TableCell>Clave</TableCell>
                 <TableCell>Nombre</TableCell>
+                <TableCell>Grupo</TableCell>
+                {/* 1. Nueva columna de encabezado */}
+                <TableCell align="center">Acciones</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -284,12 +335,56 @@ export default function UserDocente({ id }) {
                 <TableRow
                   key={m.clave}
                   hover
+                  // Puedes mantener la selección visual si quieres, pero ya no es estricta para los botones
                   selected={m.clave === selectedMateriaClave}
                   onClick={() => setSelectedMateriaClave(m.clave)}
                   sx={{ cursor: "pointer" }}
                 >
                   <TableCell>{m.clave}</TableCell>
                   <TableCell>{m.nombre}</TableCell>
+                  <TableCell>{m.grupo}</TableCell>
+
+                  {/* 2. Nueva celda con los botones agrupados */}
+                  <TableCell align="center">
+                    {/*stopPropagation evita que al hacer click en el botón se seleccione la fila entera*/}
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        display: "flex",
+                        gap: "5px",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <IconButton
+                        aria-label="lista"
+                        size="small" // Recomiendo small para que no ensanche mucho la tabla
+                        color="primary"
+                        onClick={() => handleNavigateToListaMateria(m)}
+                      >
+                        <ListAltIcon />
+                      </IconButton>
+
+                      <IconButton
+                        aria-label="actvidades"
+                        size="small"
+                        color="secondary"
+                        onClick={() => handleNavigateToActividades(m)}
+                      >
+                        <AutoStoriesIcon />
+                      </IconButton>
+
+                      <IconButton
+                        aria-label="calificaciones_parciales"
+                        size="small"
+                        color="success"
+                        onClick={() =>
+                          handleNavigateToCalifacacionesParcilaes(m)
+                        }
+                      >
+                        <ChecklistIcon />
+                      </IconButton>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

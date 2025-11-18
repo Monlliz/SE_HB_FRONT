@@ -10,7 +10,7 @@ import { fetchMateriasPerfil } from "../services/materiasService.js";
 //Iconos
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import ChecklistIcon from "@mui/icons-material/Checklist";
-
+import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import {
   Box,
   Button,
@@ -83,6 +83,28 @@ export default function UserPerfil({ id }) {
     };
     console.log(datosParaEnviar);
     navigate("/rubrosperfil", { state: datosParaEnviar });
+  };
+
+  const handleNavigateToActividades = () => {
+    // 1. Encuentra el nombre de la materia seleccionada
+    const materiaSeleccionada = materias.find(
+      (m) => m.clave === selectedMateriaClave
+    );
+    if (!materiaSeleccionada) {
+      setSelectedMateriaClave(null);
+    }
+    // 2. Prepara los datos que quieres enviar
+    const datosParaEnviar = {
+      grupoId: id,
+      semestre: semestre,
+      idNormalizado: grupoId,
+      materiaClave: selectedMateriaClave,
+      year: new Date().getFullYear(),
+      nombreMateria: materias.find((m) => m.clave === selectedMateriaClave)
+        ?.asignatura,
+    };
+    console.log(datosParaEnviar);
+    navigate("/trabajoperfil", { state: datosParaEnviar });
   };
 
   // Función para obtener las materias del grupo
@@ -190,7 +212,14 @@ export default function UserPerfil({ id }) {
           <ListAltIcon />
         </IconButton>
         <IconButton
-          aria-label="actividades"
+          aria-label="actvidades"
+          disabled={!selectedMateriaClave}
+          onClick={handleNavigateToActividades}
+        >
+               <AutoStoriesIcon />
+        </IconButton>
+        <IconButton
+          aria-label="calificaciones_parciales"
           disabled={!selectedMateriaClave}
           onClick={handleNavigateToCalifacacionesParcilaes}
         >

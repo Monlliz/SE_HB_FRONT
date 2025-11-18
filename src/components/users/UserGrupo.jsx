@@ -11,7 +11,8 @@ import { fetchMateriasGrupo } from "../services/materiasService.js";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import GroupIcon from "@mui/icons-material/Group";
-import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
+
+import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import {
   Box,
   Button,
@@ -238,7 +239,7 @@ export default function UserGrupo({ id }) {
           disabled={!selectedMateriaClave}
           onClick={handleNavigateToActividades}
         >
-          <HistoryEduIcon />
+          <AutoStoriesIcon />
         </IconButton>
         <IconButton
           aria-label="calificaciones_parciales"
