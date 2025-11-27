@@ -163,8 +163,8 @@ function Dashboard() {
 
   //------------------------------------------------------------------------
   //Verificar que es docente
+  //console.log(user);
  const esDocente = user.nombre_rol === "Docente";
- console.log(user);
  
   //Fetch de materias si es docente
   const fetchMaterias = useCallback(async () => {

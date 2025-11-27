@@ -4,20 +4,37 @@ import { useNavigate } from "react-router-dom";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  // const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token") || null);
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
+const [user, setUser] = useState(() => {
+    // Leemos ambos del almacenamiento
+    //const storedToken = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
 
+    // CONDICIÓN: Solo cargamos el usuario si existen AMBOS (token y usuario)
+    if (token) {
+      try {
+        return JSON.parse(storedUser);
+      } catch (error) {
+        console.error("Error al parsear usuario:", error);
+        return null;
+      }
+    }
+    
+    // Si no hay token, retornamos null (aunque exista el usuario en storage)
+    return null; 
+  });
   // Cargar datos del usuario si hay un token al iniciar
-  useEffect(() => {
+ /*  useEffect(() => {
     if (token) {
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         setUser(JSON.parse(storedUser));
       }
     }
-  }, [token]);
+  }, [token]); */
 
   const login = async (email, password) => {
     const response = await fetch(`${apiUrl}/login`, {

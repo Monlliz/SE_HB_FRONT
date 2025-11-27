@@ -43,7 +43,7 @@ export default function Navbar({ links = [] }) {
   // Obtener la ruta actual
   const location = useLocation();
   const currentPath = location.pathname;
-console.log(currentPath !== "/inicio");
+//console.log(currentPath !== "/inicio");
 
 
   
@@ -121,7 +121,8 @@ console.log(currentPath !== "/inicio");
               {navLinks.map((link) => (
                 <Button
                   key={link.label}
-                  href={link.href}
+                  component={Link}    // Usamos el componente Link
+                  to={link.href}
                   variant="text"
                   sx={{
                     color: "primary.dark",
