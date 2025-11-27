@@ -4,6 +4,9 @@ import { useAuth } from "../context/AuthContext.jsx"; // Contexto para la autent
 import EventDetailsDialog from "./modals/Calendario/EventDetailsDialog.jsx";
 import EventTicker from "./EventTicker.jsx";
 import {capitalizarPrimeraLetra,getFirstText} from '../utils/fornatters';
+//Mis materias
+import MisMaterias from "./MisMaterias.jsx";
+import {fetchDocenteMaterias} from "./services/docenteService.js";
 // Componentes de Material-UI
 import {
   Grid,
@@ -15,9 +18,6 @@ import {
   CardContent,
   Badge,
 } from "@mui/material";
-
-// ¡Iconos de Lucide como pediste!
-import { CalendarDays } from "lucide-react";
 
 // Componentes de MUI X Date Pickers
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -136,6 +136,9 @@ function Dashboard() {
   const [fechas, setFechas] = useState([]);
   const [loading, setLoading] = useState(false);
   const { user, token } = useAuth();
+
+   // --- 2. ESTADO PARA MATERIAS (Solo para docentes) ---
+  const [materias, setMaterias] = useState([]);
   
   const fetchFechas = useCallback(async () => {
     setLoading(true);
@@ -159,8 +162,30 @@ function Dashboard() {
   const [modalDate, setModalDate] = useState(null);
 
   //------------------------------------------------------------------------
+  //Verificar que es docente
+ const esDocente = user.nombre_rol === "Docente";
+ console.log(user);
+ 
+  //Fetch de materias si es docente
+  const fetchMaterias = useCallback(async () => {
+      if (!user.iddocente) return;
+      try {
+        if (!token) {
+          throw new Error("Autorización rechazada. No se encontró el token.");
+        }
+        //setSelectedMateriaClave(null);
+  
+        const { materias } = await fetchDocenteMaterias(token, user.iddocente);  
+        setMaterias(materias.materias || []);
+      } catch (err) {
+        console.error(err);
+        setMaterias([]); // En caso de error, asegurar que materias es un array vacío
+      }
+    }, [user.iddocente]); 
+  // ======================================================================
   useEffect(() => {
     fetchFechas();
+    esDocente ? fetchMaterias() : null;
   }, [fetchFechas]);
 
   // ======================================================================
@@ -216,6 +241,7 @@ function Dashboard() {
 
   // Filtrar los eventos para hoy
   const todaysEvents = loading ? [] : getDatosFechas(today, fechas);
+
 
 
   return (
@@ -354,7 +380,8 @@ function Dashboard() {
             >
               <Typography
                 variant="h6"
-                fontWeight="bold"
+                //fontWeight="bold"
+                 fontFamily="Abyssinica SIL, serif"
                 color="primary.contrastText"
               >
                 {dayOfWeek}
@@ -362,6 +389,7 @@ function Dashboard() {
               <Typography
                 variant="h3"
                 fontWeight="bold"
+                fontFamily="Abyssinica SIL, serif"
                 my={1}
                 color="primary.contrastText"
               >
@@ -369,7 +397,8 @@ function Dashboard() {
               </Typography>
               <Typography
                 variant="h6"
-                fontWeight="bold"
+                //fontWeight="bold"
+                 fontFamily="Abyssinica SIL, serif"
                 color="primary.contrastText"
               >
                 {monthName}
@@ -435,6 +464,12 @@ function Dashboard() {
               ))}
             </Grid>
           </Grid>
+          {esDocente && (
+            <Grid item xs={12}>
+               {/* Pasamos el array de materias al componente */}
+               <MisMaterias materias={materias} />
+            </Grid>
+          )}
         </Grid>
       </Box>
       <EventDetailsDialog
@@ -443,7 +478,7 @@ function Dashboard() {
         date={modalDate}
         events={modalEvents}
       />
-
+    
     </LocalizationProvider>
   );
 }

@@ -21,6 +21,9 @@ import "@fontsource/sofia/400.css";
 // Gabriela
 import "@fontsource/gabriela/400.css";
 
+//Abyssinica SIL
+import '@fontsource/abyssinica-sil';
+
 
 import { header } from 'motion/react-client';
 

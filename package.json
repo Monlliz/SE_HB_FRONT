@@ -12,6 +12,7 @@
   "dependencies": {
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
+    "@fontsource/abyssinica-sil": "^5.2.8",
     "@fontsource/gabriela": "5.2.8",
     "@fontsource/inter": "5.2.8",
     "@fontsource/poppins": "5.2.7",
