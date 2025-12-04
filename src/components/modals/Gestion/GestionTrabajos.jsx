@@ -12,7 +12,7 @@ import {
   InputAdornment,
 } from "@mui/material";
 // Importa el NUEVO servicio que llama a /api/rubros/tc/sync
-import { fetchRubrosTCUpdate } from "../../services/rubroService.js";
+import { fetchRubrosTCUpdate } from "../../../services/rubroService.js";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import InfoIcon from "@mui/icons-material/Info";

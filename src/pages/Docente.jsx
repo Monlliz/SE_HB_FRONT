@@ -5,13 +5,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
-import { fetchDocenteGet } from "./services/docenteService.js";
+import { fetchDocenteGet } from "../services/docenteService.js";
 import {
   Box, TextField, List, ListItem, ListItemText, Paper, IconButton,Tooltip
 } from "@mui/material";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
-import UserDocente from "./users/UserDocente"; // Componente 'Detalle'
-import NewDocente from "./modals/Docente/NewDocente"; // Modal para crear docente
+import UserDocente from "../components/users/UserDocente.jsx"; // Componente 'Detalle'
+import NewDocente from "../components/modals/Docente/NewDocente"; // Modal para crear docente
 
 /**
  * Componente principal que gestiona la interfaz de docentes.

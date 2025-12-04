@@ -5,7 +5,7 @@ import NuevaMateriaPerfil from "../modals/Grupo/Perfiles/NuevaMateriaPerfil.jsx"
 import BorrarMateriaPerfil from "../modals/Grupo/Perfiles/BorrarMateriaPerfil.jsx";
 
 //Servicios (apis)
-import { fetchMateriasPerfil } from "../services/materiasService.js";
+import { fetchMateriasPerfil } from "../../services/materiasService.js";
 
 //Iconos
 import ListAltIcon from "@mui/icons-material/ListAlt";

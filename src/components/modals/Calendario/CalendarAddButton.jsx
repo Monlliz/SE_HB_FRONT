@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Box, Tooltip, IconButton } from "@mui/material";
 import { CalendarDays } from "lucide-react";
 import AddEventModal from "./AddEventModal";
-import { createEvent } from '../../services/fechasService';
+import { createEvent } from '../../../services/fechasService';
 import { useAuth } from "../../../context/AuthContext";
 
 function CalendarAddButton({ onEventAdded }) {

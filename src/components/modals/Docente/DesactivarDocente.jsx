@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
-import { fetchDocenteDesactivar } from "../../services/docenteService";
+import { fetchDocenteDesactivar } from "../../../services/docenteService";
 import {
   Button,
   Dialog,

@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 
 import { useAuth } from "../context/AuthContext.jsx";
-import { fetchMateriasGet } from "./services/materiasService.js";
+import { fetchMateriasGet } from "../services/materiasService.js";
 
 const headCells = [
   { id: "clave", label: "Clave", width: "15%" },

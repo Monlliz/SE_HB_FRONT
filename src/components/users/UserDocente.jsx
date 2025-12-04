@@ -13,7 +13,7 @@ import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 import {
   fetchDocenteGetOne,
   fetchDocenteMaterias,
-} from "../services/docenteService.js";
+} from "../../services/docenteService.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import {
   Box,

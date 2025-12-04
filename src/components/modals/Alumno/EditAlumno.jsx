@@ -3,7 +3,7 @@ import { useAuth } from "../../../context/AuthContext";
 import {
   fetchAlumnoGetOne,
   fetchAlumnosUpdateOne,
-} from "../../services/alumnosService";
+} from "../../../services/alumnosService";
 import {
   Button,
   Dialog,

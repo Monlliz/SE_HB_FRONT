@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
 
-import {fetchAlumnoDeleteLogico} from "../../services/alumnosService.js"
+import {fetchAlumnoDeleteLogico} from "../../../services/alumnosService.js"
 import {
   Button,
   Dialog,

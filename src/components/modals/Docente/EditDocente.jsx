@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
-import { fetchDocenteGetOne, fetchDocenteActualizar } from "../../services/docenteService";
+import { fetchDocenteGetOne, fetchDocenteActualizar } from "../../../services/docenteService";
 import {
   Button,
   Dialog,

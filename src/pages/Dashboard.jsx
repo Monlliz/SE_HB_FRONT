@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx"; // Contexto para la autenticación.
-import EventDetailsDialog from "./modals/Calendario/EventDetailsDialog.jsx";
-import EventTicker from "./EventTicker.jsx";
-import {capitalizarPrimeraLetra,getFirstText} from '../utils/fornatters';
+import EventDetailsDialog from "../components/modals/Calendario/EventDetailsDialog.jsx";
+import EventTicker from "../components/EventTicker.jsx";
+import {capitalizarPrimeraLetra,getFirstText} from '../utils/fornatters.js';
 //Mis materias
-import MisMaterias from "./MisMaterias.jsx";
-import {fetchDocenteMaterias} from "./services/docenteService.js";
+import MisMaterias from "../components/MisMaterias.jsx";
+import {fetchDocenteMaterias} from "../services/docenteService.js";
 // Componentes de Material-UI
 import {
   Grid,
@@ -31,11 +31,11 @@ import { format } from "date-fns";
 import { appLinks } from "../config/NavConfig.jsx";
 
 //Servicio de fechas
-import { fetchFechasGet } from "./services/fechasService.js";
+import { fetchFechasGet } from "../services/fechasService.js";
 
 //tipos de eventos
 import { EVENT_TYPES } from "../data/eventTypes.jsx";
-import CalendarAddButton from "./modals/Calendario/CalendarAddButton.jsx";
+import CalendarAddButton from "../components/modals/Calendario/CalendarAddButton.jsx";
 // Importa tu ilustración
 // import MyIllustration from './path/to/your/illustration.png';
 

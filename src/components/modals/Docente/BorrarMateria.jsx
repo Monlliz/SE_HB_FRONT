@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
-import { fetchBorrarMateriaDocente } from "../../services/materiasService";
+import { fetchBorrarMateriaDocente } from "../../../services/materiasService";
 import {
   Button,
   Dialog,

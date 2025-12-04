@@ -6,8 +6,8 @@ import DarBajaAlumno from "../modals/Alumno/DarBajaAlumno.jsx";
 import NuevoIncidente from "../modals/Alumno/NuevoIncidente.jsx";
 //import servicio
 
-import { fetchAlumnoGetOne } from "../services/alumnosService.js";
-import { fetchIncidenteGet } from "../services/incidenteService.js";
+import { fetchAlumnoGetOne } from "../../services/alumnosService.js";
+import { fetchIncidenteGet } from "../../services/incidenteService.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import {
   Box,

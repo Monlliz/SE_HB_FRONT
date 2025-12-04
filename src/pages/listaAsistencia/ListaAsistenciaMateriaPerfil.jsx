@@ -6,7 +6,7 @@
 // Importaciones de React y hooks para estado, efectos, memoización y contexto.
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom"; // Hook para acceder a datos de la navegación.
-import { useAuth } from "../context/AuthContext.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 // Importaciones de componentes y iconos de Material-UI.
 import {
   Table,
@@ -34,11 +34,11 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import InfoIcon from "@mui/icons-material/Info";
 
 // Importación del modal y de los servicios de la API.
-import NuevaAsistencia from "./modals/Grupo/NuevaAsistencia";
+import NuevaAsistencia from "../../components/modals/Grupo/NuevaAsistencia.jsx";
 import {
-  fetchDatosAsistenciaMateria,
+  fetchDatosAsistenciaMateriaPerfil,
   fetchPostAsistenciaMateria,
-} from "./services/asistenciaService.js";
+} from "../../services/asistenciaService.js";
 
 /**
  * Componente funcional para renderizar un ícono basado en el estado de la asistencia.
@@ -90,7 +90,14 @@ const ListaAsistenciaMateria = () => {
   /** Hook para acceder al 'state' pasado a través de la navegación de React Router. */
   const location = useLocation();
   // Extrae el ID del grupo y otros datos. El objeto vacío previene errores si 'state' es nulo.
-  const { grupoId, materiaClave, nombreMateria, year } = location.state || {};
+  const {
+    grupoId,
+    semestre,
+    idNormalizado,
+    materiaClave,
+    nombreMateria,
+    year,
+  } = location.state || {};
 
   // --- ESTADOS DEL COMPONENTE ---
 
@@ -128,8 +135,10 @@ const ListaAsistenciaMateria = () => {
       if (!token)
         throw new Error("Autorización rechazada. No se encontró el token.");
 
-      const data = await fetchDatosAsistenciaMateria(
+      const data = await fetchDatosAsistenciaMateriaPerfil(
         grupoId,
+        idNormalizado,
+        semestre,
         materiaClave,
         selectedYear,
         selectedMonth,
@@ -234,7 +243,6 @@ const ListaAsistenciaMateria = () => {
         height: "calc(100vh - 64px)",
         display: "flex",
         flexDirection: "column",
-    
       }}
     >
       {/* Encabezado con título y botón para agregar nueva asistencia */}
@@ -242,7 +250,7 @@ const ListaAsistenciaMateria = () => {
         <Box>
           <Typography variant="h5">Asistencia - {nombreMateria}</Typography>
           <Typography variant="subtitle1" color="text.secondary">
-            Grupo {grupoId}
+            Perfil {grupoId}
           </Typography>
           <Typography variant="subtitle1" color="text.secondary">
             {/* Título dinámico que refleja la selección */}

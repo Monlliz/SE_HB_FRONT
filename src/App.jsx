@@ -1,19 +1,19 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Login from "./components/Login.jsx";
-import Docente from "./components/Docente.jsx";
-import Grupo from "./components/Grupo.jsx";
-import Materias from "./components/Materias.jsx";
-import ListaAsistencia from "./components/ListaAsistencia.jsx";
-import NotFound from "./components/NotFound.jsx";
-import Alumno from "./components/Alumno.jsx";
-import ReportePDF from "./components/ReportePDF.jsx";
-import ListaAsistenciaMateria from "./components/ListaAsistenciaMateria.jsx";
-import ListaAsistenciaMateriaPerfil from "./components/ListaAsistenciaMateriaPerfil.jsx";
-import Rubros from "./components/Rubros.jsx";
-import RubrosPerfil from "./components/RubrosPerfil.jsx";
-import Dashboard from "./components/Dashboard.jsx";
-import TrabajoCotidiano from "./components/TrabajoCotidiano.jsx";
-import TrabajoCotidianoP from "./components/TrabajoCotidianoPerfil.jsx"
+import Login from "./pages/Login.jsx";
+import Docente from "./pages/Docente.jsx";
+import Grupo from "./pages/Grupo.jsx";
+import Materias from "./pages/Materias.jsx";
+import ListaAsistencia from "./pages/listaAsistencia/ListaAsistencia.jsx";
+import NotFound from "./pages/NotFound.jsx";
+import Alumno from "./pages/Alumno.jsx";
+import ReportePDF from "./pages/ReportePDF.jsx";
+import ListaAsistenciaMateria from "./pages/listaAsistencia/ListaAsistenciaMateria.jsx";
+import ListaAsistenciaMateriaPerfil from "./pages/listaAsistencia/ListaAsistenciaMateriaPerfil.jsx";
+import Rubros from "./pages/rubros/Rubros.jsx";
+import RubrosPerfil from "./pages/rubros/RubrosPerfil.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
+import TrabajoCotidiano from "./pages/trabajoCotidiano/TrabajoCotidiano.jsx";
+import TrabajoCotidianoP from "./pages/trabajoCotidiano/TrabajoCotidianoPerfil.jsx"
 import { ProtectedRoute } from "./components/ProtectedRoute.jsx";
 
 function App() {

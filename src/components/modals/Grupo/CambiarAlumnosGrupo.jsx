@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
  
-import { fetchGrupoCambio,fetchGrupoGet } from "../../services/grupoService";
+import { fetchGrupoCambio,fetchGrupoGet } from "../../../services/grupoService.js";
 import {
   Button,
   Dialog,

@@ -1,12 +1,12 @@
 /**
- * @file ListaAsistencia.jsx
+ * @file ListaAsistenciaMateria.jsx
  * @description Componente para visualizar y registrar la asistencia de un grupo de estudiantes.
  */
 
 // Importaciones de React y hooks para estado, efectos, memoización y contexto.
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom"; // Hook para acceder a datos de la navegación.
-import { useAuth } from "../context/AuthContext.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 // Importaciones de componentes y iconos de Material-UI.
 import {
   Table,
@@ -21,10 +21,10 @@ import {
   Box,
   Tooltip,
   Button,
-  FormControl,    
-  InputLabel,     
-  Select,         
-  MenuItem,       
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
   Stack,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
@@ -34,11 +34,11 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import InfoIcon from "@mui/icons-material/Info";
 
 // Importación del modal y de los servicios de la API.
-import NuevaAsistencia from "./modals/Grupo/NuevaAsistencia";
+import NuevaAsistencia from "../../components/modals/Grupo/NuevaAsistencia";
 import {
-  fetchDatosAsistencia,
-  fetchPostAsistencia,
-} from "./services/asistenciaService.js";
+  fetchDatosAsistenciaMateria,
+  fetchPostAsistenciaMateria,
+} from "../../services/asistenciaService.js";
 
 /**
  * Componente funcional para renderizar un ícono basado en el estado de la asistencia.
@@ -81,7 +81,7 @@ const IconoEstatus = ({ estatus }) => {
  * Componente principal que construye y gestiona la lista de asistencia.
  * @returns {JSX.Element}
  */
-const ListaAsistencia = () => {
+const ListaAsistenciaMateria = () => {
   // --- HOOKS Y CONTEXTO ---
 
   /** Hook para obtener el token de autenticación del contexto global. */
@@ -90,7 +90,7 @@ const ListaAsistencia = () => {
   /** Hook para acceder al 'state' pasado a través de la navegación de React Router. */
   const location = useLocation();
   // Extrae el ID del grupo y otros datos. El objeto vacío previene errores si 'state' es nulo.
-  const { grupoId, year } = location.state || {};
+  const { grupoId, materiaClave, nombreMateria, year } = location.state || {};
 
   // --- ESTADOS DEL COMPONENTE ---
 
@@ -128,11 +128,17 @@ const ListaAsistencia = () => {
       if (!token)
         throw new Error("Autorización rechazada. No se encontró el token.");
 
-      const data = await fetchDatosAsistencia(grupoId, selectedYear, selectedMonth, token);
+      const data = await fetchDatosAsistenciaMateria(
+        grupoId,
+        materiaClave,
+        selectedYear,
+        selectedMonth,
+        token
+      );
       setEstudiantes(data.estudiantes);
+
       setAsistencias(data.asistencias);
-      console.log(data.asistencias)
-      setEstudiantes(data.estudiantes);
+      console.log(asistencias);
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -140,7 +146,7 @@ const ListaAsistencia = () => {
     } finally {
       setLoading(false);
     }
-  }, [grupoId, token,selectedYear, selectedMonth]);
+  }, [grupoId, token, selectedYear, selectedMonth]);
 
   /**
    * @effect
@@ -185,7 +191,12 @@ const ListaAsistencia = () => {
   const handleSaveAsistencia = async (estatusAsistencia) => {
     setIsSaving(true);
     try {
-      await fetchPostAsistencia(token, grupoId, estatusAsistencia);
+      await fetchPostAsistenciaMateria(
+        token,
+        grupoId,
+        materiaClave,
+        estatusAsistencia
+      );
       alert("Asistencia guardada con éxito"); // Opcional: Reemplazar con Snackbar/Toast.
       setModalOpen(false);
       cargarDatos(); // Vuelve a cargar los datos para reflejar los cambios.
@@ -223,57 +234,71 @@ const ListaAsistencia = () => {
         height: "calc(100vh - 64px)",
         display: "flex",
         flexDirection: "column",
-       
+    
       }}
     >
       {/* Encabezado con título y botón para agregar nueva asistencia */}
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
         <Box>
-        <Typography variant="h5">Asistencia General Grupo {grupoId}</Typography>
-        <Typography variant="subtitle1" color="text.secondary">
-          {/* Título dinámico que refleja la selección */}
-          Mostrando: {new Date(selectedYear, selectedMonth - 1).toLocaleString('es-MX', { month: 'long', year: 'numeric' })}
-        </Typography>
-      </Box>
-      
-       <Stack direction="row" spacing={2} alignItems="center">
-        {/* Selector de Año */}
-        <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
-          <InputLabel>Año</InputLabel>
-          <Select
-            value={selectedYear}
-            label="Año"
-            onChange={(e) => setSelectedYear(e.target.value)}
-          >
-            {/* Genera los últimos  años dinámicamente */}
-            {[0,1,2,3].map(offset => {
-              const year = new Date().getFullYear() - offset;
-              return <MenuItem key={year} value={year}>{year}</MenuItem>;
+          <Typography variant="h5">Asistencia - {nombreMateria}</Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            Grupo {grupoId}
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            {/* Título dinámico que refleja la selección */}
+            Mostrando:{" "}
+            {new Date(selectedYear, selectedMonth - 1).toLocaleString("es-MX", {
+              month: "long",
+              year: "numeric",
             })}
-          </Select>
-        </FormControl>
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={2} alignItems="center">
+          {/* Selector de Año */}
+          <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
+            <InputLabel>Año</InputLabel>
+            <Select
+              value={selectedYear}
+              label="Año"
+              onChange={(e) => setSelectedYear(e.target.value)}
+            >
+              {/* Genera los últimos  años dinámicamente */}
+              {[0, 1, 2, 3].map((offset) => {
+                const year = new Date().getFullYear() - offset;
+                return (
+                  <MenuItem key={year} value={year}>
+                    {year}
+                  </MenuItem>
+                );
+              })}
+            </Select>
+          </FormControl>
 
-        {/* Selector de Mes */}
-        <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
-          <InputLabel>Mes</InputLabel>
-          <Select
-            value={selectedMonth}
-            label="Mes"
-            onChange={(e) => setSelectedMonth(e.target.value)}
+          {/* Selector de Mes */}
+          <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
+            <InputLabel>Mes</InputLabel>
+            <Select
+              value={selectedMonth}
+              label="Mes"
+              onChange={(e) => setSelectedMonth(e.target.value)}
+            >
+              {/* Genera los 12 meses */}
+              {Array.from({ length: 12 }, (_, i) => (
+                <MenuItem key={i + 1} value={i + 1}>
+                  {new Date(0, i).toLocaleString("es-MX", { month: "long" })}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setModalOpen(true)}
           >
-            {/* Genera los 12 meses */}
-            {Array.from({ length: 12 }, (_, i) => (
-              <MenuItem key={i + 1} value={i + 1}>
-                {new Date(0, i).toLocaleString('es-MX', { month: 'long' })}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setModalOpen(true)}>
-          Nueva Entrada
-        </Button>
-      </Stack>
+            Nueva Entrada
+          </Button>
+        </Stack>
       </Box>
 
       {/* Vista condicional: mensaje si no hay estudiantes, o la tabla si los hay */}
@@ -347,4 +372,4 @@ const ListaAsistencia = () => {
   );
 };
 
-export default ListaAsistencia;
+export default ListaAsistenciaMateria;

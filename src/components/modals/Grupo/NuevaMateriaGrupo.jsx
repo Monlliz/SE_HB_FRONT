@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
-import { fetchMateriasGet } from "../../services/materiasService";
+import { fetchMateriasGet } from "../../../services/materiasService";
+import { fetchGrupoMateriaPost } from "../../../services/grupoService";
 import {
   Button,
   Dialog,
@@ -12,7 +13,6 @@ import {
   Autocomplete,
   TextField,
 } from "@mui/material";
-import { fetchGrupoMateriaPost } from "../../services/grupoService";
 
 function NuevaMateriaGrupo({ open, onClose, onAccept, grupoId }) {
   const [materiaSeleccionada, setMateriaSeleccionada] = useState(null);

@@ -1,16 +1,16 @@
 // Importaciones de React y hooks
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
-import GestionTrabajos from "./modals/Gestion/GestionTrabajos.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
+import GestionTrabajos from "../../components/modals/Gestion/GestionTrabajos.jsx";
 
 // Importa tus servicios reales
 import {
   fetchRubrosTCGet,
   syncCalificacionesTC_service,
   fetchCalificacionesTCGet,
-} from "./services/rubroService.js";
-import { fetchAlumnoGrupoGet } from "./services/alumnosService.js";
+} from "../../services/rubroService.js";
+import { fetchAlumnoGrupoGet } from "../../services/alumnosService.js";
 
 // Importaciones de MUI
 import {

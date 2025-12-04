@@ -5,10 +5,10 @@
 
 // Importaciones de React, hooks y componentes.
 import { useState, useEffect, useCallback } from "react";
-import UserGrupo from "./users/UserGrupo.jsx";
-import UserPerfil from "./users/UserPerfil.jsx";
+import UserGrupo from "../components/users/UserGrupo.jsx";
+import UserPerfil from "../components/users/UserPerfil.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import { fetchGrupoGet, fetchPerfilGet } from "./services/grupoService.js";
+import { fetchGrupoGet, fetchPerfilGet } from "../services/grupoService.js";
 
 //  Imports para los botones de filtro
 import {

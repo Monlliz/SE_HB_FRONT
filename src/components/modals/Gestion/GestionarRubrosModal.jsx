@@ -10,7 +10,7 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
-import { fetchRubrosUpdate } from "../../services/rubroService";
+import { fetchRubrosUpdate } from "../../../services/rubroService";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import InfoIcon from "@mui/icons-material/Info";

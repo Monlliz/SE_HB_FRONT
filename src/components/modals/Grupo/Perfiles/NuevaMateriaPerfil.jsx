@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../../context/AuthContext.jsx";
-import { fetchMateriasGet } from "../../../services/materiasService.js";
+import { fetchMateriasGet } from "../../../../services/materiasService.js";
 import {
   Button,
   Dialog,
@@ -12,7 +12,7 @@ import {
   Autocomplete,
   TextField,
 } from "@mui/material";
-import { fetcthPerfilMateriaPost } from "../../../services/grupoService.js";
+import { fetcthPerfilMateriaPost } from "../../../../services/grupoService.js";
 
 function NuevaMateriaGrupo({ open, onClose, onAccept, grupoId }) {
   const [materiaSeleccionada, setMateriaSeleccionada] = useState(null);

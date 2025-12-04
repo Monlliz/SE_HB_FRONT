@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../../context/AuthContext";
-import { fetchMateriasGet } from "../../services/materiasService";
-import { fetchDocenteMateriasPost } from "../../services/docenteService";
-import { fetchGrupoGet, fetchPerfilGet } from "../../services/grupoService.js"; // <-- Devuelta
+import { fetchMateriasGet } from "../../../services/materiasService.js";
+import { fetchDocenteMateriasPost } from "../../../services/docenteService.js";
+import { fetchGrupoGet, fetchPerfilGet } from "../../../services/grupoService.js"; // <-- Devuelta
 import {
   Button,
   Dialog,

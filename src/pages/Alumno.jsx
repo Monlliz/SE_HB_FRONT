@@ -4,7 +4,7 @@
  */
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
-import { fetchAlumnoGet } from "./services/alumnosService.js";
+import { fetchAlumnoGet } from "../services/alumnosService.js";
 import {
   Box,
   TextField,
@@ -16,10 +16,10 @@ import {
   Tooltip,
 } from "@mui/material";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
-import UserDocente from "./users/UserDocente"; // Componente 'Detalle'
-import UserAlumno from "./users/UserAlumno.jsx";
-import PostAlumno from "./modals/Alumno/PostAlumno.jsx";
-import NewDocente from "./modals/Docente/NewDocente"; // Modal para crear alumno
+import UserDocente from "../components/users/UserDocente.jsx"; // Componente 'Detalle'
+import UserAlumno from "../components/users/UserAlumno.jsx";
+import PostAlumno from "../components/modals/Alumno/PostAlumno.jsx";
+import NewDocente from "../components/modals/Docente/NewDocente.jsx"; // Modal para crear alumno
 
 /**
  * Componente principal que gestiona la interfaz de alumnos.

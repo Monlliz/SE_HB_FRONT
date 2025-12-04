@@ -5,7 +5,7 @@ import NuevaMateriaGrupo from "../modals/Grupo/NuevaMateriaGrupo.jsx";
 import BorrarMateriaGrupo from "../modals/Grupo/BorrarMateriaGrupo.jsx";
 import CambiarAlumnosGrupo from "../modals/Grupo/CambiarAlumnosGrupo.jsx";
 //Servicios (apis)
-import { fetchMateriasGrupo } from "../services/materiasService.js";
+import { fetchMateriasGrupo } from "../../services/materiasService.js";
 
 //Iconos
 import ListAltIcon from "@mui/icons-material/ListAlt";

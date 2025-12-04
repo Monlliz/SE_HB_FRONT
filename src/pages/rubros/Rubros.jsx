@@ -1,16 +1,16 @@
 // Importaciones de React y hooks
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
-import GestionarRubrosModal from "./modals/Gestion/GestionarRubrosModal.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
+import GestionarRubrosModal from "../../components/modals/Gestion/GestionarRubrosModal.jsx";
 
 // Importa tus servicios reales
 import {
   fetchRubrosMateriaGet,
   syncCalificaciones_service,
   fetchRubrosCalificacionesGet,
-} from "./services/rubroService.js";
-import { fetchAlumnoPerfilGet } from "./services/alumnosService.js";
+} from "../../services/rubroService.js";
+import { fetchAlumnoGrupoGet } from "../../services/alumnosService.js";
 
 import {
   Table,
@@ -51,8 +51,6 @@ const GestionarRubros = () => {
   const location = useLocation();
   const {
     grupoId,
-    idNormalizado,
-    semestre,
     materiaClave,
     nombreMateria,
     year: initialYear,
@@ -111,8 +109,8 @@ const GestionarRubros = () => {
     const cargarAlumnos = async () => {
       // ... (tu lógica de loading y errores) ...
       try {
-        const data = await fetchAlumnoPerfilGet(token, idNormalizado, semestre);
-        console.log("Datos de alumnos recibidos:", data);
+        const data = await fetchAlumnoGrupoGet(token, grupoId);
+
         // --- INICIO DE LA TRANSFORMACIÓN ---
         // Mapeamos los datos recibidos para que coincidan
         // con lo que el componente espera ("alumno_matricula")
@@ -263,6 +261,7 @@ const GestionarRubros = () => {
     }
   };
 
+  // --- NUEVO ---
   const handleGradeChange = (matricula, idRubro, valor) => {
     // Validar y convertir el valor
     const valorLimpio = valor.trim();
@@ -316,7 +315,7 @@ const GestionarRubros = () => {
         p: 3,
         display: "flex",
         flexDirection: "column",
-        height: "calc(100vh - 50px)",
+        height: "calc(100vh - 64px)",
       }}
     >
       {/* Encabezado con título y botones de acción */}
@@ -340,7 +339,7 @@ const GestionarRubros = () => {
             <FormControl
               size="small"
               sx={{ minWidth: 120 }}
-              disabled={isEditing}
+              disabled={isEditing} // --- MODIFICADO ---
             >
               <InputLabel id="parcial-select-label">Parcial</InputLabel>
               <Select
@@ -407,7 +406,7 @@ const GestionarRubros = () => {
         </Stack>
       </Box>
 
-      {/* --- Alerta de Error de Guardado --- */}
+      {/* --- NUEVO: Alerta de Error de Guardado --- */}
       {saveError && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {saveError}
@@ -520,15 +519,23 @@ const GestionarRubros = () => {
               ) : (
                 // Renderizado final de datos
                 datosTabla.map((alumno) => (
-                  <TableRow key={alumno.alumno_matricula} hover>
+                  <TableRow
+                    key={alumno.alumno_matricula}
+                    hover
+                    sx={{ height: "35px" }}
+                  >
                     <TableCell
                       component="th"
                       scope="row"
+                      size="small"
                       sx={{
                         left: 0,
                         position: "sticky",
                         backgroundColor: "background.paper",
                         borderRight: "1px solid rgba(224, 224, 224, 1)",
+                        padding: "4px 8px", // Padding reducido pero suficiente para leer el nombre
+                        fontSize: "0.80rem", // Letra un poco más chica
+                        whiteSpace: "nowrap", // Evita que el nombre ocupe dos líneas
                       }}
                     >
                       {` ${alumno.apellidop} ${alumno.apellidom}`}
@@ -542,7 +549,8 @@ const GestionarRubros = () => {
                         {isEditing ? (
                           <TextField
                             type="number"
-                            size="small"
+                            fullWidth // Ocupa todo el ancho de la celda
+                            variant="standard" // 'Standard' usa menos espacio que 'Outlined'
                             value={
                               alumno.calificacionesMap.get(rubro.id_rubro) ?? ""
                             }
@@ -553,41 +561,54 @@ const GestionarRubros = () => {
                                 e.target.value
                               )
                             }
+                            // Propiedades para quitar la línea inferior y ajustar el input
+                            InputProps={{
+                              disableUnderline: true, // Quita la línea de abajo del input standard
+                              sx: { fontSize: "0.85rem" }, // Tamaño de número más compacto
+                            }}
                             inputProps={{
                               min: 0,
                               max: 10,
                               step: 0.1,
-                              style: { textAlign: "center" }, 
-                            }}
-             
-                            sx={{
-                              width: "60px", 
-                              "& .MuiInputBase-input": {
-                                padding: "4px",
-                                fontSize: "0.85rem", 
+                              style: {
+                                textAlign: "center", // Centra el número
+                                padding: "5px 0", // Reduce el relleno vertical para hacer la fila delgada
+                                backgroundColor: "#fafafa", // Opcional: un fondo muy sutil al input
                               },
                             }}
-                            // -----------------------------
                             disabled={isSaving}
                           />
                         ) : (
-                          alumno.calificacionesMap.get(rubro.id_rubro) ?? "-"
+                          <div
+                            style={{ fontSize: "0.85rem", padding: "5px 0" }}
+                          >
+                            {alumno.calificacionesMap.get(rubro.id_rubro) ??
+                              "-"}
+                          </div>
                         )}
                       </TableCell>
                     ))}
 
                     <TableCell
                       align="center"
+                      size="small"
                       sx={{
+                        padding: "4px",
                         fontWeight: "bold",
+                        fontSize: "0.85rem",
                         color:
                           alumno.promedio >= 6 ? "success.main" : "error.main",
                       }}
                     >
-                      {/* --- Muestra "Calculando..." si se edita --- */}
                       {isEditing ? (
                         <Tooltip title="El promedio final se actualizará al guardar">
-                          <span style={{ fontStyle: "italic", color: "gray" }}>
+                          <span
+                            style={{
+                              fontStyle: "italic",
+                              color: "gray",
+                              opacity: 0.7,
+                            }}
+                          >
                             {alumno.promedio.toFixed(2)}
                           </span>
                         </Tooltip>

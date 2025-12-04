@@ -11,7 +11,7 @@ import {
   CircularProgress,
   Typography,
 } from "@mui/material";
-import { fetchBorrarMateriaGrupo } from "../../services/materiasService";
+import { fetchBorrarMateriaGrupo } from "../../../services/materiasService";
 
 //ES BORRADO FISICO CUIDADO
 function BorrarMateriaGrupo({
