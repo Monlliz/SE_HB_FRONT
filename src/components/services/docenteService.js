@@ -54,6 +54,7 @@ export const fetchDocenteMaterias = async (token, id) => {
     });
     if (!resMaterias.ok) throw new Error("Error al cargar materias");
     const materias = await resMaterias.json();
+    console.log(materias);
     return { materias: materias || [] };
   } catch (error) {
     console.error("Error en el servicio fetchDocenteMaterias:", error.message);

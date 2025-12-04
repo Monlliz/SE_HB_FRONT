@@ -43,10 +43,10 @@ export const fetchMateriasGrupo = async (token, id, anioActual) => {
 };
 
 //Se usa en BorrarMateria
-export const fetchBorrarMateriaDocente = async (token, docenteId, clave) => {
+export const fetchBorrarMateriaDocente = async (token, docenteId, idMateriaDocente) => {
   try {
     const response = await fetch(
-      `${apiUrl}/docente/materia/delete/${docenteId}/${clave}`,
+      `${apiUrl}/docente/materia/delete/${docenteId}/${idMateriaDocente}`,
       {
         method: "put",
         headers: {

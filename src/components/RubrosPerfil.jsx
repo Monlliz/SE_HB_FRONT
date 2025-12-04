@@ -111,7 +111,7 @@ const GestionarRubros = () => {
     const cargarAlumnos = async () => {
       // ... (tu lógica de loading y errores) ...
       try {
-        const data = await fetchAlumnoPerfilGet(token, idNormalizado,semestre);
+        const data = await fetchAlumnoPerfilGet(token, idNormalizado, semestre);
         console.log("Datos de alumnos recibidos:", data);
         // --- INICIO DE LA TRANSFORMACIÓN ---
         // Mapeamos los datos recibidos para que coincidan
@@ -263,7 +263,6 @@ const GestionarRubros = () => {
     }
   };
 
-  // --- NUEVO ---
   const handleGradeChange = (matricula, idRubro, valor) => {
     // Validar y convertir el valor
     const valorLimpio = valor.trim();
@@ -317,7 +316,7 @@ const GestionarRubros = () => {
         p: 3,
         display: "flex",
         flexDirection: "column",
-        height: "calc(100vh - 64px)",
+        height: "calc(100vh - 50px)",
       }}
     >
       {/* Encabezado con título y botones de acción */}
@@ -341,7 +340,7 @@ const GestionarRubros = () => {
             <FormControl
               size="small"
               sx={{ minWidth: 120 }}
-              disabled={isEditing} // --- MODIFICADO ---
+              disabled={isEditing}
             >
               <InputLabel id="parcial-select-label">Parcial</InputLabel>
               <Select
@@ -408,7 +407,7 @@ const GestionarRubros = () => {
         </Stack>
       </Box>
 
-      {/* --- NUEVO: Alerta de Error de Guardado --- */}
+      {/* --- Alerta de Error de Guardado --- */}
       {saveError && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {saveError}
@@ -437,9 +436,9 @@ const GestionarRubros = () => {
                     fontWeight: "bold",
                     minWidth: 200,
                     zIndex: 101,
-                    left: 0, // --- MODIFICADO ---
-                    position: "sticky", // --- MODIFICADO ---
-                    backgroundColor: "background.paper", // --- MODIFICADO ---
+                    left: 0,
+                    position: "sticky",
+                    backgroundColor: "background.paper",
                   }}
                 >
                   Nombre Alumno
@@ -558,8 +557,17 @@ const GestionarRubros = () => {
                               min: 0,
                               max: 10,
                               step: 0.1,
+                              style: { textAlign: "center" }, 
                             }}
-                            sx={{ width: "90px" }}
+             
+                            sx={{
+                              width: "60px", 
+                              "& .MuiInputBase-input": {
+                                padding: "4px",
+                                fontSize: "0.85rem", 
+                              },
+                            }}
+                            // -----------------------------
                             disabled={isSaving}
                           />
                         ) : (
@@ -576,7 +584,7 @@ const GestionarRubros = () => {
                           alumno.promedio >= 6 ? "success.main" : "error.main",
                       }}
                     >
-                      {/* --- MODIFICADO: Muestra "Calculando..." si se edita --- */}
+                      {/* --- Muestra "Calculando..." si se edita --- */}
                       {isEditing ? (
                         <Tooltip title="El promedio final se actualizará al guardar">
                           <span style={{ fontStyle: "italic", color: "gray" }}>

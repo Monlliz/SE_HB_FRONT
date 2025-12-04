@@ -32,6 +32,8 @@ export default function UserDocente({ id }) {
   const [docente, setDocente] = useState(null);
   const [materias, setMaterias] = useState([]);
   const [selectedMateriaClave, setSelectedMateriaClave] = useState(null);
+  //idMateriaDocente
+  const [idMateriaDocente, setIdMateriaDocente] = useState(null);
   const [modalMateriaOpen, setModalMateriaOpen] = useState(false);
   const [modalEditOpen, setModalEditOpen] = useState(false);
   const [modalDesactivarOpen, setModalDesactivarOpen] = useState(false);
@@ -140,7 +142,6 @@ export default function UserDocente({ id }) {
   const handleNavigateToCalifacacionesParcilaes = (materia) => {
     procesarNavegacion(materia, "/rubros", "/rubrosperfil");
   };
-
 
   const handleNavigateToActividades = (materia) => {
     procesarNavegacion(materia, "/trabajo", "/trabajoperfil");
@@ -305,6 +306,11 @@ export default function UserDocente({ id }) {
               materias.find((m) => m.clave === selectedMateriaClave)?.nombre ||
               ""
             }
+            grupo={
+              materias.find((m) => m.idMateriaDocente === idMateriaDocente)
+                ?.grupo || ""
+            }
+            idMateriaDocente={idMateriaDocente}
           />
         </Box>
         <Box
@@ -333,11 +339,14 @@ export default function UserDocente({ id }) {
             <TableBody>
               {materias.map((m) => (
                 <TableRow
-                  key={m.clave}
+                  key={m.idMateriaDocente}
                   hover
                   // Puedes mantener la selección visual si quieres, pero ya no es estricta para los botones
-                  selected={m.clave === selectedMateriaClave}
-                  onClick={() => setSelectedMateriaClave(m.clave)}
+                  selected={m.idMateriaDocente === idMateriaDocente}
+                  onClick={() => {
+                    setSelectedMateriaClave(m.clave),
+                      setIdMateriaDocente(m.idMateriaDocente);
+                  }}
                   sx={{ cursor: "pointer" }}
                 >
                   <TableCell>{m.clave}</TableCell>

@@ -8,7 +8,7 @@ import GestionarRubrosModal from "./modals/Gestion/GestionarRubrosModal.jsx";
 import {
   fetchRubrosMateriaGet,
   syncCalificaciones_service,
-  fetchRubrosCalificacionesGet
+  fetchRubrosCalificacionesGet,
 } from "./services/rubroService.js";
 import { fetchAlumnoGrupoGet } from "./services/alumnosService.js";
 
@@ -143,14 +143,14 @@ const GestionarRubros = () => {
       setSaveError(null);
 
       try {
-          const data = await fetchRubrosCalificacionesGet(
-        materiaClave,
-        parcial,
-        selectedYear,
-        token
-      );
-      setCalificaciones(data);
-     
+        const data = await fetchRubrosCalificacionesGet(
+          materiaClave,
+          parcial,
+          selectedYear,
+          token
+        );
+        setCalificaciones(data);
+
         // setOriginalCalificaciones(data); // --- NUEVO ---
       } catch (err) {
         console.error("Error cargando calificaciones:", err);
@@ -435,9 +435,9 @@ const GestionarRubros = () => {
                     fontWeight: "bold",
                     minWidth: 200,
                     zIndex: 101,
-                    left: 0, // --- MODIFICADO ---
-                    position: "sticky", // --- MODIFICADO ---
-                    backgroundColor: "background.paper", // --- MODIFICADO ---
+                    left: 0,
+                    position: "sticky",
+                    backgroundColor: "background.paper",
                   }}
                 >
                   Nombre Alumno
@@ -519,15 +519,23 @@ const GestionarRubros = () => {
               ) : (
                 // Renderizado final de datos
                 datosTabla.map((alumno) => (
-                  <TableRow key={alumno.alumno_matricula} hover>
+                  <TableRow
+                    key={alumno.alumno_matricula}
+                    hover
+                    sx={{ height: "35px" }}
+                  >
                     <TableCell
                       component="th"
                       scope="row"
+                      size="small"
                       sx={{
                         left: 0,
                         position: "sticky",
                         backgroundColor: "background.paper",
                         borderRight: "1px solid rgba(224, 224, 224, 1)",
+                        padding: "4px 8px", // Padding reducido pero suficiente para leer el nombre
+                        fontSize: "0.80rem", // Letra un poco más chica
+                        whiteSpace: "nowrap", // Evita que el nombre ocupe dos líneas
                       }}
                     >
                       {` ${alumno.apellidop} ${alumno.apellidom}`}
@@ -541,7 +549,8 @@ const GestionarRubros = () => {
                         {isEditing ? (
                           <TextField
                             type="number"
-                            size="small"
+                            fullWidth // Ocupa todo el ancho de la celda
+                            variant="standard" // 'Standard' usa menos espacio que 'Outlined'
                             value={
                               alumno.calificacionesMap.get(rubro.id_rubro) ?? ""
                             }
@@ -552,32 +561,54 @@ const GestionarRubros = () => {
                                 e.target.value
                               )
                             }
+                            // Propiedades para quitar la línea inferior y ajustar el input
+                            InputProps={{
+                              disableUnderline: true, // Quita la línea de abajo del input standard
+                              sx: { fontSize: "0.85rem" }, // Tamaño de número más compacto
+                            }}
                             inputProps={{
                               min: 0,
                               max: 10,
                               step: 0.1,
+                              style: {
+                                textAlign: "center", // Centra el número
+                                padding: "5px 0", // Reduce el relleno vertical para hacer la fila delgada
+                                backgroundColor: "#fafafa", // Opcional: un fondo muy sutil al input
+                              },
                             }}
-                            sx={{ width: "90px" }}
                             disabled={isSaving}
                           />
                         ) : (
-                          alumno.calificacionesMap.get(rubro.id_rubro) ?? "-"
+                          <div
+                            style={{ fontSize: "0.85rem", padding: "5px 0" }}
+                          >
+                            {alumno.calificacionesMap.get(rubro.id_rubro) ??
+                              "-"}
+                          </div>
                         )}
                       </TableCell>
                     ))}
 
                     <TableCell
                       align="center"
+                      size="small"
                       sx={{
+                        padding: "4px",
                         fontWeight: "bold",
+                        fontSize: "0.85rem",
                         color:
                           alumno.promedio >= 6 ? "success.main" : "error.main",
                       }}
                     >
-                      {/* --- MODIFICADO: Muestra "Calculando..." si se edita --- */}
                       {isEditing ? (
                         <Tooltip title="El promedio final se actualizará al guardar">
-                          <span style={{ fontStyle: "italic", color: "gray" }}>
+                          <span
+                            style={{
+                              fontStyle: "italic",
+                              color: "gray",
+                              opacity: 0.7,
+                            }}
+                          >
                             {alumno.promedio.toFixed(2)}
                           </span>
                         </Tooltip>
