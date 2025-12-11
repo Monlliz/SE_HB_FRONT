@@ -32,11 +32,8 @@ import {
   fetchDocenteGet,
   fetchDocenteImport,
 } from "../services/docenteService.js";
-import {
-  fetchMateriasGet,
-  
-} from "../services/materiasService.js";
-//fetchMateriasImport falta
+import { fetchMateriasGet,fetchMateriasImport } from "../services/materiasService.js";
+// falta
 //================================
 // --- CONFIGURACIÓN INICIAL PARA EXPORTACIONES---
 //================================
@@ -222,7 +219,7 @@ export default function GestionData() {
           importResponse = await fetchDocenteImport(token, formData);
           break;
         case 3:
-       //   importResponse = await fetchMateriasImport(token, formData);
+          importResponse = await fetchMateriasImport(token, formData);
 
           break;
         default:

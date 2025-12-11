@@ -44,26 +44,22 @@ export const fetchMateriasPost = async (token, newmaterias) => {
     console.log(materias);
 
     return { materias: materias || [] };
-    
   } catch (error) {
     console.error("Error en el servicio fetchMateriasPost:", error.message);
     throw error;
   }
 };
 
-export const fetchMateriasPut = async (token, clave, editmaterias) => {  
+export const fetchMateriasPut = async (token, clave, editmaterias) => {
   try {
-    const response = await fetch(
-      `${apiUrl}/materias/${clave}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-auth-token": token,
-        },
-        body: JSON.stringify({"asignatura":editmaterias}),
-      }
-    );
+    const response = await fetch(`${apiUrl}/materias/${clave}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "x-auth-token": token,
+      },
+      body: JSON.stringify({ asignatura: editmaterias }),
+    });
     if (!response.ok) throw new Error("Error al cargar materias");
     const materias = await response.json();
     return { materias: materias || [] };
@@ -72,29 +68,25 @@ export const fetchMateriasPut = async (token, clave, editmaterias) => {
     throw error;
   }
 };
-export const fetchMateriasDeleteLogico = async (token, clave) => {  
+export const fetchMateriasDeleteLogico = async (token, clave) => {
   try {
-    const response = await fetch(
-      `${apiUrl}/materias/deleteLogico/${clave}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-auth-token": token,
-        },
-      }
-    );
+    const response = await fetch(`${apiUrl}/materias/deleteLogico/${clave}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "x-auth-token": token,
+      },
+    });
     if (!response.ok) throw new Error("Error al cargar materias");
     const materias = await response.json();
     console.log(materias);
-    
+
     return { materias: materias || [] };
   } catch (error) {
     console.error("Error en el servicio fetchMateriasPut:", error.message);
     throw error;
   }
 };
-
 
 //------------------------------------------------------------------------------------------//
 //Obtener materias por grupo
@@ -119,7 +111,11 @@ export const fetchMateriasGrupo = async (token, id, anioActual) => {
 };
 
 //Se usa en BorrarMateria
-export const fetchBorrarMateriaDocente = async (token, docenteId, idMateriaDocente) => {
+export const fetchBorrarMateriaDocente = async (
+  token,
+  docenteId,
+  idMateriaDocente
+) => {
   try {
     const response = await fetch(
       `${apiUrl}/docente/materia/delete/${docenteId}/${idMateriaDocente}`,
@@ -136,7 +132,10 @@ export const fetchBorrarMateriaDocente = async (token, docenteId, idMateriaDocen
       throw new Error("Error al eliminar la materia");
     }
   } catch (error) {
-    console.error("Error en el servicio fetchBorrarMateriaDocente:", error.message);
+    console.error(
+      "Error en el servicio fetchBorrarMateriaDocente:",
+      error.message
+    );
     throw error;
   }
 };
@@ -164,8 +163,7 @@ export const fetchBorrarMateriaGrupo = async (token, grupoId, clave) => {
   }
 };
 
-
-//PERFIL 
+//PERFIL
 //Obtener materias por grupo
 export const fetchMateriasPerfil = async (token, id, anioActual) => {
   try {
@@ -183,6 +181,36 @@ export const fetchMateriasPerfil = async (token, id, anioActual) => {
     return { materias: materias || [] };
   } catch (error) {
     console.error("Error en el servicio fetchMateriasPerfil:", error.message);
+    throw error;
+  }
+};
+
+//------------------------------------------------------------------------------------------//
+// Importar materias csv
+// ... (Tus servicios existentes de materias)
+
+export const fetchMateriasImport = async (token, formData) => {
+  // Asumiendo que tu base URL es /api/ y tu endpoint es /materias/importar
+  try {
+    const resImport = await fetch(`${apiUrl}/materias/importar`, {
+      method: "POST",
+      headers: {
+        "x-auth-token": token,
+      },
+      body: formData,
+    });
+
+    const data = await resImport.json();
+
+    if (!resImport.ok) {
+      const errorMessage =
+        data.message || `Error del servidor: ${resImport.status}`;
+      throw new Error(errorMessage);
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error en el servicio fetchMateriasImport:", error.message);
     throw error;
   }
 };
