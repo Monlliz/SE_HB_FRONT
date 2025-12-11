@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../../context/AuthContext.jsx";
+import { OctagonX } from "lucide-react";
 import {
   Button,
   Dialog,
@@ -59,17 +60,36 @@ function BorrarMateriaGrupo({
       return <Box sx={{ color: "red", my: 2 }}>Error: {error}</Box>;
     }
     return (
-      <Typography>
-        {" "}
-        Esta seguro de eliminar la materia {nombre} ?
+      <Typography fontSize={"1.2rem"}>
+        ¿Está seguro de <strong>eliminar</strong> la materia {nombre}?
       </Typography>
     );
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>ELIMINAR MATERIA</DialogTitle>
-      <DialogContent>{renderContent()}</DialogContent>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+      <DialogTitle
+      sx={{
+          backgroundColor: "#C91818",
+          color: "white",
+          textAlign: "center",
+          py: 1.5,
+          fontFamily: '"Poppins", sans-serif',
+          fontWeight: 600
+      }}
+      >
+        <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
+          <OctagonX  size={22} />
+          ELIMINAR MATERIA
+        </Box>
+      </DialogTitle>
+      <DialogContent
+      sx={{
+          marginTop: 2,
+          justifyContent: "center",
+          justifyItems: "center",
+          textAlign: "center"
+        }}>{renderContent()}</DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={isSubmitting}>
           Cancelar
@@ -79,6 +99,9 @@ function BorrarMateriaGrupo({
           disabled={loading || isSubmitting}
           type="button"
           onClick={handleDelete}
+          sx={{
+            backgroundColor:"#C91818"
+          }}
         >
           {isSubmitting ? (
             <CircularProgress size={24} color="inherit" />

@@ -1,6 +1,9 @@
+import { LogIn } from "lucide-react";
+
 const apiUrl = import.meta.env.VITE_API_URL;
 
-//Se usa en la vista de materias
+//-----------------------VISTA MATERIAS-------------------------//
+//GET
 export const fetchMateriasGet = async (token) => {
   try {
     const [resMaterias] = await Promise.all([
@@ -21,6 +24,79 @@ export const fetchMateriasGet = async (token) => {
   }
 };
 
+//POST
+export const fetchMateriasPost = async (token, newmaterias) => {
+  try {
+    const [resMaterias] = await Promise.all([
+      fetch(`${apiUrl}/materias`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-auth-token": token,
+        },
+        body: JSON.stringify(newmaterias),
+      }),
+    ]);
+    if (!resMaterias.ok) {
+      throw new Error("Error al obtener la lista de materias.");
+    }
+    const materias = await resMaterias.json();
+    console.log(materias);
+
+    return { materias: materias || [] };
+    
+  } catch (error) {
+    console.error("Error en el servicio fetchMateriasPost:", error.message);
+    throw error;
+  }
+};
+
+export const fetchMateriasPut = async (token, clave, editmaterias) => {  
+  try {
+    const response = await fetch(
+      `${apiUrl}/materias/${clave}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-auth-token": token,
+        },
+        body: JSON.stringify({"asignatura":editmaterias}),
+      }
+    );
+    if (!response.ok) throw new Error("Error al cargar materias");
+    const materias = await response.json();
+    return { materias: materias || [] };
+  } catch (error) {
+    console.error("Error en el servicio fetchMateriasPut:", error.message);
+    throw error;
+  }
+};
+export const fetchMateriasDeleteLogico = async (token, clave) => {  
+  try {
+    const response = await fetch(
+      `${apiUrl}/materias/deleteLogico/${clave}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-auth-token": token,
+        },
+      }
+    );
+    if (!response.ok) throw new Error("Error al cargar materias");
+    const materias = await response.json();
+    console.log(materias);
+    
+    return { materias: materias || [] };
+  } catch (error) {
+    console.error("Error en el servicio fetchMateriasPut:", error.message);
+    throw error;
+  }
+};
+
+
+//------------------------------------------------------------------------------------------//
 //Obtener materias por grupo
 export const fetchMateriasGrupo = async (token, id, anioActual) => {
   try {

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import { fetchBorrarMateriaDocente } from "../../../services/materiasService";
+import {capitalizarPrimeraLetra} from "../../../utils/fornatters.js";
+import { OctagonX } from "lucide-react";
+
 import {
   Button,
   Dialog,
@@ -12,7 +15,6 @@ import {
   CircularProgress,
   Typography,
 } from "@mui/material";
-
 //ES BORRADO LOGICO, EN LA BD SE PONE UNA FECHA FIN Y EN LA BUSQUEDA DE MATERIA SE IGNORAN LAS QUE TIENEN FECHA FIN
 function BorrarMateria({ open, onClose, onAccept, nombre, docenteId, clave,grupo,idMateriaDocente }) {
   const { token } = useAuth();
@@ -50,14 +52,35 @@ function BorrarMateria({ open, onClose, onAccept, nombre, docenteId, clave,grupo
       return <Box sx={{ color: "red", my: 2 }}>Error: {error}</Box>;
     }
     return (
-      <Typography> Esta seguro de eliminar la materia {nombre} {grupo} ?</Typography>
+      <Typography fontSize={"1.5rem"}>¿Está seguro de <strong>eliminar</strong> la materia {nombre}{grupo}?</Typography>
     );
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Desactivar Docente</DialogTitle>
-      <DialogContent>{renderContent()}</DialogContent>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+      <DialogTitle
+        sx={{
+          backgroundColor: "#C91818",
+          color: "white",
+          textAlign: "center",
+          py: 1.5,
+          fontFamily: '"Poppins", sans-serif',
+          fontWeight: 600
+      }}
+      >
+        <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
+          <OctagonX  size={22} />
+          DESACTIVAR DOCENTE
+        </Box>
+      </DialogTitle>
+      <DialogContent
+        sx={{
+          marginTop: 2,
+          justifyContent: "center",
+          justifyItems: "center",
+          textAlign: "center"
+        }}
+      >{renderContent()}</DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={isSubmitting}>
           Cancelar
@@ -67,6 +90,9 @@ function BorrarMateria({ open, onClose, onAccept, nombre, docenteId, clave,grupo
           disabled={loading || isSubmitting}
           type="button"
           onClick={handleDelete}
+          sx={{
+            backgroundColor:"#C91818"
+          }}
         >
           {isSubmitting ? (
             <CircularProgress size={24} color="inherit" />
