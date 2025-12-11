@@ -162,3 +162,30 @@ export const fetchDocenteMateriasPost = async (
     throw error;
   }
 };
+
+
+//Importar csv
+export const fetchDocenteImport = async (token, formData) => {
+    // Asumiendo que tu base URL es /api/ y tu endpoint es /docentes/importar
+    try {
+        const resImport = await fetch(`${apiUrl}/docente/importar`, {
+            method: "POST",
+            headers: {
+                "x-auth-token": token,
+            },
+            body: formData, 
+        });
+
+        const data = await resImport.json();
+
+        if (!resImport.ok) {
+            const errorMessage = data.message || `Error del servidor: ${resImport.status}`;
+            throw new Error(errorMessage);
+        }
+
+        return data; 
+    } catch (error) {
+        console.error("Error en el servicio fetchDocenteImport:", error.message);
+        throw error;
+    }
+};

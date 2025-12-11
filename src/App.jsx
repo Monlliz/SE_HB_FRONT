@@ -14,6 +14,7 @@ import RubrosPerfil from "./pages/rubros/RubrosPerfil.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import TrabajoCotidiano from "./pages/trabajoCotidiano/TrabajoCotidiano.jsx";
 import TrabajoCotidianoP from "./pages/trabajoCotidiano/TrabajoCotidianoPerfil.jsx"
+import GestionData from "./pages/GestionData.jsx";
 import { ProtectedRoute } from "./components/ProtectedRoute.jsx";
 
 function App() {
@@ -32,6 +33,7 @@ function App() {
         <Route path="/trabajo" element={<TrabajoCotidiano />} />
          <Route path="/trabajoperfil" element={<TrabajoCotidianoP />} />
         <Route path="/listaAsistencia" element={<ListaAsistencia />} />
+        <Route path="/gestiondatos" element={<GestionData />} />
         <Route
           path="/listaAsistenciamateria"
           element={<ListaAsistenciaMateria />}

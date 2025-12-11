@@ -106,13 +106,12 @@ export const fetchAlumnoPost = async (token, datosParaEnviar) => {
       throw new Error("Error al dar de alta a Alumno");
     }
   } catch (error) {
-      console.error("Error en el servicio fetchAlumnoPost:", error.message);
+    console.error("Error en el servicio fetchAlumnoPost:", error.message);
     throw error;
   }
 };
 
-
-export const fetchAlumnoGrupoGet = async (token,grupoId) => {
+export const fetchAlumnoGrupoGet = async (token, grupoId) => {
   try {
     const resAlumnos = await fetch(`${apiUrl}/alumnos/grupo/${grupoId}`, {
       headers: {
@@ -138,13 +137,16 @@ export const fetchAlumnoGrupoGet = async (token,grupoId) => {
   }
 };
 
-export const fetchAlumnoPerfilGet = async (token,idNormalizado,semestre) => {
+export const fetchAlumnoPerfilGet = async (token, idNormalizado, semestre) => {
   try {
-    const resAlumnos = await fetch(`${apiUrl}/alumnos/perfil/${idNormalizado}/${semestre}`, {
-      headers: {
-        "x-auth-token": token,
-      },
-    });
+    const resAlumnos = await fetch(
+      `${apiUrl}/alumnos/perfil/${idNormalizado}/${semestre}`,
+      {
+        headers: {
+          "x-auth-token": token,
+        },
+      }
+    );
 
     if (!resAlumnos.ok) {
       if (resAlumnos.status === 401) {
@@ -160,6 +162,47 @@ export const fetchAlumnoPerfilGet = async (token,idNormalizado,semestre) => {
     return { alumnos: alumnos || [] };
   } catch (error) {
     console.error("Error en el servicio fetchAlumnoGrupoGet:", error.message);
+    throw error;
+  }
+};
+
+//Import con csv de alumnos
+export const fetchAlumnoImport = async (token, formData) => {
+  try {
+    const resImport = await fetch(`${apiUrl}/alumnos/importar`, {
+      method: "POST",
+      headers: {
+        // MUY IMPORTANTE: No definimos Content-Type aquí.
+        // El navegador lo establece automáticamente a 'multipart/form-data'
+        // con el boundary necesario cuando se envía un objeto FormData.
+        "x-auth-token": token,
+      },
+      // El objeto FormData se envía directamente como cuerpo (body).
+      body: formData,
+    });
+
+    const data = await resImport.json();
+
+    if (!resImport.ok) {
+      // Manejar la respuesta del servidor si no es 200/202.
+      // Si el status es 401, el error es de autorización.
+      if (resImport.status === 401) {
+        throw new Error(
+          "Autorización rechazada. Por favor, inicia sesión de nuevo."
+        );
+      }
+
+      // Manejar el caso 400 (Archivo faltante o no CSV) y 500 (Error de servidor)
+      const errorMessage =
+        data.message || `Error del servidor: ${resImport.status}`;
+      throw new Error(errorMessage);
+    }
+
+    // Si la respuesta es 200 (Éxito) o 202 (Éxito parcial con errores)
+    // Devolvemos el reporte de la importación (data)
+    return data;
+  } catch (error) {
+    console.error("Error en el servicio fetchAlumnoImport:", error.message);
     throw error;
   }
 };
