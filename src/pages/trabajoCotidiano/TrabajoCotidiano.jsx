@@ -617,7 +617,7 @@ const TrabajoCotidiano = () => {
                         borderRight: "1px solid rgba(224, 224, 224, 1)",
                       }}
                     >
-                      {`${alumno.apellidop} ${alumno.apellidom} `}
+                      {`${alumno.apellidop} ${alumno.apellidom} ${alumno.nombres} `}
                     </TableCell>
 
                     {rubros.map((rubro) => (

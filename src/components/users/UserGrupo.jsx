@@ -12,7 +12,7 @@ import ListAltIcon from "@mui/icons-material/ListAlt";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import GroupIcon from "@mui/icons-material/Group";
 
-import AutoStoriesIcon from '@mui/icons-material/AutoStories';
+import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 import {
   Box,
   Button,
@@ -23,6 +23,7 @@ import {
   TableCell,
   TableBody,
   IconButton,
+  Tooltip,
 } from "@mui/material";
 
 // El nombre del componente era UserGrupo, lo que sugiere que el `id` es de un grupo.
@@ -185,17 +186,19 @@ export default function UserGrupo({ id }) {
         <Typography variant="h5" fontWeight="bold">
           Grupo - {id}
         </Typography>
-
-        <IconButton aria-label="lista" onClick={handleNavigateToLista}>
-          <ListAltIcon />
-        </IconButton>
-
-        <IconButton
-          aria-label="lista"
-          onClick={() => setModalGrupoCambio(true)}
-        >
-          <GroupIcon />
-        </IconButton>
+        <Tooltip title="Lista general del grupo">
+          <IconButton aria-label="lista" onClick={handleNavigateToLista}>
+            <ListAltIcon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Cambio de alumnos del grupo">
+          <IconButton
+            aria-label="lista"
+            onClick={() => setModalGrupoCambio(true)}
+          >
+            <GroupIcon />
+          </IconButton>
+        </Tooltip>
       </Box>
       {/* Controles de Materias */}
       <Box
@@ -211,43 +214,52 @@ export default function UserGrupo({ id }) {
         <Typography variant="h5" fontWeight="bold">
           Materias
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => setModalMateriaOpen(true)}
-        >
-          Agregar
-        </Button>
-        <Button
-          variant="outlined"
-          color="error"
-          disabled={!selectedMateriaClave}
-          onClick={() => setModalBorrarMateriaOpen(true)}
-        >
-          Eliminar
-        </Button>
-
-        <IconButton
-          aria-label="lista"
-          disabled={!selectedMateriaClave}
-          onClick={handleNavigateToListaMateria}
-        >
-          <ListAltIcon />
-        </IconButton>
-        <IconButton
-          aria-label="actvidades"
-          disabled={!selectedMateriaClave}
-          onClick={handleNavigateToActividades}
-        >
-          <AutoStoriesIcon />
-        </IconButton>
-        <IconButton
-          aria-label="calificaciones_parciales"
-          disabled={!selectedMateriaClave}
-          onClick={handleNavigateToCalifacacionesParcilaes}
-        >
-          <ChecklistIcon />
-        </IconButton>
+        <Tooltip title="Agregar materias al grupo">
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => setModalMateriaOpen(true)}
+          >
+            Agregar
+          </Button>
+        </Tooltip>
+        <Tooltip title="Eliminar materia del grupo">
+          <Button
+            variant="outlined"
+            color="error"
+            disabled={!selectedMateriaClave}
+            onClick={() => setModalBorrarMateriaOpen(true)}
+          >
+            Eliminar
+          </Button>
+        </Tooltip>
+        <Tooltip title="Lista de Asistencia por Materia">
+          <IconButton
+            aria-label="lista"
+            disabled={!selectedMateriaClave}
+            onClick={handleNavigateToListaMateria}
+          >
+            <ListAltIcon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Actividades Cotidianas">
+          <IconButton
+            aria-label="actvidades"
+            disabled={!selectedMateriaClave}
+            onClick={handleNavigateToActividades}
+          >
+            <AutoStoriesIcon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Calificaciones Parciales">
+          <IconButton
+            aria-label="calificaciones_parciales"
+            disabled={!selectedMateriaClave}
+            onClick={handleNavigateToCalifacacionesParcilaes}
+          >
+            <ChecklistIcon />
+          </IconButton>
+        </Tooltip>
       </Box>
 
       {/* Tabla de Materias */}
