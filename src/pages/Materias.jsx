@@ -31,7 +31,8 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { fetchMateriasGet, fetchMateriasPost, fetchMateriasPut, fetchMateriasDeleteLogico } from "../services/materiasService.js";
 import ReusableModal from "../components/modals/ReusableModal.jsx";
 import ConfirmModal from "../components/modals/ConfirmModal.jsx";
-import { camposNuevaMateria, camposEditMateria,headCells } from "../config/camposMateria.jsx";
+import FiltrosPopover from "../components/FiltrosPopover.jsx";
+import { camposNuevaMateria, camposEditMateria, headCells } from "../config/camposMateria.jsx";
 
 
 export default function Materias() {
@@ -43,6 +44,49 @@ export default function Materias() {
   const [selectedClave, setSelectedClave] = useState(null);
 
   const { token } = useAuth();
+  //-----------Busqueda de filtros avanzada------------------//
+  // Nuevo estado para los filtros avanzados
+  const [advancedFilters, setAdvancedFilters] = useState({
+    clave: "",
+    semestre: null,
+    perfil: null,
+    year: null
+  });
+
+  // Esta función se ejecuta cuando le dan "Aplicar" en el popover
+  const handleApplyFilters = (filters) => {
+    setAdvancedFilters(filters);
+    console.log("Filtros recibidos:", filters);
+  };
+
+  // Lógica de filtrado combinada
+  const filteredData = materiasData.filter((materia) => {
+    // 1. Filtro buscador general (el que ya tenías)
+    const matchesGeneralSearch = 
+        search === "" || 
+        materia.asignatura.toLowerCase().includes(search.toLowerCase());
+
+    // 2. Filtros Avanzados (Popover)
+    const matchesClave = 
+        !advancedFilters.clave || 
+        materia.clave.toLowerCase().includes(advancedFilters.clave.toLowerCase());
+
+    const matchesSemestre = 
+        !advancedFilters.semestre || 
+        String(materia.semestre) === String(advancedFilters.semestre);
+
+    const matchesPerfil = 
+        !advancedFilters.perfil || 
+        materia.perfil_id === advancedFilters.perfil; // Ajusta si usas ID o Nombre
+
+    const matchesYear = 
+        !advancedFilters.year || 
+        String(materia.yearm) === String(advancedFilters.year);
+
+    // Deben cumplirse TODAS las condiciones
+    return matchesGeneralSearch && matchesClave && matchesSemestre && matchesPerfil && matchesYear;
+  });
+  //-----------Fin búsqueda de filtros avanzada------------------//
 
   //----------------------Notificación Snackbar----------------------//
   // Estado para la notificación
@@ -72,13 +116,13 @@ export default function Materias() {
     cargarMaterias();
   }, [token]);
 
-  //--------------Filtro de búsqueda----------------------//
+ /*  //--------------Filtro de búsqueda----------------------//
   // Filtrar materias según la asignatura
   const filteredData = materiasData.filter((materia) => {
     const searchLower = search.toLowerCase();
     const asignaturaLower = materia.asignatura.toLowerCase();
     return search === "" || asignaturaLower.includes(searchLower);
-  });
+  }); */
 
   //----------------------Fin filtro de búsqueda----------------------//
 
@@ -286,13 +330,7 @@ export default function Materias() {
               },
             }}
           />
-          <Button
-            variant="outlined"
-            color="primary"
-          // onClick={() => ...}
-          >
-            Ver Filtros
-          </Button>
+          <FiltrosPopover onApplyFilters={handleApplyFilters}/>
         </Box>
       </Box>
 
