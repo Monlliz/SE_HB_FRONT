@@ -21,10 +21,10 @@ import {
   Box,
   Tooltip,
   Button,
-  FormControl,    
-  InputLabel,     
-  Select,         
-  MenuItem,       
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
   Stack,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
@@ -35,6 +35,7 @@ import InfoIcon from "@mui/icons-material/Info";
 
 // Importación del modal y de los servicios de la API.
 import NuevaAsistencia from "../../components/modals/Grupo/NuevaAsistencia";
+import { useNotification } from "../../components/modals/NotificationModal.jsx";
 import {
   fetchDatosAsistencia,
   fetchPostAsistencia,
@@ -93,7 +94,8 @@ const ListaAsistencia = () => {
   const { grupoId, year } = location.state || {};
 
   // --- ESTADOS DEL COMPONENTE ---
-
+  // INICIALIZACIÓN DE NOTIFICACIONES ---
+  const { showNotification, NotificationComponent } = useNotification();
   /** @state {boolean} modalOpen - Controla la visibilidad del modal para añadir nueva asistencia. */
   const [modalOpen, setModalOpen] = useState(false);
   /** @state {Array} estudiantes - Almacena la lista de estudiantes del grupo. */
@@ -128,10 +130,15 @@ const ListaAsistencia = () => {
       if (!token)
         throw new Error("Autorización rechazada. No se encontró el token.");
 
-      const data = await fetchDatosAsistencia(grupoId, selectedYear, selectedMonth, token);
+      const data = await fetchDatosAsistencia(
+        grupoId,
+        selectedYear,
+        selectedMonth,
+        token
+      );
       setEstudiantes(data.estudiantes);
       setAsistencias(data.asistencias);
-      console.log(data.asistencias)
+      console.log(data.asistencias);
       setEstudiantes(data.estudiantes);
       setError(null);
     } catch (err) {
@@ -140,7 +147,7 @@ const ListaAsistencia = () => {
     } finally {
       setLoading(false);
     }
-  }, [grupoId, token,selectedYear, selectedMonth]);
+  }, [grupoId, token, selectedYear, selectedMonth]);
 
   /**
    * @effect
@@ -186,12 +193,13 @@ const ListaAsistencia = () => {
     setIsSaving(true);
     try {
       await fetchPostAsistencia(token, grupoId, estatusAsistencia);
-      alert("Asistencia guardada con éxito"); // Opcional: Reemplazar con Snackbar/Toast.
+      showNotification("Lista Guardada Exitosamente", "success");
       setModalOpen(false);
       cargarDatos(); // Vuelve a cargar los datos para reflejar los cambios.
     } catch (error) {
       console.error("Error al guardar la asistencia:", error);
-      alert("Hubo un error al guardar la asistencia."); // Informar al usuario.
+
+      showNotification("Hubo un error al guardar la asistencia.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -223,57 +231,70 @@ const ListaAsistencia = () => {
         height: "calc(100vh - 64px)",
         display: "flex",
         flexDirection: "column",
-       
       }}
     >
       {/* Encabezado con título y botón para agregar nueva asistencia */}
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
         <Box>
-        <Typography variant="h5">Asistencia General Grupo {grupoId}</Typography>
-        <Typography variant="subtitle1" color="text.secondary">
-          {/* Título dinámico que refleja la selección */}
-          Mostrando: {new Date(selectedYear, selectedMonth - 1).toLocaleString('es-MX', { month: 'long', year: 'numeric' })}
-        </Typography>
-      </Box>
-      
-       <Stack direction="row" spacing={2} alignItems="center">
-        {/* Selector de Año */}
-        <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
-          <InputLabel>Año</InputLabel>
-          <Select
-            value={selectedYear}
-            label="Año"
-            onChange={(e) => setSelectedYear(e.target.value)}
-          >
-            {/* Genera los últimos  años dinámicamente */}
-            {[0,1,2,3].map(offset => {
-              const year = new Date().getFullYear() - offset;
-              return <MenuItem key={year} value={year}>{year}</MenuItem>;
+          <Typography variant="h5">
+            Asistencia General Grupo {grupoId}
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            {/* Título dinámico que refleja la selección */}
+            Mostrando:{" "}
+            {new Date(selectedYear, selectedMonth - 1).toLocaleString("es-MX", {
+              month: "long",
+              year: "numeric",
             })}
-          </Select>
-        </FormControl>
+          </Typography>
+        </Box>
 
-        {/* Selector de Mes */}
-        <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
-          <InputLabel>Mes</InputLabel>
-          <Select
-            value={selectedMonth}
-            label="Mes"
-            onChange={(e) => setSelectedMonth(e.target.value)}
+        <Stack direction="row" spacing={2} alignItems="center">
+          {/* Selector de Año */}
+          <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
+            <InputLabel>Año</InputLabel>
+            <Select
+              value={selectedYear}
+              label="Año"
+              onChange={(e) => setSelectedYear(e.target.value)}
+            >
+              {/* Genera los últimos  años dinámicamente */}
+              {[0, 1, 2, 3].map((offset) => {
+                const year = new Date().getFullYear() - offset;
+                return (
+                  <MenuItem key={year} value={year}>
+                    {year}
+                  </MenuItem>
+                );
+              })}
+            </Select>
+          </FormControl>
+
+          {/* Selector de Mes */}
+          <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
+            <InputLabel>Mes</InputLabel>
+            <Select
+              value={selectedMonth}
+              label="Mes"
+              onChange={(e) => setSelectedMonth(e.target.value)}
+            >
+              {/* Genera los 12 meses */}
+              {Array.from({ length: 12 }, (_, i) => (
+                <MenuItem key={i + 1} value={i + 1}>
+                  {new Date(0, i).toLocaleString("es-MX", { month: "long" })}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setModalOpen(true)}
           >
-            {/* Genera los 12 meses */}
-            {Array.from({ length: 12 }, (_, i) => (
-              <MenuItem key={i + 1} value={i + 1}>
-                {new Date(0, i).toLocaleString('es-MX', { month: 'long' })}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setModalOpen(true)}>
-          Nueva Entrada
-        </Button>
-      </Stack>
+            Nueva Entrada
+          </Button>
+        </Stack>
       </Box>
 
       {/* Vista condicional: mensaje si no hay estudiantes, o la tabla si los hay */}
@@ -343,6 +364,7 @@ const ListaAsistencia = () => {
         onSave={handleSaveAsistencia}
         isSaving={isSaving}
       />
+      {NotificationComponent}
     </Box>
   );
 };

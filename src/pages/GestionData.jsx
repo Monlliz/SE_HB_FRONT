@@ -1,5 +1,6 @@
 import React, { useState, useEffect, act } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useNotification } from "../components/modals/NotificationModal.jsx";
 // Imports de MUI
 import {
   Button,
@@ -16,11 +17,13 @@ import {
   FormControl,
   Divider,
   Stack,
+  Tooltip,
 } from "@mui/material";
 //iconos
 import FilterAltIcon from "@mui/icons-material/FilterAlt"; // Asegúrate de importar el icono
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import CloudDownloadIcon from "@mui/icons-material/CloudDownload";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 //Import de servicios propios
 import { useExport } from "../utils/useExport.js";
 //import de fetchs
@@ -32,8 +35,11 @@ import {
   fetchDocenteGet,
   fetchDocenteImport,
 } from "../services/docenteService.js";
-import { fetchMateriasGet,fetchMateriasImport } from "../services/materiasService.js";
-// falta
+import {
+  fetchMateriasGet,
+  fetchMateriasImport,
+} from "../services/materiasService.js";
+
 //================================
 // --- CONFIGURACIÓN INICIAL PARA EXPORTACIONES---
 //================================
@@ -132,7 +138,10 @@ const entityColumnConfig = {
 //================================
 
 export default function GestionData() {
-  //datos para probar
+  //================================
+  // --- INICIALIZACIÓN DE NOTIFICACIONES ---
+  //================================
+  const { showNotification, NotificationComponent } = useNotification();
 
   //==================================
   // -- LLAMAR FUNCION DE EXPORTACION
@@ -157,16 +166,19 @@ export default function GestionData() {
   //========================================
   const handleDescargarPlantilla = () => {
     if (!grupoImport) {
-      alert(
-        "Primero selecciona la entidad (Alumnos, Docentes o Materias) para descargar la plantilla."
-      );
+      showNotification("Selecciona una entidad a importar", "warning");
+
       return;
     }
     // 1. Obtener la configuración de columnas de la entidad seleccionada
     const entityConfig = entityColumnConfig[grupoImport];
 
     if (!entityConfig) {
-      alert("Configuración de columnas no encontrada para esta entidad.");
+      showNotification(
+        "Configuración de columnas no encontrada para esta entidad",
+        "warning"
+      );
+
       return;
     }
     const columnLabels = entityConfig.reduce((acc, col) => {
@@ -199,11 +211,15 @@ export default function GestionData() {
   //=================================================
   const handleImportar = async () => {
     if (!grupoImport) {
-      alert("Selecciona la entidad a importar (Alumnos, Docentes o Materias).");
+      showNotification(
+        "Selecciona la entidad a importar (Alumnos, Docentes o Materias).",
+        "warning"
+      );
+
       return;
     }
     if (!archivoImport) {
-      alert("Selecciona un archivo CSV para importar.");
+      showNotification("Selecciona un archivo CSV para importar.", "warning");
       return;
     }
     setLoading(true);
@@ -225,14 +241,12 @@ export default function GestionData() {
         default:
           throw new Error("Entidad de importación no válida.");
       }
-
+      showNotification("¡Importación exitosa!", "success");
       setArchivoImport(null); // Limpiar el archivo seleccionado
       // Posiblemente recargar datos o notificar éxito
     } catch (error) {
       console.error("Error en la importación:", error);
-      alert(
-        "Error al importar los datos. Revisa la consola y el formato del CSV."
-      );
+      showNotification("Error al procesar el archivo", "error");
     } finally {
       setLoading(false);
     }
@@ -379,7 +393,7 @@ export default function GestionData() {
           break;
 
         default:
-          alert("Entidad no soportada para exportar");
+          showNotification("Entidad no soportada para exportar", "error");
           setLoading(false);
           return;
       }
@@ -475,7 +489,7 @@ export default function GestionData() {
       });
 
       if (finalColumnsConfig.length === 0) {
-        alert("Selecciona al menos una columna para exportar");
+        showNotification("Selecciona al menos una columna para exportar", "warning");
         setLoading(false);
         return;
       }
@@ -499,7 +513,7 @@ export default function GestionData() {
       });
 
       if (finalData.length === 0) {
-        alert("No se encontraron registros con los filtros seleccionados.");
+        showNotification("No se encontraron registros con los filtros seleccionados.", "warning");
         setLoading(false);
         return;
       }
@@ -516,7 +530,7 @@ export default function GestionData() {
       exportar(finalData, fileName, formatString);
     } catch (error) {
       console.error("Error exportando:", error);
-      alert("Hubo un error al obtener los datos.");
+      showNotification("Hubo un error al obtener los datos.", "error");
     } finally {
       setLoading(false);
     }
@@ -571,6 +585,11 @@ export default function GestionData() {
         <Typography variant="body2" color="text.secondary">
           Solo formato CSV
         </Typography>
+        <Tooltip title="Las Fechas deben de ir en formato de Texto">
+          <HelpOutlineIcon
+            sx={{ fontSize: 20, mb: 2, color: "primary.main" }}
+          />
+        </Tooltip>
         <FormControl fullWidth margin="normal">
           <InputLabel id="select-entidad-label">Entidad a importar</InputLabel>
           <Select
@@ -727,6 +746,7 @@ export default function GestionData() {
           Exportar datos
         </Button>
       </Card>
+      {NotificationComponent}
     </Box>
   );
 }
