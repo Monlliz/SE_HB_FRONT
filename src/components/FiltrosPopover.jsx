@@ -12,15 +12,10 @@ import {
 import FilterListIcon from "@mui/icons-material/FilterList";
 import CloseIcon from "@mui/icons-material/Close";
 
+import { semestres, perfiles } from '../config/camposMateria';
 // DATOS DE EJEMPLO (Reemplázalos con tus datos reales o props)
-const semestres = ["1", "2", "3", "4", "5", "6"];
-const perfiles = [
-  "Bachillerato Común (BC)",
-  "Físico Matemático",
-  "Químico Biológico",
-  "Económico Administrativo",
-  "Humanidades",
-];
+
+
 // Generamos años desde 2020 a 2030
 const anios = Array.from({ length: 11 }, (_, i) => (2020 + i).toString());
 
@@ -112,12 +107,12 @@ export default function FiltrosPopover({ onApplyFilters }) {
           horizontal: "left",
         }}
         slotProps={{
-            paper: {
-                sx: { borderRadius: 2, mt: 1, boxShadow: 3 } // Estilo de la ventana
-            }
+          paper: {
+            sx: { borderRadius: 2, mt: 1, boxShadow: 3 } // Estilo de la ventana
+          }
         }}
       >
-        <Box sx={{ p: 3, width: 320 }}>
+        <Box sx={{ p: 3, width: "100%" }}>
           {/* Encabezado del Popover */}
           <Box
             sx={{
@@ -125,9 +120,10 @@ export default function FiltrosPopover({ onApplyFilters }) {
               justifyContent: "space-between",
               alignItems: "center",
               mb: 2,
+              color: "primary.main",
             }}
           >
-            <Typography variant="subtitle1" fontWeight="bold">
+            <Typography variant="h1" fontSize="1.3rem">
               Filtrar Materias
             </Typography>
             <IconButton size="small" onClick={handleClose}>
@@ -158,9 +154,23 @@ export default function FiltrosPopover({ onApplyFilters }) {
 
             {/* 3. PERFIL (Autocomplete) */}
             <Autocomplete
+              // A. Las opciones son el array de objetos
               options={perfiles}
-              value={filters.perfil}
-              onChange={(_, newValue) => handleFilterChange("perfil", newValue)}
+
+              // B. Le decimos que muestre la propiedad 'label' en el texto
+              getOptionLabel={(option) => option.label}
+
+              // C. VALOR: Buscamos el objeto completo usando el ID guardado en el estado
+              // Si filters.perfil es "BC", busca el objeto {id:"BC", label:"Sin Perfil"}
+              value={perfiles.find((p) => p.id === filters.perfil) || null}
+
+              // D. CAMBIO: Cuando seleccionan, guardamos solo el ID (option.id)
+              onChange={(_, newValue) => {
+                // newValue es el objeto completo o null (si borran)
+                handleFilterChange("perfil", newValue ? newValue.id : null);
+              }}
+
+              // E. Renderizado normal
               renderInput={(params) => (
                 <TextField {...params} label="Perfil" size="small" />
               )}
