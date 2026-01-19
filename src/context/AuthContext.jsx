@@ -172,41 +172,43 @@ export const AuthProvider = ({ children }) => {
 
   // --- LÓGICA PARA ACTIVAR EL MODAL SEGÚN EL TIEMPO DEL JWT ---
   useEffect(() => {
-    if (token && location.pathname !== "/login") {
-      try {
-        // 1. Decodificar el payload del token (la parte del medio)
-        const payload = JSON.parse(atob(token.split(".")[1]));
-
-        // exp está en segundos, JS usa milisegundos
-        const expiryTime = payload.exp * 1000;
-        const currentTime = Date.now();
-
-        // Buffer: 5 minutos antes de expirar (300,000 ms)
-        // Si tu token dura solo 2 min para pruebas, cambia esto a 30000 (30 seg)
-        const warningBuffer = 5 * 60 * 1000;
-        const timeUntilWarning = expiryTime - currentTime - warningBuffer;
-
-        console.log(`Segundos para el modal: ${timeUntilWarning / 1000}`);
-
-        if (timeUntilWarning <= 0) {
-          // Si ya estamos en el tiempo límite, mostrar de inmediato
-          setShowExtendModal(true);
-        } else {
-          // Programar la alarma
-          const timer = setTimeout(() => {
-            console.log("Activando modal de extensión...");
-            setShowExtendModal(true);
-          }, timeUntilWarning);
-
-          // Limpiar el timer si el token cambia o el componente se desmonta
-          return () => clearTimeout(timer);
-        }
-      } catch (error) {
-        console.error("Error al calcular expiración:", error);
-      }
+    // Si no hay token o estamos en login, no hacer nada
+    if (!token || location.pathname === "/login") {
+      setShowExtendModal(false);
+      return;
     }
-  }, [token]); // Esto hace que se reinicie cada vez que el token se actualiza
 
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const expiryTime = payload.exp * 1000;
+      const currentTime = Date.now();
+
+      const warningBuffer = 5 * 60 * 1000;
+      const timeUntilWarning = expiryTime - currentTime - warningBuffer;
+
+      // Si ya expiró, logout inmediato
+      if (currentTime >= expiryTime) {
+        logout();
+        return;
+      }
+
+      console.log(`Segundos para el modal: ${timeUntilWarning / 1000}`);
+
+      if (timeUntilWarning <= 0) {
+        setShowExtendModal(true);
+      } else {
+        const timer = setTimeout(() => {
+          setShowExtendModal(true);
+        }, timeUntilWarning);
+        return () => clearTimeout(timer);
+      }
+    } catch (error) {
+      console.error("Error al calcular expiración:", error);
+    }
+    // AGREGAMOS location.pathname para que se re-ejecute al navegar
+  }, [token, location.pathname]);
+
+  //Modal de extensión de sesión
   return (
     <AuthContext.Provider
       value={{
@@ -220,69 +222,71 @@ export const AuthProvider = ({ children }) => {
       }}
     >
       {children}
-
       {/* --- MODAL DE CONFIRMACIÓN  --- */}
-      <Dialog
-        open={showExtendModal}
-        onClose={(event, reason) => {
-          // Evita que el usuario cierre el modal haciendo click afuera o con Escape
-          if (reason !== "backdropClick" && reason !== "escapeKeyDown") {
-            setShowExtendModal(false);
-          }
-        }}
-        aria-labelledby="session-timeout-title"
-        aria-describedby="session-timeout-description"
-        PaperProps={{
-          style: { borderRadius: 15, padding: "10px" },
-        }}
-      >
-        <DialogTitle
-          id="session-timeout-title"
-          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+      {token && (
+        <Dialog
+          open={showExtendModal}
+          onClose={(event, reason) => {
+            // Evita que el usuario cierre el modal haciendo click afuera o con Escape
+            if (reason !== "backdropClick" && reason !== "escapeKeyDown") {
+              setShowExtendModal(false);
+            }
+          }}
+          aria-labelledby="session-timeout-title"
+          aria-describedby="session-timeout-description"
+          PaperProps={{
+            style: { borderRadius: 15, padding: "10px" },
+          }}
         >
-          <TimerTokenIcon color="warning" sx={{ fontSize: 30 }} />
-          <Typography variant="h6" component="span" fontWeight="bold">
-            ¿Tu sesión está por expirar?
-          </Typography>
-        </DialogTitle>
+          <DialogTitle
+            id="session-timeout-title"
+            sx={{ display: "flex", alignItems: "center", gap: 1 }}
+          >
+            <TimerTokenIcon color="warning" sx={{ fontSize: 30 }} />
+            <Typography variant="h6" component="span" fontWeight="bold">
+              ¿Tu sesión está por expirar?
+            </Typography>
+          </DialogTitle>
 
-        <DialogContent>
-          <DialogContentText
-            id="session-timeout-description"
-            sx={{ color: "text.secondary" }}
-          >
-            Por motivos de seguridad, tu sesión se cerrará pronto. ¿Deseas
-            mantenerte conectado y continuar con tu trabajo?
-          </DialogContentText>
-        </DialogContent>
+          <DialogContent>
+            <DialogContentText
+              id="session-timeout-description"
+              sx={{ color: "text.secondary" }}
+            >
+              Por motivos de seguridad, tu sesión se cerrará pronto. ¿Deseas
+              mantenerte conectado y continuar con tu trabajo?
+            </DialogContentText>
+          </DialogContent>
 
-        <DialogActions
-          sx={{ padding: "20px", justifyContent: "space-between" }}
-        >
-          <Button
-            onClick={logout}
-            color="error"
-            variant="outlined"
-            sx={{ borderRadius: "8px", textTransform: "none" }}
+          <DialogActions
+            sx={{ padding: "20px", justifyContent: "space-between" }}
           >
-            Finalizar sesión
-          </Button>
-          <Button
-            onClick={refreshToken}
-            color="primary"
-            variant="contained"
-            autoFocus
-            sx={{
-              borderRadius: "8px",
-              textTransform: "none",
-              boxShadow: 2,
-              "&:hover": { boxShadow: 4 },
-            }}
-          >
-            Sí, continuar conectado
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <Button
+              onClick={logout}
+              color="error"
+              variant="outlined"
+              sx={{ borderRadius: "8px", textTransform: "none" }}
+            >
+              Finalizar sesión
+            </Button>
+            <Button
+              onClick={refreshToken}
+              color="primary"
+              variant="contained"
+              autoFocus
+              sx={{
+                borderRadius: "8px",
+                textTransform: "none",
+                boxShadow: 2,
+                "&:hover": { boxShadow: 4 },
+              }}
+            >
+              Sí, continuar conectado
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
+      ;
     </AuthContext.Provider>
   );
 };
