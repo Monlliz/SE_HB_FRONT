@@ -242,7 +242,7 @@ export default function UserDocente({ matricula }) {
           }}
         >
           <Typography variant="h5" fontWeight="bold">
-            Incidentes
+            Incidencias
           </Typography>
           <Button
             variant="contained"
@@ -283,7 +283,7 @@ export default function UserDocente({ matricula }) {
           {incidente.length === 0 ? (
             <Paper sx={{ width: "100%", padding: 4, textAlign: "center" }}>
               <Typography variant="h6" color="text.secondary">
-                No hay incidentes para mostrar.
+                No hay incidencias para mostrar.
               </Typography>
             </Paper>
           ) : (
@@ -307,7 +307,7 @@ export default function UserDocente({ matricula }) {
                   </Typography>
                 ) : (
                   <Typography sx={{ flex: "1 1 100%" }} variant="h6">
-                    Reporte de Incidentes
+                    Reporte de Incidencias
                   </Typography>
                 )}
               </Toolbar>

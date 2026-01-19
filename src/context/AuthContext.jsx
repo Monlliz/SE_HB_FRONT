@@ -1,6 +1,6 @@
 import { createContext, useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { useLocation } from "react-router-dom";
 //Esto esta muy mal
 import {
   Dialog,
@@ -18,6 +18,8 @@ const AuthContext = createContext();
 const authChannel = new BroadcastChannel("auth_channel");
 
 export const AuthProvider = ({ children }) => {
+  //identificar la ruta actual
+  const location = useLocation();
   // const [user, setUser] = useState(null);
 
   //refresh del token
@@ -170,7 +172,7 @@ export const AuthProvider = ({ children }) => {
 
   // --- LÓGICA PARA ACTIVAR EL MODAL SEGÚN EL TIEMPO DEL JWT ---
   useEffect(() => {
-    if (token) {
+    if (token && location.pathname !== "/login") {
       try {
         // 1. Decodificar el payload del token (la parte del medio)
         const payload = JSON.parse(atob(token.split(".")[1]));
