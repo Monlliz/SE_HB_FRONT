@@ -172,9 +172,7 @@ export const fetchAlumnoImport = async (token, formData) => {
     const resImport = await fetch(`${apiUrl}/alumnos/importar`, {
       method: "POST",
       headers: {
-        // MUY IMPORTANTE: No definimos Content-Type aquí.
-        // El navegador lo establece automáticamente a 'multipart/form-data'
-        // con el boundary necesario cuando se envía un objeto FormData.
+  
         "x-auth-token": token,
       },
       // El objeto FormData se envía directamente como cuerpo (body).

@@ -7,7 +7,16 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { fetchDocenteGet } from "../services/docenteService.js";
 import {
-  Box, TextField, List, ListItem, ListItemText, Paper, IconButton,Tooltip
+  Box,
+  TextField,
+  List,
+  ListItem,
+  ListItemText,
+  Paper,
+  IconButton,
+  Tooltip,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import UserDocente from "../components/users/UserDocente.jsx"; // Componente 'Detalle'
@@ -35,6 +44,8 @@ export default function Docente() {
   const [loading, setLoading] = useState(false);
   /** @state {string|null} error - Almacena mensajes de error si la carga de datos falla. */
   const [error, setError] = useState(null);
+  /** @state {boolean} showAll - Controla si se muestran todos los docentes o solo los filtrados. */
+  const [showAll, setShowAll] = useState(false);
 
   // --- LÓGICA DE DATOS ---
 
@@ -47,16 +58,18 @@ export default function Docente() {
     setLoading(true);
     setError(null);
     try {
-      if (!token) throw new Error("Autorización rechazada. No se encontró el token.");
+      if (!token) throw new Error("Autorización rechazada.");
       const data = await fetchDocenteGet(token);
-      setDocentes(data.docentes);
+      const docentesOrdenados = (data.docentes || []).sort((a, b) => {
+        return a.apellidop.localeCompare(b.apellidop);
+      });
+      setDocentes(docentesOrdenados);
     } catch (error) {
-      console.error("Error al cargar Docentes:", error);
       setError(error.message);
     } finally {
       setLoading(false);
     }
-  }, [token]); // Depende del token. Se recreará si el token cambia.
+  }, [token]);
 
   /**
    * @effect
@@ -71,18 +84,32 @@ export default function Docente() {
    * Filtra la lista de docentes cada vez que el término de búsqueda (`search`) o la lista maestra (`docentes`) cambian.
    */
   useEffect(() => {
-    // Si no hay texto de búsqueda, la lista de resultados se vacía.
-    if (!search) {
-      setResultados([]);
-      return;
+    let filtered = docentes ?? [];
+
+    if (!showAll) {
+      // Si no se marca "Ver todos", requiere que haya algo en el buscador
+      if (!search) {
+        setResultados([]);
+        return;
+      }
+      filtered = filtered.filter((docente) => {
+        const nombreCompleto =
+          `${docente.nombres} ${docente.apellidop} ${docente.apellidom}`.toLowerCase();
+        return nombreCompleto.includes(search.toLowerCase());
+      });
+    } else {
+      // Si "Ver todos" es true, aún podemos aplicar el filtro de búsqueda sobre la lista completa
+      if (search) {
+        filtered = filtered.filter((docente) => {
+          const nombreCompleto =
+            `${docente.nombres} ${docente.apellidop} ${docente.apellidom}`.toLowerCase();
+          return nombreCompleto.includes(search.toLowerCase());
+        });
+      }
     }
-    // Filtra la lista de docentes si existe y el término de búsqueda no está vacío.
-    const filtered = (docentes ?? []).filter((docente) => {
-      const nombres = docente?.nombres ?? "";
-      return nombres.toLowerCase().includes(search.toLowerCase());
-    });
+
     setResultados(filtered);
-  }, [search, docentes]);
+  }, [search, docentes, showAll]);
 
   // --- MANEJADORES DE EVENTOS ---
 
@@ -107,10 +134,18 @@ export default function Docente() {
   // --- RENDERIZADO DEL COMPONENTE ---
 
   return (
-    <Box sx={{ display: "flex", width: "100%", height: "calc(100vh - 80px)"}}>
+    <Box sx={{ display: "flex", width: "100%", height: "calc(100vh - 80px)" }}>
       {/* Panel Izquierdo (20%): Búsqueda y Lista (Maestro) */}
-      <Paper sx={{ width: "20%", height: "100%", display: "flex", flexDirection: "column", p: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+      <Paper
+        sx={{
+          width: "20%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          p: 2,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
           <TextField
             fullWidth
             variant="outlined"
@@ -124,7 +159,22 @@ export default function Docente() {
             </IconButton>
           </Tooltip>
         </Box>
-
+        <FormControlLabel
+          control={
+            <Checkbox
+              size="small"
+              checked={showAll}
+              onChange={(e) => setShowAll(e.target.checked)}
+            />
+          }
+          label={
+            showAll ? "Mostrando todos los docentes" : "Ver todos los docentes"
+          }
+          sx={{
+            mb: 1,
+            "& .MuiFormControlLabel-label": { fontSize: "0.85rem" },
+          }}
+        />
         {/* Modal para crear un nuevo docente */}
         <NewDocente
           open={modalNewOpen}
@@ -133,26 +183,51 @@ export default function Docente() {
         />
 
         <List sx={{ width: "100%", flexGrow: 1, overflowY: "auto" }}>
-          {loading && <ListItem><ListItemText primary="Cargando..." /></ListItem>}
-          {error && <ListItem><ListItemText primary={error} sx={{ color: "red" }} /></ListItem>}
+          {loading && (
+            <ListItem>
+              <ListItemText primary="Cargando..." />
+            </ListItem>
+          )}
+          {error && (
+            <ListItem>
+              <ListItemText primary={error} sx={{ color: "red" }} />
+            </ListItem>
+          )}
+
           {!loading && !error && (
-            search && resultados.length > 0 ? (
-              resultados.map((docente) => (
-                <ListItem
-                  key={docente.iddocente}
-                  onClick={() => handleClick(docente)}
-                  selected={selectedDocenteId === docente.iddocente}
-                  sx={{ cursor: "pointer", "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.04)" } }}
-                  divider
-                >
-                  <ListItemText primary={docente.nombres} secondary={`${docente.apellidop} ${docente.apellidom}`} />
+            <>
+              {/* Si hay resultados, los mapeamos directamente */}
+              {resultados.length > 0 ? (
+                resultados.map((docente) => (
+                  <ListItem
+                    key={docente.iddocente}
+                    onClick={() => handleClick(docente)}
+                    selected={selectedDocenteId === docente.iddocente}
+                    sx={{
+                      cursor: "pointer",
+                      "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.04)" },
+                    }}
+                    divider
+                  >
+                    <ListItemText
+                      primary={docente.nombres}
+                      secondary={`${docente.apellidop} ${docente.apellidom}`}
+                    />
+                  </ListItem>
+                ))
+              ) : (
+                /* Si no hay resultados, mostramos el mensaje de ayuda contextual */
+                <ListItem>
+                  <ListItemText
+                    primary={
+                      search
+                        ? "No se encontraron coincidencias"
+                        : "Usa el buscador o marca 'Mostrar lista completa'"
+                    }
+                  />
                 </ListItem>
-              ))
-            ) : search ? (
-              <ListItem><ListItemText primary="No se encontraron docentes" /></ListItem>
-            ) : (
-              <ListItem><ListItemText primary="Escribe un nombre para buscar..." /></ListItem>
-            )
+              )}
+            </>
           )}
         </List>
       </Paper>
@@ -162,7 +237,14 @@ export default function Docente() {
         {selectedDocenteId ? (
           <UserDocente id={selectedDocenteId} />
         ) : (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "100%",
+            }}
+          >
             <p>Selecciona un docente de la lista para ver sus detalles.</p>
           </Box>
         )}
