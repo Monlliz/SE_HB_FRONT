@@ -191,7 +191,7 @@ export default function UserGrupo({ id }) {
             <ListAltIcon />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Cambio de alumnos del grupo">
+        <Tooltip title="Cambio de alumnos del grupo" enterTouchDelay={0} leaveTouchDelay={3000}>
           <IconButton
             aria-label="lista"
             onClick={() => setModalGrupoCambio(true)}

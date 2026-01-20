@@ -66,7 +66,7 @@ const EventTicker = ({ events = [] }) => {
           variant="body2"
           sx={{
             color: "primary.contrastText",
-            fontWeight: 500,
+            fontWeight: "bold",
             fontFamily:"Inter",
             whiteSpace: "nowrap", // Evita que el texto se parta
           }}

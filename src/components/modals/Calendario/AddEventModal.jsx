@@ -95,7 +95,7 @@ const AddEventModal = ({ open, onClose, onSave }) => {
         sx={{ mt: 2 }}
       >
         {/* Campo: Nombre del evento */}
-        <Box display="flex" alignItems="center" gap={1} mb={3}>
+        <Box display="flex" alignItems="center" gap={1} mb={3} mt={1}>
           <Type color={theme.palette.primary.main} size={20} />
           <TextField
             label="Nombre del evento"

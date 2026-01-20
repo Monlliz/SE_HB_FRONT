@@ -25,6 +25,7 @@ import {
   TableCell,
   TableBody,
   IconButton,
+  Tooltip,
 } from "@mui/material";
 //Funcion principal (El id es del docente)
 export default function UserDocente({ id }) {
@@ -135,7 +136,7 @@ export default function UserDocente({ id }) {
     procesarNavegacion(
       materia,
       "/listaAsistenciamateria",
-      "/listaAsistenciamateriaPerfil"
+      "/listaAsistenciamateriaPerfil",
     );
   };
 
@@ -344,8 +345,8 @@ export default function UserDocente({ id }) {
                   // Puedes mantener la selección visual si quieres, pero ya no es estricta para los botones
                   selected={m.idMateriaDocente === idMateriaDocente}
                   onClick={() => {
-                    setSelectedMateriaClave(m.clave),
-                      setIdMateriaDocente(m.idMateriaDocente);
+                    (setSelectedMateriaClave(m.clave),
+                      setIdMateriaDocente(m.idMateriaDocente));
                   }}
                   sx={{ cursor: "pointer" }}
                 >
@@ -364,24 +365,27 @@ export default function UserDocente({ id }) {
                         justifyContent: "center",
                       }}
                     >
-                      <IconButton
-                        aria-label="lista"
-                        size="small" // Recomiendo small para que no ensanche mucho la tabla
-                        color="primary"
-                        onClick={() => handleNavigateToListaMateria(m)}
-                      >
-                        <ListAltIcon />
-                      </IconButton>
-
-                      <IconButton
-                        aria-label="actvidades"
-                        size="small"
-                        color="secondary"
-                        onClick={() => handleNavigateToActividades(m)}
-                      >
-                        <AutoStoriesIcon />
-                      </IconButton>
-
+                      <Tooltip title="Lista de asistencia por materia">
+                        <IconButton
+                          aria-label="lista"
+                          size="small" // Recomiendo small para que no ensanche mucho la tabla
+                          color="primary"
+                          onClick={() => handleNavigateToListaMateria(m)}
+                        >
+                          <ListAltIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Actividades cotidianas">
+                        <IconButton
+                          aria-label="actvidades"
+                          size="small"
+                          color="secondary"
+                          onClick={() => handleNavigateToActividades(m)}
+                        >
+                          <AutoStoriesIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Calificaciones parciales">
                       <IconButton
                         aria-label="calificaciones_parciales"
                         size="small"
@@ -392,6 +396,7 @@ export default function UserDocente({ id }) {
                       >
                         <ChecklistIcon />
                       </IconButton>
+                      </Tooltip>
                     </div>
                   </TableCell>
                 </TableRow>
