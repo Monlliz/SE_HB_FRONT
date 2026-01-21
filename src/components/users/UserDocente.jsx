@@ -340,13 +340,13 @@ export default function UserDocente({ id }) {
             <TableBody>
               {materias.map((m) => (
                 <TableRow
-                  key={m.idMateriaDocente}
+                  key={m.iddm}
                   hover
                   // Puedes mantener la selección visual si quieres, pero ya no es estricta para los botones
-                  selected={m.idMateriaDocente === idMateriaDocente}
+                  selected={m.iddm === idMateriaDocente}
                   onClick={() => {
                     (setSelectedMateriaClave(m.clave),
-                      setIdMateriaDocente(m.idMateriaDocente));
+                      setIdMateriaDocente(m.iddm));
                   }}
                   sx={{ cursor: "pointer" }}
                 >

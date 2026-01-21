@@ -116,6 +116,7 @@ export const fetchBorrarMateriaDocente = async (
   docenteId,
   idMateriaDocente
 ) => {
+  console.log(token, docenteId, idMateriaDocente);
   try {
     const response = await fetch(
       `${apiUrl}/docente/materia/delete/${docenteId}/${idMateriaDocente}`,

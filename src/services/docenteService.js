@@ -38,6 +38,7 @@ export const fetchDocenteGetOne = async (token, id) => {
     });
     if (!resDocente.ok) throw new Error("Error al cargar docente");
     const docente = await resDocente.json();
+    
     return { docente: docente || [] };
   } catch (error) {
     console.error("Error en el servicio fetchDocenteGetOne:", error.message);
@@ -54,7 +55,7 @@ export const fetchDocenteMaterias = async (token, id) => {
     });
     if (!resMaterias.ok) throw new Error("Error al cargar materias");
     const materias = await resMaterias.json();
-    console.log(materias);
+   // console.log(materias);
     return { materias: materias || [] };
   } catch (error) {
     console.error("Error en el servicio fetchDocenteMaterias:", error.message);
