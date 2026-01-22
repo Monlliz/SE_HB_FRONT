@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
 
-import {fetchAlumnoDeleteLogico} from "../../../services/alumnosService.js"
+import {
+  fetchAlumnoDeleteLogico,
+  fetcthAlumnoReactivar,
+} from "../../../services/alumnosService.js";
+import { useNotification } from "../../modals/NotificationModal.jsx";
 import {
   Button,
   Dialog,
@@ -16,11 +20,13 @@ import {
 function DesactivarDocente({
   open,
   onClose,
+  onConfirm,
   onAccept,
   nombres,
   apellidop,
   matricula,
 }) {
+  const { showNotification, NotificationComponent } = useNotification();
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,8 +39,26 @@ function DesactivarDocente({
       }
 
       await fetchAlumnoDeleteLogico(token, matricula);
-      alert("Alumno dado de baja con éxito");
+
       onAccept();
+      onClose();
+    } catch (err) {
+      alert(`Error: ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleActivar = async () => {
+    try {
+      if (!token) {
+        throw new Error("Autorización rechazada. No se encontró el token.");
+      }
+
+      await fetcthAlumnoReactivar(token, matricula);
+
+      onAccept();
+      onClose();
     } catch (err) {
       alert(`Error: ${err.message}`);
     } finally {
@@ -43,22 +67,41 @@ function DesactivarDocente({
   };
 
   const renderContent = () => {
-    if (loading) {
+    if (!onConfirm) {
+      if (loading) {
+        return (
+          <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
+            <CircularProgress />
+          </Box>
+        );
+      }
+      if (error) {
+        return <Box sx={{ color: "red", my: 2 }}>Error: {error}</Box>;
+      }
       return (
-        <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-          <CircularProgress />
-        </Box>
+        <Typography>
+          {" "}
+          Esta seguro de Desactivar al Alumno {nombres} {apellidop} ?
+        </Typography>
+      );
+    } else {
+      if (loading) {
+        return (
+          <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
+            <CircularProgress />
+          </Box>
+        );
+      }
+      if (error) {
+        return <Box sx={{ color: "red", my: 2 }}>Error: {error}</Box>;
+      }
+      return (
+        <Typography>
+          {" "}
+          Esta seguro de activar al Alumno {nombres} {apellidop} ?
+        </Typography>
       );
     }
-    if (error) {
-      return <Box sx={{ color: "red", my: 2 }}>Error: {error}</Box>;
-    }
-    return (
-      <Typography>
-        {" "}
-        Esta seguro de Desactivar al Alumno {nombres} {apellidop} ?
-      </Typography>
-    );
   };
 
   return (
@@ -73,7 +116,7 @@ function DesactivarDocente({
           variant="contained"
           disabled={loading || isSubmitting}
           type="button"
-          onClick={handleDelete}
+          onClick={onConfirm ? handleActivar : handleDelete}
         >
           {isSubmitting ? (
             <CircularProgress size={24} color="inherit" />
@@ -82,6 +125,7 @@ function DesactivarDocente({
           )}
         </Button>
       </DialogActions>
+      {NotificationComponent}
     </Dialog>
   );
 }

@@ -68,7 +68,7 @@ export default function Navbar({ links = [] }) {
   // 4. **FUNCIÓN PARA "GENERAR CUENTAS" (EJEMPLO)**
   const handleGenerateAccounts = () => {
     handleUserClose();
-    console.log("Por implementar: Generar Cuentas");
+    navigate("/generaciondecuentas");
   };
 
   // 5. **FUNCIÓN PARA "GESTIÓN DE DATOS" (EJEMPLO)**

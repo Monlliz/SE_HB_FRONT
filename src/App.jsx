@@ -13,8 +13,9 @@ import Rubros from "./pages/rubros/Rubros.jsx";
 import RubrosPerfil from "./pages/rubros/RubrosPerfil.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import TrabajoCotidiano from "./pages/trabajoCotidiano/TrabajoCotidiano.jsx";
-import TrabajoCotidianoP from "./pages/trabajoCotidiano/TrabajoCotidianoPerfil.jsx"
+import TrabajoCotidianoP from "./pages/trabajoCotidiano/TrabajoCotidianoPerfil.jsx";
 import GestionData from "./pages/GestionData.jsx";
+import GeneracionDeCuentas from "./pages/GeneracionDeCuentas.jsx";
 import { ProtectedRoute } from "./components/ProtectedRoute.jsx";
 
 function App() {
@@ -31,17 +32,19 @@ function App() {
         <Route path="/materias" element={<Materias />} />
         <Route path="/alumnos" element={<Alumno />} />
         <Route path="/trabajo" element={<TrabajoCotidiano />} />
-         <Route path="/trabajoperfil" element={<TrabajoCotidianoP />} />
+        <Route path="/trabajoperfil" element={<TrabajoCotidianoP />} />
         <Route path="/listaAsistencia" element={<ListaAsistencia />} />
         <Route path="/gestiondatos" element={<GestionData />} />
         <Route
           path="/listaAsistenciamateria"
           element={<ListaAsistenciaMateria />}
         />
+
         <Route
           path="/listaAsistenciamateriaPerfil"
           element={<ListaAsistenciaMateriaPerfil />}
         />
+        <Route path="/generaciondecuentas" element={<GeneracionDeCuentas />} />
         <Route path="/Reporte" element={<ReportePDF />} />
         <Route path="/Rubros" element={<Rubros />} />
         <Route path="/RubrosPerfil" element={<RubrosPerfil />} />

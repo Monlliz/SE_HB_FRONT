@@ -134,14 +134,15 @@ const TrabajoCotidiano = () => {
   }, [grupoId, token]);
 
   //Adaptar la función para obtener el string desde el valor numérico
-  const getStringFromValor = (valorNumerico, ponderacionRubro) => {
+  const getStringFromValor = (valorNumerico, rubro) => {
     // Si la BD trae null, lo mantenemos como null (el select mostrará "Vacío")
     if (valorNumerico === null || valorNumerico === undefined) {
       return null;
     }
 
     const valor = Number(valorNumerico);
-    const ponderacion = Number(ponderacionRubro);
+    const ponderacion = Number(rubro.ponderacion);
+    const pInsuficiente = Number(rubro.ponderacioninsuficiente);
 
     if (valor === 1) {
       // Asumimos que 1 siempre es "Si" al cargar.
@@ -155,6 +156,7 @@ const TrabajoCotidiano = () => {
     if (ponderacion > 0 && valor === ponderacion) {
       return "R";
     }
+    if (pInsuficiente > 0 && valor === pInsuficiente) return "I";
 
     // Fallback para valores inesperados (o nulos que no se capturaron)
     return null;
@@ -173,7 +175,7 @@ const TrabajoCotidiano = () => {
       // 1. Necesitas los rubros para saber la ponderación del "Retardo"
       const rubrosMap = new Map();
       for (const rubro of rubros) {
-        rubrosMap.set(rubro.idrubrotc, rubro.ponderacion);
+        rubrosMap.set(rubro.idrubrotc, rubro);
       }
 
       try {
@@ -190,17 +192,17 @@ const TrabajoCotidiano = () => {
         // 2. Transforma los datos numéricos a strings ("Si", "No", "R")
         const calificacionesTransformadas = data.map((calif) => {
           // Busca la ponderación de este rubro específico
-          const ponderacion = rubrosMap.get(calif.idrubrotc) || 0;
+          const rubroInfo = rubrosMap.get(calif.idrubrotc) || 0;
           return {
             ...calif,
             // Reemplaza el valor numérico (1, 0, 0.5) por el string ("Si", "No", "R")
-            calificacion: getStringFromValor(calif.calificacion, ponderacion),
+            calificacion: getStringFromValor(calif.calificacion, rubroInfo),
           };
         });
 
         console.log(
           "Calificaciones transformadas a string:",
-          calificacionesTransformadas
+          calificacionesTransformadas,
         );
 
         // 3. Guarda los datos transformados (strings) en el estado
@@ -209,7 +211,7 @@ const TrabajoCotidiano = () => {
       } catch (err) {
         console.error("Error cargando calificaciones:", err);
         setErrorCalificaciones(
-          "Error al cargar calificaciones: " + err.message
+          "Error al cargar calificaciones: " + err.message,
         );
       } finally {
         setLoadingCalificaciones(false);
@@ -235,7 +237,7 @@ const TrabajoCotidiano = () => {
   const datosTabla = useMemo(() => {
     // --- CAMBIO 1 ---
     // Esta función ahora devuelve los PUNTOS directos (1, 0, o la ponderación)
-    const getPuntosObtenidos = (valorString, rubroPonderacion) => {
+    const getPuntosObtenidos = (valorString, rubro) => {
       switch (valorString) {
         case "Si":
           return 1;
@@ -244,14 +246,15 @@ const TrabajoCotidiano = () => {
         case "J":
           return 1;
         case "R":
-          // "R" (Retardo) vale los puntos guardados en la ponderación
-          return Number(rubroPonderacion);
+          return Number(rubro.ponderacion);
+        case "I":
+          return Number(rubro.ponderacioninsuficiente);
         default:
           return 0; // Si es null o "", no suma puntos
       }
     };
 
-    // El Map se crea igual (esto está bien)
+    // El Map se crea igual
     const califMap = new Map();
     for (const calif of calificaciones) {
       if (!califMap.has(calif.alumno_matricula)) {
@@ -273,7 +276,7 @@ const TrabajoCotidiano = () => {
       for (const rubro of rubros) {
         const notaString = susCalificaciones.get(rubro.idrubrotc);
 
-        const puntos = getPuntosObtenidos(notaString, rubro.ponderacion);
+        const puntos = getPuntosObtenidos(notaString, rubro);
 
         sumaPuntosObtenidos += puntos;
       }
@@ -306,16 +309,16 @@ const TrabajoCotidiano = () => {
     setIsSaving(true);
     setSaveError(null);
 
-    const rubrosMap = new Map();
-    for (const rubro of rubros) {
-      rubrosMap.set(rubro.idrubrotc, rubro.ponderacion);
+    const rubrosFullMap = new Map();
+    for (const r of rubros) {
+      rubrosFullMap.set(r.idrubrotc, r);
     }
     const calificacionesParaDB = calificaciones.map((calif) => {
-      const ponderacionDelRubro = rubrosMap.get(calif.idrubrotc) || 0;
+      const rubroObjeto = rubrosFullMap.get(calif.idrubrotc);
 
       const valorNumerico = getValorNumericoParaDB(
         calif.calificacion,
-        ponderacionDelRubro
+        rubroObjeto,
       );
 
       return {
@@ -349,7 +352,7 @@ const TrabajoCotidiano = () => {
       const newState = [...prevCalificaciones];
       const index = newState.findIndex(
         (c) =>
-          c.alumno_matricula === matricula && c.idrubrotc === Number(idRubro)
+          c.alumno_matricula === matricula && c.idrubrotc === Number(idRubro),
       );
 
       if (index > -1) {
@@ -376,7 +379,7 @@ const TrabajoCotidiano = () => {
     datosTabla.length > 0;
 
   //Calificaciones
-  const getValorNumericoParaDB = (valorString, ponderacion) => {
+  const getValorNumericoParaDB = (valorString, rubro) => {
     switch (valorString) {
       case "Si":
         return 1;
@@ -385,7 +388,9 @@ const TrabajoCotidiano = () => {
       case "J":
         return 1; // Justificante
       case "R":
-        return Number(ponderacion); // <-- CORREGIDO: Usa la ponderación
+        return Number(rubro.ponderacion);
+      case "I":
+        return Number(rubro.ponderacioninsuficiente);
       default:
         return null; // "Vacío" o cualquier otra cosa es null
     }
@@ -639,7 +644,7 @@ const TrabajoCotidiano = () => {
                                 handleGradeChange(
                                   alumno.alumno_matricula,
                                   rubro.idrubrotc,
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               disabled={isSaving}
@@ -652,10 +657,11 @@ const TrabajoCotidiano = () => {
                               <MenuItem value={"No"}>No</MenuItem>
                               <MenuItem value={"J"}>Justificante</MenuItem>
                               <MenuItem value={"R"}>Retardo</MenuItem>
+                              <MenuItem value={"I"}>Insuficiente</MenuItem>
                             </Select>
                           </FormControl>
                         ) : (
-                          alumno.calificacionesMap.get(rubro.idrubrotc) ?? "-"
+                          (alumno.calificacionesMap.get(rubro.idrubrotc) ?? "-")
                         )}
                       </TableCell>
                     ))}

@@ -32,11 +32,13 @@ export default function UserDocente({ matricula }) {
   const [modalIncidenteOpen, setModalIncidenteOpen] = useState(false);
   const [modalEditOpen, setModalEditOpen] = useState(false);
   const [modalDesactivarOpen, setModalDesactivarOpen] = useState(false);
+  const [altaBaja, setAltaBaja] = useState(false);
+
   const [modalBorrarMateriaOpen, setModalBorrarMateriaOpen] = useState(false);
   const [incidente, setIncidentes] = useState([]);
 
   //Para la navegacion a Reportes
-   const navigate = useNavigate();
+  const navigate = useNavigate();
   const fetchIncidente = async () => {
     const { incidentes } = await fetchIncidenteGet(token, matricula);
     setIncidentes(incidentes);
@@ -59,19 +61,21 @@ export default function UserDocente({ matricula }) {
     setSelectedMateriaClave(newSelected.length >= 5);
   };
 
-  const handleNavigateToReporte = ()=>{
-     const incidentesSeleccionados = incidente.filter(item => selected.includes(item.id));
+  const handleNavigateToReporte = () => {
+    const incidentesSeleccionados = incidente.filter((item) =>
+      selected.includes(item.id),
+    );
 
-  const datosParaEnviar = {
+    const datosParaEnviar = {
       R_MATRICULA: matricula,
-      R_NOMBRE : alumno.nombres,
+      R_NOMBRE: alumno.nombres,
       R_APELLIDOP: alumno.apellidop,
-      R_APELLIDM:alumno.apellidom,
-      R_INCIDENTES:incidentesSeleccionados 
+      R_APELLIDM: alumno.apellidom,
+      R_INCIDENTES: incidentesSeleccionados,
     };
     console.log(datosParaEnviar);
-        navigate("/reporte", { state: datosParaEnviar });
-  }
+    navigate("/reporte", { state: datosParaEnviar });
+  };
 
   const isSelected = (id) => selected.indexOf(id) !== -1;
 
@@ -170,7 +174,7 @@ export default function UserDocente({ matricula }) {
             Correo: {alumno.correo}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-           {alumno.grupo}  {alumno.perfil}  {alumno.ingles}
+            {alumno.grupo} {alumno.perfil} {alumno.ingles}
           </Typography>
           <Typography
             sx={{
@@ -198,18 +202,35 @@ export default function UserDocente({ matricula }) {
             onAccept={handleAcceptEdit}
             matricula={matricula}
           />
-          <Button
-            variant="outlined"
-            color="error"
-            size="small"
-            onClick={() => setModalDesactivarOpen(true)}
-          >
-            Dar de Baja
-          </Button>
+
+          {alumno.activo ? (
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              onClick={() => {
+                (setModalDesactivarOpen(true), setAltaBaja(false));
+              }}
+            >
+              Dar de Baja
+            </Button>
+          ) : (
+            <Button
+              variant="outlined"
+              color="success"
+              size="small"
+              onClick={() => {
+                (setModalDesactivarOpen(true), setAltaBaja(true));
+              }}
+            >
+              Activar Estudiante
+            </Button>
+          )}
           <DarBajaAlumno
             open={modalDesactivarOpen}
             onClose={() => setModalDesactivarOpen(false)}
             onAccept={handleAcceptEdit}
+            onConfirm={altaBaja}
             matricula={matricula}
             nombres={alumno.nombres}
             apellidop={alumno.apellidop}
@@ -312,9 +333,7 @@ export default function UserDocente({ matricula }) {
                 )}
               </Toolbar>
 
-
               <TableContainer sx={{ overflow: "auto" }}>
-  
                 <Table stickyHeader aria-label="sticky table">
                   <TableHead>
                     <TableRow>
@@ -353,7 +372,7 @@ export default function UserDocente({ matricula }) {
                                 year: "numeric",
                                 month: "long",
                                 day: "numeric",
-                              }
+                              },
                             )}
                           </TableCell>
                           <TableCell align="center">

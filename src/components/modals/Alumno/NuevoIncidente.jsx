@@ -113,8 +113,8 @@ function NuevoIncidente({ open, onClose, onAccept, matricula }) {
         label: "Plagio de actividades academicas",
       },
       {
-        value: "Acciones indebidad durante el examen",
-        label: "Acciones indebidad durante el examen",
+        value: "Acciones indebidas durante el examen",
+        label: "Acciones indebidas durante el examen",
       },
       {
         value: "Otro",

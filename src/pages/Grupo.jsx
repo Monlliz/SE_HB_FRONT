@@ -57,7 +57,7 @@ export default function Grupo() {
       const { grupos } = dataGrupos;
       const { perfiles } = dataPerfiles;
 
-      const idGrupoOcultar = "EG";
+      const idGrupoOcultar = ["EG","BI"];
 
       const perfilesFiltrados = perfiles.filter((perfil) => {
         const tieneNumero = /^\d+-/.test(perfil.idperfil); // verifica si inicia con número y guion
@@ -69,7 +69,7 @@ export default function Grupo() {
       setPerfiles(perfilesFiltrados);
 
       const gruposFiltrados = grupos.filter(
-        (grupo) => grupo.idgrupo !== idGrupoOcultar
+         (grupo) => !idGrupoOcultar.includes(grupo.idgrupo)
       );
       setGrupos(gruposFiltrados);
     } catch (error) {

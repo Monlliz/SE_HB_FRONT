@@ -31,70 +31,68 @@ function GestionTrabajos({
   parcial,
   yearC,
 }) {
+  // Estado local para los rúbros que se están editando
   const [rubrosEdit, setRubrosEdit] = useState([]);
-
+  //obtener fecha
+  const fechaHoy = new Date().toISOString().split("T")[0];
   // Cuando el modal se abre, copia los rúbros actuales al estado local
-// Cuando el modal se abre, copia los rúbros al estado local
+  // Cuando el modal se abre, copia los rúbros al estado local
   useEffect(() => {
-    // Hacemos una copia profunda
-    const rubrosCopiados = JSON.parse(JSON.stringify(rubrosActuales));
-
-    // --- CAMBIO 1: Asegurar que las ponderaciones sean strings ---
-    // Esto asegura que 0.5 (número) se vuelva "0.5" (string)
-    const rubrosConStrings = rubrosCopiados.map(rubro => ({
-      ...rubro,
-      ponderacion: String(rubro.ponderacion)
-    }));
-    
-    setRubrosEdit(rubrosConStrings);
+    if (open && rubrosActuales) {
+      const rubrosCopiados = JSON.parse(JSON.stringify(rubrosActuales));
+      const rubrosConStrings = rubrosCopiados.map((rubro) => ({
+        ...rubro,
+        ponderacion: String(rubro.ponderacion || "0"),
+        // Aseguramos que si viene null de la BD, sea "0"
+        ponderacioninsuficiente: String(rubro.ponderacioninsuficiente ?? "0"),
+      }));
+      setRubrosEdit(rubrosConStrings);
+    }
   }, [open, rubrosActuales]);
 
-  // Sigue siendo útil para MOSTRAR la suma
-  const sumaPonderaciones = useMemo(() => {
-    const total = rubrosEdit.reduce(
-      (acc, rubro) => acc + Number(rubro.ponderacion),
-      0
-    );
-    return Math.round(total * 100) / 100;
-  }, [rubrosEdit]);
+
 
   // --- MANEJADORES DE CAMBIOS ---
 
- // Maneja el cambio en un TextField (nombre o ponderación)
+  // Maneja el cambio en un TextField (nombre o ponderación)
   const handleRubroChange = (index, campo, valor) => {
     const nuevosRubros = [...rubrosEdit];
 
     // --- CAMBIO 1: Convertir % a decimal ---
-    if (campo === "ponderacion") {
+    if (campo === "ponderacion" || campo === "ponderacioninsuficiente") {
       // Si el usuario escribe "50", lo convertimos a 0.5
       const valorDecimal = Number(valor) / 100;
       // Lo guardamos como string para ser consistentes (ej: "0.5")
-      nuevosRubros[index][campo] = String(valorDecimal);
+      nuevosRubros[index][campo] = valorDecimal.toFixed(2);
     } else {
       nuevosRubros[index][campo] = valor;
     }
-    
+
     setRubrosEdit(nuevosRubros);
   };
 
   // Añade un nuevo rúbro TC vacío
   // Añade un nuevo rúbro vacío a la lista
   const handleAddRubro = () => {
-    // --- CAMBIO 2: Obtener la ponderación del último rubro ---
-    let defaultPonderacion = "0.00"; // Default si no hay rubros
+    let defaultPonderacion = "1";
+    let defaultInsuficiente = "1";
+
     if (rubrosEdit.length > 0) {
-      // Asigna la misma ponderación del último ítem
-      defaultPonderacion = rubrosEdit[rubrosEdit.length - 1].ponderacion;
+      const ultimo = rubrosEdit[rubrosEdit.length - 1];
+      defaultPonderacion = ultimo.ponderacion;
+      // CORRECCIÓN AQUÍ:
+      defaultInsuficiente = ultimo.ponderacioninsuficiente;
     }
-    // ---------------------------------------------------
 
     setRubrosEdit([
       ...rubrosEdit,
       {
-        id_rubro: `new_${Date.now()}`, // ID temporal
+        id_rubro: `new_${Date.now()}`,
         nombre_rubro: "",
-        ponderacion: defaultPonderacion, // <-- USA EL VALOR OBTENIDO
+        ponderacion: defaultPonderacion,
+        ponderacioninsuficiente: defaultInsuficiente, // Usar minúsculas
         materia_clave: materiaClave,
+        fecha_limite: fechaHoy,
       },
     ]);
   };
@@ -108,6 +106,37 @@ function GestionTrabajos({
   // --- MANEJADOR DE GUARDADO ---
   const handleGuardar = async () => {
     try {
+      for (let i = 0; i < rubrosEdit.length; i++) {
+        const rubro = rubrosEdit[i];
+        const numRubro = i + 1;
+
+        // 1. Validar nombre vacío
+        if (!rubro.nombre_rubro || rubro.nombre_rubro.trim() === "") {
+          alert(
+            `El nombre de la actividad en la fila ${numRubro} es obligatorio.`,
+          );
+          return; // Detiene la ejecución
+        }
+
+        // 2. Validar que las ponderaciones no sean 0
+        const pRetardo = Number(rubro.ponderacion);
+        const pInsuficiente = Number(rubro.ponderacioninsuficiente);
+
+        if (pRetardo <= 0) {
+          alert(
+            `El % de Retardo en la actividad "${rubro.nombre_rubro}" debe ser mayor a 0.`,
+          );
+          return;
+        }
+
+        if (pInsuficiente <= 0) {
+          alert(
+            `El % Insuficiente en la actividad "${rubro.nombre_rubro}" debe ser mayor a 0.`,
+          );
+          return;
+        }
+      }
+
       const payload = {
         materiaClave: materiaClave,
         idGrupo: idGrupo,
@@ -148,7 +177,7 @@ function GestionTrabajos({
               />
 
               <TextField
-                label="Fecha Límite"
+                label="Fecha de entrega"
                 type="date"
                 value={
                   rubro.fecha_limite ? rubro.fecha_limite.split("T")[0] : ""
@@ -165,13 +194,19 @@ function GestionTrabajos({
               <TextField
                 // --- CAMBIO 1: Actualizar Label ---
                 label="% Retardo"
-                type="number"
+                type="text"
                 // --- CAMBIO 1: Convertir "0.5" a "50" para MOSTRAR ---
                 value={Number(rubro.ponderacion) * 100}
-                onChange={(e) =>
-                  // Pasa el valor del % ("50") directamente
-                  handleRubroChange(index, "ponderacion", e.target.value)
-                }
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  if (/^\d*$/.test(value)) {
+                    const number = Number(value);
+                    if (number <= 100) {
+                      handleRubroChange(index, "ponderacion", value);
+                    }
+                  }
+                }}
                 sx={{ width: 200 }}
                 // --- CAMBIO 1: Añadir el símbolo % ---
                 InputProps={{
@@ -180,6 +215,32 @@ function GestionTrabajos({
                   ),
                 }}
               />
+              <TextField
+                label="% Insuficiente"
+                type="text"
+                value={Number(rubro.ponderacioninsuficiente) * 100}
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  if (/^\d*$/.test(value)) {
+                    const number = Number(value);
+                    if (number <= 100) {
+                      handleRubroChange(
+                        index,
+                        "ponderacioninsuficiente",
+                        value,
+                      );
+                    }
+                  }
+                }}
+                sx={{ width: 200 }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">%</InputAdornment>
+                  ),
+                }}
+              />
+
               <IconButton
                 onClick={() => handleDeleteRubro(index)}
                 color="error"
@@ -193,12 +254,6 @@ function GestionTrabajos({
         <Button startIcon={<AddIcon />} onClick={handleAddRubro} sx={{ mt: 2 }}>
           Añadir Actividad
         </Button>
-
-        {/* --- Alerta informativa --- */}
-        <Alert severity="info" icon={<InfoIcon />} sx={{ mt: 3 }}>
-          Suma de ponderaciones de TC:{" "}
-          <strong>{Number(sumaPonderaciones * 100).toFixed(0)}%</strong>
-        </Alert>
       </DialogContent>
 
       <DialogActions>

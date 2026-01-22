@@ -92,6 +92,26 @@ export const fetchAlumnoDeleteLogico = async (token, matricula) => {
   }
 };
 
+export const fetcthAlumnoReactivar = async (token, matricula) => {
+  try {
+    const restAlumno = await fetch(
+      `${apiUrl}/alumnos/activarAlumno/${matricula}`,
+      {
+        method: "PUT",
+        headers: {
+          "x-auth-token": token,
+        },
+      }
+    );
+    if (!restAlumno.ok) {
+      throw new Error("Error al reactivar al Alumno");
+    }
+  } catch (error) {
+    console.error("Error en el servicio fetchAlumnosUpdateOne:", error.message);
+    throw error;
+  }
+};
+
 export const fetchAlumnoPost = async (token, datosParaEnviar) => {
   try {
     const restAlumno = await fetch(`${apiUrl}/alumnos`, {
