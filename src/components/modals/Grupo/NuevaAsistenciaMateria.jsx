@@ -87,7 +87,7 @@ const NuevaAsistencia = ({ open, onClose, estudiantes, onSave }) => {
             >
               <Typography sx={{ wordBreak: "break-word" }}>
                 {" "}
-                {estudiante.apellidop + " " + estudiante.apellidom}
+                {estudiante.nombres + " " + estudiante.apellidop + " " + estudiante.apellidom}
               </Typography>
               <FormControl   sx={{ flexShrink: 0 }}>
                 <RadioGroup
