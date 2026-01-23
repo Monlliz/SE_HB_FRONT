@@ -87,9 +87,13 @@ const NuevaAsistencia = ({ open, onClose, estudiantes, onSave }) => {
             >
               <Typography sx={{ wordBreak: "break-word" }}>
                 {" "}
-                {estudiante.nombres+" " + estudiante.apellidop + " " + estudiante.apellidom}
+                {estudiante.apellidop +
+                  " " +
+                  estudiante.apellidom +
+                  " " +
+                  estudiante.nombres}
               </Typography>
-              <FormControl   sx={{ flexShrink: 0 }}>
+              <FormControl sx={{ flexShrink: 0 }}>
                 <RadioGroup
                   row
                   value={estatusAsistencia[estudiante.matricula] || ""}
