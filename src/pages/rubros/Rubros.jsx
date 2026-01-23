@@ -151,7 +151,7 @@ const GestionarRubros = () => {
           materiaClave,
           parcial,
           selectedYear,
-          token
+          token,
         );
         setCalificaciones(data);
         // Almacena la data original después de la carga exitosa
@@ -159,7 +159,7 @@ const GestionarRubros = () => {
       } catch (err) {
         console.error("Error cargando calificaciones:", err);
         setErrorCalificaciones(
-          "Error al cargar calificaciones: " + err.message
+          "Error al cargar calificaciones: " + err.message,
         );
       } finally {
         setLoadingCalificaciones(false);
@@ -237,7 +237,7 @@ const GestionarRubros = () => {
       // Agregamos los encabezados de los rubros dinámicamente
       ...rubros.map(
         (rubro) =>
-          `Rúbro: ${rubro.nombre_rubro} (${Number(rubro.ponderacion) * 100}%)`
+          `Rúbro: ${rubro.nombre_rubro} (${Number(rubro.ponderacion) * 100}%)`,
       ),
       "Promedio Final",
     ];
@@ -298,7 +298,7 @@ const GestionarRubros = () => {
       parcial,
       selectedYear,
       exportar,
-    ]
+    ],
   );
 
   // --- FIN LÓGICA DE EXPORTACIÓN ---
@@ -357,7 +357,7 @@ const GestionarRubros = () => {
       const newState = [...prevCalificaciones];
       const index = newState.findIndex(
         (c) =>
-          c.alumno_matricula === matricula && c.id_rubro === Number(idRubro)
+          c.alumno_matricula === matricula && c.id_rubro === Number(idRubro),
       );
 
       if (index > -1) {
@@ -625,11 +625,11 @@ const GestionarRubros = () => {
                       sx={{
                         left: 0,
                         position: "sticky",
-                        backgroundColor: "background.paper",
-                        borderRight: "1px solid rgba(224, 224, 224, 1)",
-                        padding: "4px 8px",
-                        fontSize: "0.80rem",
-                        whiteSpace: "nowrap",
+                        backgroundColor: "#f9f9f9",
+                        zIndex: 100,
+                        fontWeight: "500",
+                        borderRight: "2px solid rgba(224, 224, 224, 1)",
+                        boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)",
                       }}
                     >
                       {` ${alumno.apellidop} ${alumno.apellidom} ${alumno.nombres}`}
@@ -652,7 +652,7 @@ const GestionarRubros = () => {
                               handleGradeChange(
                                 alumno.alumno_matricula,
                                 rubro.id_rubro,
-                                e.target.value
+                                e.target.value,
                               )
                             }
                             InputProps={{

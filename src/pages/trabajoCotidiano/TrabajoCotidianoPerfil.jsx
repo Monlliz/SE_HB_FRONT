@@ -202,7 +202,7 @@ const TrabajoCotidiano = () => {
 
         console.log(
           "Calificaciones transformadas a string:",
-          calificacionesTransformadas
+          calificacionesTransformadas,
         );
 
         // 3. Guarda los datos transformados (strings) en el estado
@@ -211,7 +211,7 @@ const TrabajoCotidiano = () => {
       } catch (err) {
         console.error("Error cargando calificaciones:", err);
         setErrorCalificaciones(
-          "Error al cargar calificaciones: " + err.message
+          "Error al cargar calificaciones: " + err.message,
         );
       } finally {
         setLoadingCalificaciones(false);
@@ -317,7 +317,7 @@ const TrabajoCotidiano = () => {
 
       const valorNumerico = getValorNumericoParaDB(
         calif.calificacion,
-        ponderacionDelRubro
+        ponderacionDelRubro,
       );
 
       return {
@@ -351,7 +351,7 @@ const TrabajoCotidiano = () => {
       const newState = [...prevCalificaciones];
       const index = newState.findIndex(
         (c) =>
-          c.alumno_matricula === matricula && c.idrubrotc === Number(idRubro)
+          c.alumno_matricula === matricula && c.idrubrotc === Number(idRubro),
       );
 
       if (index > -1) {
@@ -615,8 +615,11 @@ const TrabajoCotidiano = () => {
                       sx={{
                         left: 0,
                         position: "sticky",
-                        backgroundColor: "background.paper",
-                        borderRight: "1px solid rgba(224, 224, 224, 1)",
+                        backgroundColor: "#f9f9f9",
+                        zIndex: 100,
+                        fontWeight: "500",
+                        borderRight: "2px solid rgba(224, 224, 224, 1)",
+                        boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)",
                       }}
                     >
                       {`${alumno.apellidop} ${alumno.apellidom} ${alumno.nombres} `}
@@ -641,7 +644,7 @@ const TrabajoCotidiano = () => {
                                 handleGradeChange(
                                   alumno.alumno_matricula,
                                   rubro.idrubrotc,
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               disabled={isSaving}
@@ -657,7 +660,7 @@ const TrabajoCotidiano = () => {
                             </Select>
                           </FormControl>
                         ) : (
-                          alumno.calificacionesMap.get(rubro.idrubrotc) ?? "-"
+                          (alumno.calificacionesMap.get(rubro.idrubrotc) ?? "-")
                         )}
                       </TableCell>
                     ))}

@@ -618,8 +618,12 @@ const TrabajoCotidiano = () => {
                       sx={{
                         left: 0,
                         position: "sticky",
-                        backgroundColor: "background.paper",
-                        borderRight: "1px solid rgba(224, 224, 224, 1)",
+                       
+                        backgroundColor: "#f9f9f9",
+                        zIndex: 100,
+                        fontWeight: "500", 
+                        borderRight: "2px solid rgba(224, 224, 224, 1)", 
+                        boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)", 
                       }}
                     >
                       {`${alumno.apellidop} ${alumno.apellidom} ${alumno.nombres} `}
