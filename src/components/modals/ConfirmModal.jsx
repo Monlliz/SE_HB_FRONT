@@ -9,7 +9,7 @@ import {
   Typography,
   CircularProgress
 } from '@mui/material';
-import { OctagonX } from "lucide-react";
+import { OctagonX,CircleCheckBig  } from "lucide-react";
 
 /**
  * @param {boolean} open - Si el modal está visible
@@ -24,8 +24,9 @@ export default function ConfirmModal({
   onClose, 
   onConfirm, 
   title = "ELIMINAR REGISTRO", 
-  message,
-  isLoading = false 
+  message = "¿Estás seguro de que deseas realizar esta acción?",
+  isLoading = false, 
+  type = false // false: rojo, true: verde
 }) {
   return (
     <Dialog 
@@ -37,7 +38,7 @@ export default function ConfirmModal({
       {/* --- ENCABEZADO ROJO --- */}
       <DialogTitle 
         sx={{
-            backgroundColor: "#C91818",
+            backgroundColor: type ? "#4ca200" : "#C91818",
             color: "white",
             textAlign: "center",
             py: 1.5,
@@ -46,7 +47,7 @@ export default function ConfirmModal({
         }}
       >
         <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
-          <OctagonX size={22} />
+          {type ? <CircleCheckBig size={22} /> : <OctagonX size={22} />}
           {title.toUpperCase()}
         </Box>
       </DialogTitle>
@@ -64,7 +65,7 @@ export default function ConfirmModal({
       >
         {/* Renderizado del mensaje */}
         <Typography fontSize={"1.2rem"}>
-           {message || "¿Estás seguro de que deseas realizar esta acción?"}
+           {message}
         </Typography>
       </DialogContent>
 
@@ -82,8 +83,8 @@ export default function ConfirmModal({
           variant="contained"
           disabled={isLoading}
           sx={{
-            backgroundColor: "#C91818",
-            "&:hover": { backgroundColor: "#a31313" } // Un rojo un poco más oscuro al hover
+            backgroundColor: type ? "#4ca200" : "#C91818",
+            "&:hover": { backgroundColor: type ? "#3a7d00" : "#a31313" } // Un verde o rojo un poco más oscuro al hover
           }}
         >
           {isLoading ? (

@@ -1,20 +1,28 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 //los modales
+import ReusableModal from "../modals/ReusableModal.jsx";
+import ConfirmModal from "../modals/ConfirmModal.jsx";
+
 import NuevaMateriaDocente from "../modals/Docente/NuevaMateriaDocente.jsx";
-import EditDocente from "../modals/Docente/EditDocente.jsx";
-import DesactivarDocente from "../modals/Docente/DesactivarDocente.jsx";
 import BorrarMateria from "../modals/Docente/BorrarMateria.jsx";
 //iconos
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import AutoStoriesIcon from "@mui/icons-material/AutoStories";
+import { Pencil } from 'lucide-react';
+
 //import servicio
+
 import {
   fetchDocenteGetOne,
   fetchDocenteMaterias,
+  fetchDocenteActualizar,
+  fetchDocenteDesactivar
 } from "../../services/docenteService.js";
+
 import { useAuth } from "../../context/AuthContext.jsx";
+import { camposNuevoDocente } from "../../config/camposDocente-Alumno.jsx"
 import {
   Box,
   Button,
@@ -27,6 +35,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
+
 //Funcion principal (El id es del docente)
 export default function UserDocente({ id }) {
   //Todos los estados necesarios
@@ -37,7 +46,6 @@ export default function UserDocente({ id }) {
   const [idMateriaDocente, setIdMateriaDocente] = useState(null);
   const [modalMateriaOpen, setModalMateriaOpen] = useState(false);
   const [modalEditOpen, setModalEditOpen] = useState(false);
-  const [modalDesactivarOpen, setModalDesactivarOpen] = useState(false);
   const [modalBorrarMateriaOpen, setModalBorrarMateriaOpen] = useState(false);
   const navigate = useNavigate();
   //URL de la API
@@ -89,6 +97,26 @@ export default function UserDocente({ id }) {
     fetchMaterias();
   }, [fetchDocente, fetchMaterias]);
 
+  //------------Editar docente--------
+
+
+  // 3. Función para guardar (onSubmit del modal)
+  const handleUpdateDocente = async (formData) => {
+    try {
+      const { activo, iddocente, ...datosParaEnviar } = formData;
+      await fetchDocenteActualizar(token, id, datosParaEnviar);
+      alert("Docente actualizado con éxito");
+      setModalEditOpen(false);
+
+      handleAcceptEdit(); // función de refresco 
+
+    } catch (error) {
+      alert(`Error: ${error.message}`);
+    }
+  };
+
+  //Fin editar docente---------------------------------------------------
+
   //Funciones aceptar modales
 
   //Función para manejar el "Aceptar" del modal de agregar materia y borrar materia
@@ -101,10 +129,43 @@ export default function UserDocente({ id }) {
     setModalEditOpen(false); // Cierra el modal
     fetchDocente();
   };
+  //fin 
+  //Desactivar docente--------------------------------------------------------------
 
+  const [loadingDelete, setLoadingDelete] = useState(false);
+  const [modalDeleteOpen, setModalDeleteOpen] = useState(false);
+
+
+  // Función que ejecuta la desactivación
+  const handleConfirmDesactivar = async () => {
+    setLoadingDelete(true);
+    try {
+      if (!token) throw new Error("No token found");
+
+      // Usamos el ID del docente seleccionado
+
+      await fetchDocenteDesactivar(token, id);
+
+      alert("Docente desactivado con éxito");
+
+      // Cerramos modal y recargamos tabla
+      setModalDeleteOpen(false);
+      handleAcceptEdit(); // Reutilizamos tu función de refrescar tabla
+
+    } catch (err) {
+      alert(`Error: ${err.message}`);
+    } finally {
+      setLoadingDelete(false);
+    }
+  };
+  //Fin desactivar docente----------------------------------------------------
+  //----------------------------------------------------------------------------
   if (!docente) {
     return <Typography>Cargando docente...</Typography>;
   }
+  //-----------------------------------------------------------------------------
+
+
 
   //Navegacion a otras rutas
 
@@ -218,27 +279,37 @@ export default function UserDocente({ id }) {
           >
             Editar
           </Button>
-          <EditDocente
+          <ReusableModal
             open={modalEditOpen}
             onClose={() => setModalEditOpen(false)}
-            onAccept={handleAcceptEdit}
-            docenteId={id}
+            iconEntity={Pencil} // Icono de edición
+            title="Editar Docente"
+            fields={camposNuevoDocente}
+            initialValues={docente}
+            // Para validar duplicados (opcional, pasa tu lista completa de docentes)
+            //existingData={docentesData}
+            onSubmit={handleUpdateDocente}
           />
+
           <Button
             variant="outlined"
             color="error"
             size="small"
-            onClick={() => setModalDesactivarOpen(true)}
+            onClick={() => setModalDeleteOpen(true)}
           >
             Desactivar
           </Button>
-          <DesactivarDocente
-            open={modalDesactivarOpen}
-            onClose={() => setModalDesactivarOpen(false)}
-            onAccept={handleAcceptEdit}
-            docenteId={id}
-            nombres={docente.nombres}
-            apellidop={docente.apellidop}
+          <ConfirmModal
+            open={modalDeleteOpen}
+            onClose={() => setModalDeleteOpen(false)}
+            onConfirm={handleConfirmDesactivar}
+            isLoading={loadingDelete}
+            title="DESACTIVAR DOCENTE"
+            message={
+              <span>
+                ¿Está seguro de desactivar al docente <strong>{docente.nombres} {docente.apellidop} {docente.apellidom}</strong>?
+              </span>
+            }
           />
         </Box>
       </Box>
@@ -386,16 +457,16 @@ export default function UserDocente({ id }) {
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Calificaciones parciales">
-                      <IconButton
-                        aria-label="calificaciones_parciales"
-                        size="small"
-                        color="success"
-                        onClick={() =>
-                          handleNavigateToCalifacacionesParcilaes(m)
-                        }
-                      >
-                        <ChecklistIcon />
-                      </IconButton>
+                        <IconButton
+                          aria-label="calificaciones_parciales"
+                          size="small"
+                          color="success"
+                          onClick={() =>
+                            handleNavigateToCalifacacionesParcilaes(m)
+                          }
+                        >
+                          <ChecklistIcon />
+                        </IconButton>
                       </Tooltip>
                     </div>
                   </TableCell>

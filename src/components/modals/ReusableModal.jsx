@@ -288,7 +288,9 @@ export default function ReusableModal({
                         }
                         // Esto impide físicamente escribir más de la cuenta
                         inputProps={{
-                            maxLength: field.maxLength
+                            maxLength: field.maxLength,
+                            min: field.min, // Para fecha mínima
+                            max: field.max
                         }}
                     />
                 );

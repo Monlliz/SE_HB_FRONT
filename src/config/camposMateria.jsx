@@ -8,7 +8,7 @@ import {
 // Definición de los campos para el formulario de materias CREATE
 export const camposNuevaMateria = [
     { name: "clave", label: "Clave", type: "text", required: true, maxLength: 8, minLength: 8, icon: KeyRound, pattern: "^[A-Za-z0-9]*$", errorMessage: "La clave debe contener solo letras y números.", unique: true },
-    { name: "asignatura", label: "Nombre", type: "text", required: true, maxLength: 95, icon: BookA, pattern: "^(?!.*[-_]{2})(?!.*[-_]$)(?!^[-_])(?=(?:[^()]*\\([^()]*\\))*[^()]*$)[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9][A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9\\s_\\-()]*$", errorMessage: "El nombre puede contener letras, números, espacios, guiones, guiones bajos y paréntesis. No puede empezar/terminar con -_ ni contener -_ consecutivos." },
+    { name: "asignatura", label: "Nombre", type: "text", required: true, maxLength: 95, icon: BookA, pattern: "^(?![-_.,:;])(?!.*[-_]$)(?!.*[_,:;]$)(?!.*[-_.,:;]{2})(?=(?:[^()]*\\([^()]*\\))*[^()]*$)[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9][A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9\\s_\\-()\\.,:;]*\\.?$", errorMessage: "El nombre puede contener letras, números, espacios, guiones, guiones bajos y paréntesis. No puede empezar/terminar con -_ ni contener -_ consecutivos." },
     {
         name: "perfil_id", label: "Perfil", type: "select", required: true, icon: ClipboardList, options: [
             { id: "BC", label: "Sin Perfil" },
@@ -34,7 +34,7 @@ export const camposNuevaMateria = [
 // Definición de los campos para el formulario de materias EDIT
 export const camposEditMateria = [
     { name: "clave", label: "Clave", type: "text", icon: KeyRound, disable: true, unique: true },
-    { name: "asignatura", label: "Nombre", type: "text", required: true, icon: BookA, pattern: "^(?!.*[-_]{2})(?!.*[-_]$)(?!^[-_])(?=(?:[^()]*\\([^()]*\\))*[^()]*$)[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9][A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9\\s_\\-()]*$", errorMessage: "El nombre puede contener letras, números, espacios, guiones, guiones bajos y paréntesis. No puede empezar/terminar con -_ ni contener -_ consecutivos." },
+    { name: "asignatura", label: "Nombre", type: "text", required: true, icon: BookA, pattern: "^(?![-_.,:;])(?!.*[-_]$)(?!.*[_,:;]$)(?!.*[-_.,:;]{2})(?=(?:[^()]*\\([^()]*\\))*[^()]*$)[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9][A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9\\s_\\-()\\.,:;]*\\.?$", errorMessage: "El nombre puede contener letras, números, espacios, guiones, guiones bajos y paréntesis. No puede empezar/terminar con -_ ni contener -_ consecutivos." },
     {
         name: "perfil_id", label: "Perfil", type: "select", disable: true, icon: ClipboardList, options: [
             { id: "BC", label: "Sin Perfil" },

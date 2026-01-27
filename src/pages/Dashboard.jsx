@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx"; // Contexto para la autenticación.
 import EventDetailsDialog from "../components/modals/Calendario/EventDetailsDialog.jsx";
 import EventTicker from "../components/EventTicker.jsx";
-import {capitalizarPrimeraLetra,getFirstText} from '../utils/fornatters.js';
+import { capitalizarPrimeraLetra, getFirstText } from '../utils/fornatters.js';
 //Mis materias
 import MisMaterias from "../components/MisMaterias.jsx";
-import {fetchDocenteMaterias} from "../services/docenteService.js";
+import { fetchDocenteMaterias } from "../services/docenteService.js";
 // Componentes de Material-UI
 import {
   Grid,
@@ -89,7 +89,7 @@ function DiaConBadge(props) {
     // Buscamos el tipo dentro del JSON
     // Buscamos en EVENT_TYPES por clave (objeto, no array)
     const tipoConfig = EVENT_TYPES[tipoPrioritario.tipo];
-    
+
     if (tipoConfig && tipoConfig.color) {
       colorDelBadge = tipoConfig.color;
     }
@@ -137,9 +137,9 @@ function Dashboard() {
   const [loading, setLoading] = useState(false);
   const { user, token } = useAuth();
 
-   // --- 2. ESTADO PARA MATERIAS (Solo para docentes) ---
+  // --- 2. ESTADO PARA MATERIAS (Solo para docentes) ---
   const [materias, setMaterias] = useState([]);
-  
+
   const fetchFechas = useCallback(async () => {
     setLoading(true);
     try {
@@ -164,24 +164,24 @@ function Dashboard() {
   //------------------------------------------------------------------------
   //Verificar que es docente
   //console.log(user);
- const esDocente = user.nombre_rol === "Docente";
- 
+  const esDocente = user.nombre_rol === "Docente";
+
   //Fetch de materias si es docente
   const fetchMaterias = useCallback(async () => {
-      if (!user.iddocente) return;
-      try {
-        if (!token) {
-          throw new Error("Autorización rechazada. No se encontró el token.");
-        }
-        //setSelectedMateriaClave(null);
-  
-        const { materias } = await fetchDocenteMaterias(token, user.iddocente);  
-        setMaterias(materias.materias || []);
-      } catch (err) {
-        console.error(err);
-        setMaterias([]); // En caso de error, asegurar que materias es un array vacío
+    if (!user.iddocente) return;
+    try {
+      if (!token) {
+        throw new Error("Autorización rechazada. No se encontró el token.");
       }
-    }, [user.iddocente]); 
+      //setSelectedMateriaClave(null);
+
+      const { materias } = await fetchDocenteMaterias(token, user.iddocente);
+      setMaterias(materias.materias || []);
+    } catch (err) {
+      console.error(err);
+      setMaterias([]); // En caso de error, asegurar que materias es un array vacío
+    }
+  }, [user.iddocente]);
   // ======================================================================
   useEffect(() => {
     fetchFechas();
@@ -242,6 +242,7 @@ function Dashboard() {
   // Filtrar los eventos para hoy
   const todaysEvents = loading ? [] : getDatosFechas(today, fechas);
 
+  const existsingEvents = Array.isArray(todaysEvents) && todaysEvents.length > 0;
 
 
   return (
@@ -263,14 +264,14 @@ function Dashboard() {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                backgroundColor: "primary.main", 
+                backgroundColor: "primary.main",
                 borderRadius: "1rem",
                 boxShadow: "none",
                 //opacity: 0.9, // Control de transparencia general
               }}
             >
               <Typography variant="h4" sx={{ color: "white" }}>
-                Hola, {user.nombres != null ? capitalizarPrimeraLetra(getFirstText(user.nombres)) : capitalizarPrimeraLetra(getFirstText(user.username))}
+                Hola,  {capitalizarPrimeraLetra(getFirstText(user.username))}
               </Typography>
 
               {/* Placeholder para tu ilustración */}
@@ -293,7 +294,7 @@ function Dashboard() {
               </Box>
             </Paper>
           </Grid>
-         
+
           {/* ====== 2. Contenido Principal (3 columnas) ====== */}
 
           {/* --- Columna 1 (md={5}) --- */}
@@ -306,8 +307,9 @@ function Dashboard() {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  padding: "4% 4.5%",
+                  padding: "3% 4.5%",
                   borderBottom: "1.5px solid #eee",
+
                 }}
               >
                 <Typography
@@ -324,11 +326,12 @@ function Dashboard() {
               <DateCalendar
                 // Conecta el estado
                 value={selectedDate}
-                 sx={{
+                sx={{
                   // Apunta a la clase CSS del label del header
                   ".MuiPickersCalendarHeader-label": {
                     textTransform: "capitalize", // Pone la primera letra en mayúscula
                   },
+
                 }}
                 onChange={(newDate) => setSelectedDate(newDate)}
                 // Usa el componente personalizado para renderizar los días
@@ -344,24 +347,30 @@ function Dashboard() {
               />
             </Paper>
           </Grid>
-          
 
-         {/* --- Columna 2 (Ticker Y Fecha) --- */}
-           <Grid
+
+          {/* --- Columna 2 (Ticker Y Fecha) --- */}
+          <Grid
             item
             xs={12}
-            sm={4} 
-            md={4} 
+            sm={4}
+            md={4}
             sx={{
               display: "flex",
               flexDirection: "column", // <-- CAMBIO: Apila verticalmente
               alignItems: "center",
-              justifyContent: "flex-start", // <-- CAMBIO: Alinea arriba
-              gap: 10, // <-- CAMBIO: Añade espacio entre los items
+              justifyContent: "stretch", // <-- CAMBIO: Alinea arriba
+              gap: 4, // <-- CAMBIO: Añade espacio entre los items
+              maxWidth: "40%",
+              overflow: "hidden" // Seguridad extra
             }}
           >
             {/* --- 2a. BARRA DE NOTIFICACIONES (NUEVA POSICIÓN) --- */}
-            <Box sx={{ width: "100%" }}>
+            <Box sx={{
+              width: existsingEvents
+                ? { xs: "100%", sm: "90%" } // Si hay eventos (Ancho total o el que necesites)
+                : { xs: "100%", sm: "98%" }
+            }}>
               <EventTicker events={todaysEvents} />
             </Box>
 
@@ -375,13 +384,15 @@ function Dashboard() {
                 overflow: "hidden",
                 pb: "4rem",
                 clipPath: "polygon(0% 0%, 100% 0%, 100% 75%, 50% 100%, 0% 75%)",
-                width: "60%",
+                width: existsingEvents 
+                ? { xs: "100%", sm: "40%", lg: "30%" } 
+                : { xs: "90%", sm: "60%", lg: "60%" },
               }}
             >
               <Typography
                 variant="h6"
                 //fontWeight="bold"
-                 fontFamily="Abyssinica SIL, serif"
+                fontFamily="Abyssinica SIL, serif"
                 color="primary.contrastText"
               >
                 {dayOfWeek}
@@ -398,7 +409,7 @@ function Dashboard() {
               <Typography
                 variant="h6"
                 //fontWeight="bold"
-                 fontFamily="Abyssinica SIL, serif"
+                fontFamily="Abyssinica SIL, serif"
                 color="primary.contrastText"
               >
                 {monthName}
@@ -406,6 +417,7 @@ function Dashboard() {
             </Paper>
           </Grid>
 
+          {/* --- Columna 3 navegacion --- */}
           {/* --- Columna 3 (md={5}) --- */}
           <Grid item xs={12} sm={4} md={4}>
             <Grid
@@ -466,8 +478,8 @@ function Dashboard() {
           </Grid>
           {esDocente && (
             <Grid item xs={12}>
-               {/* Pasamos el array de materias al componente */}
-               <MisMaterias materias={materias} />
+              {/* Pasamos el array de materias al componente */}
+              <MisMaterias materias={materias} />
             </Grid>
           )}
         </Grid>
@@ -478,7 +490,7 @@ function Dashboard() {
         date={modalDate}
         events={modalEvents}
       />
-    
+
     </LocalizationProvider>
   );
 }

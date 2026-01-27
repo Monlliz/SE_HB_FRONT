@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Paper, Typography, Avatar } from "@mui/material";
 import { EVENT_TYPES } from "../data/eventTypes"; // Ajusta la ruta
-import {capitalizarPrimeraLetra} from '../utils/fornatters';
+import { capitalizarPrimeraLetra } from '../utils/fornatters';
 // --- Helpers de Estilo ---
 // (Funciones para obtener el ícono y color, igual que en tu modal)
 
@@ -15,18 +15,33 @@ const tickerAnimation = {
 };
 
 const EventTicker = ({ events = [] }) => {
-  // Si no hay eventos, muestra un mensaje
+  const commonPaperStyles = {
+    padding: "2.5% 5%",
+    borderRadius: "12px",
+    // Si quieres el fondo AZUL OSCURO de la imagen 1, usa "primary.main"
+    // Si quieres el fondo CLARO de la imagen 2, usa "secondary.light" o "#F0F4F8"
+    backgroundColor: "primary.main",
+    color: "primary.contrastText", // Texto blanco si el fondo es oscuro
+    overflow: "hidden", // CRUCIAL: Corta lo que sobra
+    position: "relative", // Necesario para contener lo absoluto
+    display: "flex",
+    alignItems: "center",
+  
+  };
+// Ajusta la duración de la animación basado en cuántos eventos hay
+  // (Más eventos = animación más lenta para que se pueda leer)
+  const animationDuration = events.length * 4; // 4 segundos por evento (ajusta a tu gusto)
+
+  // --- Caso: No hay eventos ---
   if (events.length === 0) {
     return (
-      <Paper
-        sx={{
-          padding: "12px 16px",
-          backgroundColor: "secondary.light", // Tu azul claro
-          borderRadius: "12px",
-          textAlign: "center",
-        }}
-      >
-        <Typography variant="body2" sx={{ color: "primary.main", fontWeight: 500 }}>
+      <Paper sx={{
+        ...commonPaperStyles,
+        justifyContent: "center", // Centrado si es texto estático
+        backgroundColor: "secondary.light", // Color clarito para el mensaje
+        color: "primary.main",
+      }}>
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>
           No hay eventos programados para hoy.
         </Typography>
       </Paper>
@@ -36,10 +51,10 @@ const EventTicker = ({ events = [] }) => {
   // Función para renderizar un solo item del ticker
   const renderEventItem = (event, index) => {
     // Busca la configuración del evento (ej: 'festivo')
-    const eventType = EVENT_TYPES[event.tipo] || null; 
+    const eventType = EVENT_TYPES[event.tipo] || null;
     // Obtén el color (con fallback)
     const itemColor = eventType?.color || EVENT_TYPES.default.color;
-    
+
     // Obtén el COMPONENTE del ícono (con fallback)
     const IconComponent = eventType?.icon || EVENT_TYPES.default.icon;
     return (
@@ -67,8 +82,8 @@ const EventTicker = ({ events = [] }) => {
           sx={{
             color: "primary.contrastText",
             fontWeight: "bold",
-            fontFamily:"Inter",
-            whiteSpace: "nowrap", // Evita que el texto se parta
+            fontFamily: "Inter",
+            
           }}
         >
           {capitalizarPrimeraLetra(event.etiqueta)}
@@ -77,27 +92,21 @@ const EventTicker = ({ events = [] }) => {
     );
   };
 
-  // Ajusta la duración de la animación basado en cuántos eventos hay
-  // (Más eventos = animación más lenta para que se pueda leer)
-  const animationDuration = events.length * 4; // 4 segundos por evento (ajusta a tu gusto)
-
+  
   return (
     <Paper
       sx={{
-        padding: "4% 0", // Delgado, como pediste
-        backgroundColor: "primary.main", // Tu azul claro
-        borderRadius: "1rem",
-        overflow: "hidden", // ¡Muy importante para que funcione el carrusel!
-        width: "100%",
-        ...tickerAnimation, // Inyecta los keyframes
+        ...commonPaperStyles,
       }}
     >
       <Box
         sx={{
           display: "flex",
-          width: "fit-content", // Se ajusta al ancho de los eventos
+          //width: "fit-content", // Se ajusta al ancho de los eventos
           // Aplica la animación
+          whiteSpace: "nowrap",
           animation: `ticker ${animationDuration}s linear infinite`,
+          ...tickerAnimation,
           "&:hover": {
             animationPlayState: "paused", // Pausa la animación con el mouse
           },

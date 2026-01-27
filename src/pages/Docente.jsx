@@ -20,7 +20,10 @@ import {
 } from "@mui/material";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import UserDocente from "../components/users/UserDocente.jsx"; // Componente 'Detalle'
-import NewDocente from "../components/modals/Docente/NewDocente"; // Modal para crear docente
+import { camposNuevoDocente } from "../config/camposDocente-Alumno.jsx"; // Campos para el formulario
+import ReusableModal from "../components/modals/ReusableModal.jsx";
+import { fetchDocentePost } from "../services/docenteService.js";
+import { User } from "lucide-react";
 
 /**
  * Componente principal que gestiona la interfaz de docentes.
@@ -122,15 +125,32 @@ export default function Docente() {
     // La llamada a fetchDocente() aquí es innecesaria y se ha eliminado.
   };
 
-  /**
-   * Se ejecuta después de que el modal de "Nuevo Docente" se cierra con éxito.
-   * Vuelve a cargar la lista de docentes para incluir el nuevo registro.
-   */
-  const handleAcceptNew = () => {
-    setModalNewOpen(false); // Cierra el modal.
-    fetchDocente(); // Actualiza la lista de docentes.
-  };
 
+  //----------Crear nuevo docente----------------
+  // Esta función se la pasaremos al ReusableModal en la prop "onSubmit"
+  const handleSaveDocente = async (formData) => {
+    try {
+      if (!token) throw new Error("No token found");
+
+      // 1. Llamamos a la API con los datos que vienen del modal
+      await fetchDocentePost(token, formData);
+
+      // 2. Feedback visual (puedes usar tu snackbar o alert)
+      // setAlert(true); // Si usas tu lógica de alertas
+      // setSnackbarOpen(true);
+      alert("Docente ingresado con éxito");
+
+      // 3. Refrescar la tabla (importante)
+      // Aquí deberías llamar a la función que carga los docentes, ej:
+      // fetchDocentes(); 
+     setModalNewOpen(false); // Cierra el modal.
+    fetchDocente(); // Actualiza la lista de docentes.
+
+    } catch (error) {
+      console.error(error);
+      alert(`Error: ${error.message}`);
+    }
+  };
   // --- RENDERIZADO DEL COMPONENTE ---
 
   return (
@@ -175,12 +195,21 @@ export default function Docente() {
             "& .MuiFormControlLabel-label": { fontSize: "0.85rem" },
           }}
         />
-        {/* Modal para crear un nuevo docente */}
+        <ReusableModal
+          open={modalNewOpen}
+          onClose={() => setModalNewOpen(false)}
+          iconEntity={User} // Icono del título del modal
+          title="Ingresar Nuevo Docente"
+          fields={camposNuevoDocente} // El array que creamos en el Paso 1
+          initialValues={{}} // Objeto vacío porque es nuevo
+          onSubmit={handleSaveDocente} // La función del Paso 2
+        />
+        {/*  {/* Modal para crear un nuevo docente 
         <NewDocente
           open={modalNewOpen}
           onClose={() => setModalNewOpen(false)}
           onAccept={handleAcceptNew}
-        />
+        /> */}
 
         <List sx={{ width: "100%", flexGrow: 1, overflowY: "auto" }}>
           {loading && (
