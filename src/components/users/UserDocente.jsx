@@ -206,7 +206,7 @@ export default function UserDocente({ id }) {
   };
 
   const handleNavigateToActividades = (materia) => {
-    procesarNavegacion(materia, "/trabajo", "/trabajoperfil");
+    procesarNavegacion(materia, "/trabajo", "/trabajo");
   };
 
   return (

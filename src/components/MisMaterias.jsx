@@ -53,7 +53,7 @@ const MisMaterias = ({ materias = [] }) => {
   };
 
   const handleNavigateToActividades = (materia) => {
-    procesarNavegacion(materia, "/trabajo", "/trabajoperfil");
+    procesarNavegacion(materia, "/trabajo", "/trabajo");
   };
 
   const paperStyles = {
