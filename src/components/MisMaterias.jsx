@@ -40,11 +40,11 @@ const MisMaterias = ({ materias = [] }) => {
     }
   };
 
-  const handleNavigateToListaMateria = (materia) => {
+    const handleNavigateToListaMateria = (materia) => {
     procesarNavegacion(
       materia,
-      "/listaAsistenciamateria",
-      "/listaAsistenciamateriaPerfil",
+      "/listaAsistencia",
+      "/listaAsistencia",
     );
   };
 
