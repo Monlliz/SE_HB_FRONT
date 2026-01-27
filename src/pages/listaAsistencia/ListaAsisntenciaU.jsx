@@ -9,9 +9,23 @@ import { useAuth } from "../../context/AuthContext.jsx";
 
 // UI Components
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  CircularProgress, Typography, Box, Tooltip, Button, FormControl,
-  InputLabel, Select, MenuItem, Stack
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  CircularProgress,
+  Typography,
+  Box,
+  Tooltip,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Stack,
 } from "@mui/material";
 
 // Icons
@@ -28,21 +42,42 @@ import { useNotification } from "../../components/modals/NotificationModal.jsx";
 
 // Servicios (Importamos TODOS los necesarios)
 import {
-  fetchDatosAsistencia,             // General
-  fetchPostAsistencia,              // General POST
-  fetchDatosAsistenciaMateria,      // Materia Normal
-  fetchPostAsistenciaMateria,       // Materia POST
-  fetchDatosAsistenciaMateriaPerfil // Materia Perfil
+  fetchDatosAsistencia, // General
+  fetchPostAsistencia, // General POST
+  fetchDatosAsistenciaMateria, // Materia Normal
+  fetchPostAsistenciaMateria, // Materia POST
+  fetchDatosAsistenciaMateriaPerfil, // Materia Perfil
 } from "../../services/asistenciaService.js";
 
 // --- SUBCOMPONENTE DE ÍCONO ---
 const IconoEstatus = ({ estatus }) => {
   switch (estatus) {
-    case "asistio": return <Tooltip title="Asistió"><CheckCircleIcon color="success" /></Tooltip>;
-    case "falta": return <Tooltip title="Faltó"><CancelIcon color="error" /></Tooltip>;
-    case "demorado": return <Tooltip title="Demora"><DescriptionIcon color="warning" /></Tooltip>;
-    case "antes": return <Tooltip title="Se retiró antes"><DescriptionIcon color="info" /></Tooltip>;
-    default: return <Typography variant="caption">-</Typography>;
+    case "asistio":
+      return (
+        <Tooltip title="Asistió">
+          <CheckCircleIcon color="success" />
+        </Tooltip>
+      );
+    case "falta":
+      return (
+        <Tooltip title="Faltó">
+          <CancelIcon color="error" />
+        </Tooltip>
+      );
+    case "demorado":
+      return (
+        <Tooltip title="Demora">
+          <DescriptionIcon color="warning" />
+        </Tooltip>
+      );
+    case "antes":
+      return (
+        <Tooltip title="Se retiró antes">
+          <DescriptionIcon color="info" />
+        </Tooltip>
+      );
+    default:
+      return <Typography variant="caption">-</Typography>;
   }
 };
 
@@ -60,10 +95,10 @@ const ListaAsistencia = () => {
   const {
     grupoId,
     year: initialYear,
-    materiaClave,      // Solo en modos Materia/Perfil
-    nombreMateria,     // Solo en modos Materia/Perfil
-    idNormalizado,     // Solo en modo Perfil
-    semestre           // Solo en modo Perfil
+    materiaClave, // Solo en modos Materia/Perfil
+    nombreMateria, // Solo en modos Materia/Perfil
+    idNormalizado, // Solo en modo Perfil
+    semestre, // Solo en modo Perfil
   } = location.state || {};
 
   // Lógica para determinar en qué modo estamos
@@ -81,7 +116,9 @@ const ListaAsistencia = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   // Filtros de fecha
-  const [selectedYear, setSelectedYear] = useState(initialYear || new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState(
+    initialYear || new Date().getFullYear(),
+  );
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
 
   // -----------------------------------------------------------------------
@@ -97,38 +134,61 @@ const ListaAsistencia = () => {
     setError(null);
 
     try {
-      if (!token) throw new Error("Autorización rechazada. No se encontró el token.");
+      if (!token)
+        throw new Error("Autorización rechazada. No se encontró el token.");
 
       let data;
-      
+
       // >>> AQUÍ OCURRE LA MAGIA DE LA UNIFICACIÓN <<<
       if (isPerfil) {
         console.log("Cargando modo PERFIL");
         data = await fetchDatosAsistenciaMateriaPerfil(
-          grupoId, idNormalizado, semestre, materiaClave, selectedYear, selectedMonth, token
+          grupoId,
+          idNormalizado,
+          semestre,
+          materiaClave,
+          selectedYear,
+          selectedMonth,
+          token,
         );
       } else if (isMateria) {
         console.log("Cargando modo MATERIA");
         data = await fetchDatosAsistenciaMateria(
-          grupoId, materiaClave, selectedYear, selectedMonth, token
+          grupoId,
+          materiaClave,
+          selectedYear,
+          selectedMonth,
+          token,
         );
       } else {
         console.log("Cargando modo GENERAL");
         data = await fetchDatosAsistencia(
-          grupoId, selectedYear, selectedMonth, token
+          grupoId,
+          selectedYear,
+          selectedMonth,
+          token,
         );
       }
 
       setEstudiantes(data.estudiantes || []);
       setAsistencias(data.asistencias || []);
-
     } catch (err) {
       console.error("Error al cargar datos:", err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [grupoId, token, selectedYear, selectedMonth, isPerfil, isMateria, materiaClave, idNormalizado, semestre]);
+  }, [
+    grupoId,
+    token,
+    selectedYear,
+    selectedMonth,
+    isPerfil,
+    isMateria,
+    materiaClave,
+    idNormalizado,
+    semestre,
+  ]);
 
   useEffect(() => {
     cargarDatos();
@@ -142,18 +202,23 @@ const ListaAsistencia = () => {
     try {
       if (isMateria || isPerfil) {
         // Asumiendo que Perfil y Materia usan el mismo endpoint de guardado por materia
-        await fetchPostAsistenciaMateria(token, grupoId, materiaClave, estatusAsistencia);
+        await fetchPostAsistenciaMateria(
+          token,
+          grupoId,
+          materiaClave,
+          estatusAsistencia,
+        );
       } else {
         // Modo General
         await fetchPostAsistencia(token, grupoId, estatusAsistencia);
       }
-      
+
       if (showNotification) {
         showNotification("Asistencia guardada con éxito", "success");
       } else {
         alert("Asistencia guardada con éxito");
       }
-      
+
       setModalOpen(false);
       cargarDatos();
     } catch (error) {
@@ -183,62 +248,119 @@ const ListaAsistencia = () => {
 
   const fechasUnicas = useMemo(
     () => Object.keys(asistenciaMap).sort((a, b) => new Date(a) - new Date(b)),
-    [asistenciaMap]
+    [asistenciaMap],
   );
+
+  //Editar lista
+  // 1. Añade un estado para la fecha seleccionada (edición)
+  const [selectedDateToEdit, setSelectedDateToEdit] = useState(null);
+
+  // 2. Función para abrir el modal con datos existentes
+  const handleEditAsistencia = (fecha) => {
+    setSelectedDateToEdit(fecha);
+    setModalOpen(true);
+  };
+
+  // 3. Limpiar la fecha al cerrar
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedDateToEdit(null);
+  };
 
   // -----------------------------------------------------------------------
   // RENDER
   // -----------------------------------------------------------------------
-  
+
   // Título y Subtítulo dinámicos
   const getTitulo = () => {
-    if (isPerfil || isMateria) return `Asistencia - ${nombreMateria || materiaClave}`;
+    if (isPerfil || isMateria)
+      return `Asistencia - ${nombreMateria || materiaClave}`;
     return `Asistencia General - Grupo ${grupoId}`;
   };
 
   const getSubtitulo = () => {
-      if (isPerfil) return `Perfil ${grupoId} (Semestre ${semestre})`;
-      if (isMateria) return `Grupo ${grupoId}`;
-      return `Vista General`;
+    if (isPerfil) return `Perfil ${grupoId} (Semestre ${semestre})`;
+    if (isMateria) return `Grupo ${grupoId}`;
+    return `Vista General`;
   };
 
-  if (loading) return <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}><CircularProgress /></Box>;
-  if (error) return <Typography color="error" align="center" sx={{ my: 4 }}>{error}</Typography>;
+  if (loading)
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  if (error)
+    return (
+      <Typography color="error" align="center" sx={{ my: 4 }}>
+        {error}
+      </Typography>
+    );
 
   return (
-    <Box sx={{ p: 3, height: "calc(100vh - 64px)", display: "flex", flexDirection: "column" }}>
-      
+    <Box
+      sx={{
+        p: 3,
+        height: "calc(100vh - 64px)",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       {/* Header */}
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
         <Box>
           <Typography variant="h5">{getTitulo()}</Typography>
-          <Typography variant="subtitle1" color="text.secondary">{getSubtitulo()}</Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            {getSubtitulo()}
+          </Typography>
           <Typography variant="subtitle2" color="text.secondary">
-            Mostrando: {new Date(selectedYear, selectedMonth - 1).toLocaleString("es-MX", { month: "long", year: "numeric" })}
+            Mostrando:{" "}
+            {new Date(selectedYear, selectedMonth - 1).toLocaleString("es-MX", {
+              month: "long",
+              year: "numeric",
+            })}
           </Typography>
         </Box>
 
         <Stack direction="row" spacing={2} alignItems="center">
           <FormControl sx={{ m: 1, minWidth: 100 }} size="small">
             <InputLabel>Año</InputLabel>
-            <Select value={selectedYear} label="Año" onChange={(e) => setSelectedYear(e.target.value)}>
+            <Select
+              value={selectedYear}
+              label="Año"
+              onChange={(e) => setSelectedYear(e.target.value)}
+            >
               {[0, 1, 2, 3].map((off) => {
-                 const y = new Date().getFullYear() - off;
-                 return <MenuItem key={y} value={y}>{y}</MenuItem>;
+                const y = new Date().getFullYear() - off;
+                return (
+                  <MenuItem key={y} value={y}>
+                    {y}
+                  </MenuItem>
+                );
               })}
             </Select>
           </FormControl>
 
           <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
             <InputLabel>Mes</InputLabel>
-            <Select value={selectedMonth} label="Mes" onChange={(e) => setSelectedMonth(e.target.value)}>
+            <Select
+              value={selectedMonth}
+              label="Mes"
+              onChange={(e) => setSelectedMonth(e.target.value)}
+            >
               {Array.from({ length: 12 }, (_, i) => (
-                <MenuItem key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString("es-MX", { month: "long" })}</MenuItem>
+                <MenuItem key={i + 1} value={i + 1}>
+                  {new Date(0, i).toLocaleString("es-MX", { month: "long" })}
+                </MenuItem>
               ))}
             </Select>
           </FormControl>
 
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setModalOpen(true)}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setModalOpen(true)}
+          >
             Nueva Entrada
           </Button>
         </Stack>
@@ -249,7 +371,7 @@ const ListaAsistencia = () => {
         <Paper sx={{ p: 3, textAlign: "center" }}>
           <InfoIcon color="action" sx={{ mr: 1, verticalAlign: "middle" }} />
           <Typography variant="subtitle1" component="span">
-             No se encontraron estudiantes.
+            No se encontraron estudiantes.
           </Typography>
         </Paper>
       ) : (
@@ -274,8 +396,16 @@ const ListaAsistencia = () => {
                 </TableCell>
                 {/* --- COLUMNAS DE FECHAS --- */}
                 {fechasUnicas.map((fecha) => (
-                  <TableCell key={fecha} align="center" sx={{ fontWeight: "bold", minWidth: 80 }}>
-                    {new Date(fecha + "T00:00:00").toLocaleDateString("es-MX", { day: "2-digit", month: "short" })}
+                  <TableCell
+                    key={fecha}
+                    align="center"
+                    sx={{ fontWeight: "bold", minWidth: 80 }}
+                    onClick={() => handleEditAsistencia(fecha)}
+                  >
+                    {new Date(fecha + "T00:00:00").toLocaleDateString("es-MX", {
+                      day: "2-digit",
+                      month: "short",
+                    })}
                   </TableCell>
                 ))}
               </TableRow>
@@ -299,11 +429,13 @@ const ListaAsistencia = () => {
                   >
                     {`${est.apellidop} ${est.apellidom} ${est.nombres}`}
                   </TableCell>
-                  
+
                   {/* --- CELDAS DE ASISTENCIA --- */}
                   {fechasUnicas.map((fecha) => (
                     <TableCell key={`${est.matricula}-${fecha}`} align="center">
-                      <IconoEstatus estatus={asistenciaMap[fecha]?.[est.matricula]} />
+                      <IconoEstatus
+                        estatus={asistenciaMap[fecha]?.[est.matricula]}
+                      />
                     </TableCell>
                   ))}
                 </TableRow>
@@ -316,10 +448,14 @@ const ListaAsistencia = () => {
       {/* Modal */}
       <NuevaAsistencia
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={handleCloseModal}
         estudiantes={estudiantes}
         onSave={handleSaveAsistencia}
+        editDate={selectedDateToEdit}
         isSaving={isSaving}
+        asistenciaActual={
+          selectedDateToEdit ? asistenciaMap[selectedDateToEdit] : {}
+        }
       />
       {NotificationComponent}
     </Box>

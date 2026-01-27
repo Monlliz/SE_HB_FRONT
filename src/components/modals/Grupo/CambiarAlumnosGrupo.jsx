@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
- 
-import { fetchGrupoCambio,fetchGrupoGet } from "../../../services/grupoService.js";
+
+import {
+  fetchGrupoCambio,
+  fetchGrupoGet,
+} from "../../../services/grupoService.js";
 import {
   Button,
   Dialog,
@@ -15,22 +18,23 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel
+  InputLabel,
 } from "@mui/material";
 
 function CambiarAlumnosGrupo({ open, onClose, onAccept, grupoId }) {
   const { token } = useAuth();
+
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [formulario, setFormulario] = useState({grupo: '', });
-const handleChange = (event) => {
-  const { name, value } = event.target;
-  setFormulario(prevState => ({
-    ...prevState,
-    [name]: value
-  }));
-};
+  const [formulario, setFormulario] = useState({ grupo: "" });
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormulario((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
+  };
 
   const opcionesSelect = {
     grupo: [
@@ -56,7 +60,7 @@ const handleChange = (event) => {
       }
 
       //Aqui va el fetch
-      await fetchGrupoCambio(token,grupoId,formulario.grupo);
+      await fetchGrupoCambio(token, grupoId, formulario.grupo);
       alert(`Alumnos Cambiados de grupo`);
       onAccept();
     } catch (err) {

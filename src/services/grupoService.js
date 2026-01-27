@@ -44,6 +44,7 @@ export const fetchGrupoMateriaPost = async (
 
 export const fetchGrupoCambio = async (token, grupoId1, grupoId2) => {
   try {
+    console.log("fetchGrupoCambio", token, grupoId1, grupoId2);
     const response = await fetch(`${apiUrl}/grupo/${grupoId1}/${grupoId2}`, {
       method: "PUT",
       headers: {

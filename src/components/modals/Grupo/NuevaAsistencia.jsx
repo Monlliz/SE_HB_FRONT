@@ -19,21 +19,42 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
-const NuevaAsistencia = ({ open, onClose, estudiantes, onSave }) => {
-  const [fecha, setFecha] = useState(dayjs()); // Fecha, por defecto hoy
+const NuevaAsistencia = ({
+  open,
+  onClose,
+  estudiantes,
+  onSave,
+  editDate,
+  asistenciaActual,
+}) => {
+  const [fecha, setFecha] = useState(dayjs());
   const [estatusAsistencia, setEstatusAsistencia] = useState({});
 
   // Inicializa el estado de la asistencia cada vez que la lista de estudiantes cambia o el modal se abre
   useEffect(() => {
     if (open) {
-      const initialState = {};
-      estudiantes.forEach((estudiante) => {
-        // Por defecto, todos asisten
-        initialState[estudiante.matricula] = "asistio";
-      });
-      setEstatusAsistencia(initialState);
+      if (editDate && asistenciaActual) {
+        // MODO EDICIÓN: Cargar fecha y estados guardados
+        setFecha(dayjs(editDate));
+
+        const editState = {};
+        estudiantes.forEach((est) => {
+          // Si el estudiante tiene registro, lo ponemos; si no, por defecto asistio
+          editState[est.matricula] =
+            asistenciaActual[est.matricula] || "asistio";
+        });
+        setEstatusAsistencia(editState);
+      } else {
+        // MODO NUEVO: Fecha hoy y todos asistieron
+        setFecha(dayjs());
+        const initialState = {};
+        estudiantes.forEach((est) => {
+          initialState[est.matricula] = "asistio";
+        });
+        setEstatusAsistencia(initialState);
+      }
     }
-  }, [open, estudiantes]);
+  }, [open, estudiantes, editDate, asistenciaActual]);
 
   // Maneja el cambio de estatus para un estudiante
   const handleStatusChange = (matricula, nuevoEstatus) => {
@@ -58,15 +79,19 @@ const NuevaAsistencia = ({ open, onClose, estudiantes, onSave }) => {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Nueva Entrada de Lista</DialogTitle>
+      <DialogTitle>
+        {editDate
+          ? `Editando Asistencia: ${dayjs(editDate).format("DD/MM/YYYY")}`
+          : "Nueva Entrada de Lista"}
+      </DialogTitle>
       <DialogContent>
-        {/* Selector de Fecha */}
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Fecha de la asistencia"
             value={fecha}
             onChange={(nuevaFecha) => setFecha(nuevaFecha)}
-            sx={{ my: 2 }}
+            sx={{ my: 2, width: "100%" }}
+    
           />
         </LocalizationProvider>
 
