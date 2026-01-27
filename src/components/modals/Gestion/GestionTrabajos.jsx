@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Alert,
   Button,
   Dialog,
   DialogActions,
@@ -11,14 +10,11 @@ import {
   TextField,
   InputAdornment,
 } from "@mui/material";
-// Importa el NUEVO servicio que llama a /api/rubros/tc/sync
 import { fetchRubrosTCUpdate } from "../../../services/rubroService.js";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
-import InfoIcon from "@mui/icons-material/Info";
 import SaveIcon from "@mui/icons-material/Save";
 
-// Renombramos el componente para mayor claridad
 function GestionTrabajos({
   open,
   onClose,
@@ -31,20 +27,16 @@ function GestionTrabajos({
   parcial,
   yearC,
 }) {
-  // Estado local para los rúbros que se están editando
   const [rubrosEdit, setRubrosEdit] = useState([]);
-  //obtener fecha
   const fechaHoy = new Date().toISOString().split("T")[0];
-  // Cuando el modal se abre, copia los rúbros actuales al estado local
-  // Cuando el modal se abre, copia los rúbros al estado local
+
   useEffect(() => {
     if (open && rubrosActuales) {
       const rubrosCopiados = JSON.parse(JSON.stringify(rubrosActuales));
       const rubrosConStrings = rubrosCopiados.map((rubro) => ({
         ...rubro,
-        ponderacion: String(rubro.ponderacion || "0"),
-        // Aseguramos que si viene null de la BD, sea "0"
-        ponderacioninsuficiente: String(rubro.ponderacioninsuficiente ?? "0"),
+        ponderacion: String(Math.round(Number(rubro.ponderacion || 0) * 100)),
+        ponderacioninsuficiente: String(Math.round(Number(rubro.ponderacioninsuficiente || 0) * 100)),
       }));
       setRubrosEdit(rubrosConStrings);
     }
@@ -52,16 +44,36 @@ function GestionTrabajos({
 
   // --- MANEJADORES DE CAMBIOS ---
 
-  // Maneja el cambio en un TextField (nombre o ponderación)
   const handleRubroChange = (index, campo, valor) => {
     const nuevosRubros = [...rubrosEdit];
 
-    // --- CAMBIO 1: Convertir % a decimal ---
     if (campo === "ponderacion" || campo === "ponderacioninsuficiente") {
-      // Si el usuario escribe "50", lo convertimos a 0.5
-      const valorDecimal = Number(valor) / 100;
-      // Lo guardamos como string para ser consistentes (ej: "0.5")
-      nuevosRubros[index][campo] = valorDecimal.toFixed(2);
+      // 1. REGLA: No permitir vacío. Si borra todo, ponemos "0".
+      if (valor === "") {
+        nuevosRubros[index][campo] = "0";
+        setRubrosEdit(nuevosRubros);
+        return;
+      }
+
+      // 2. Solo permitir números
+      if (!/^\d+$/.test(valor)) {
+        return; 
+      }
+
+      // 3. Limpiar ceros a la izquierda (ej: "05" -> "5")
+      let valorLimpio = valor;
+      if (valor.length > 1 && valor.startsWith("0")) {
+        valorLimpio = valor.replace(/^0+/, "");
+        // Si al quitar ceros queda vacío (ej: input era "00"), forzamos "0"
+        if (valorLimpio === "") valorLimpio = "0";
+      }
+
+      // 4. (Opcional) Límite lógico de 100
+      if (Number(valorLimpio) > 100) {
+        return;
+      }
+
+      nuevosRubros[index][campo] = valorLimpio;
     } else {
       nuevosRubros[index][campo] = valor;
     }
@@ -69,33 +81,33 @@ function GestionTrabajos({
     setRubrosEdit(nuevosRubros);
   };
 
-  // Añade un nuevo rúbro TC vacío
-  // Añade un nuevo rúbro vacío a la lista
   const handleAddRubro = () => {
-    let defaultPonderacion = "1";
-    let defaultInsuficiente = "1";
+    // --- CAMBIO: Por defecto inician en "100" ---
+    let defaultPonderacion = "100";
+    let defaultInsuficiente = "100";
 
-    if (rubrosEdit.length > 0) {
+    // (Opcional) Si prefieres copiar la del anterior, descomenta esto. 
+    // Si quieres forzar 100 siempre, déjalo comentado o bórralo.
+    /* if (rubrosEdit.length > 0) {
       const ultimo = rubrosEdit[rubrosEdit.length - 1];
       defaultPonderacion = ultimo.ponderacion;
-      // CORRECCIÓN AQUÍ:
       defaultInsuficiente = ultimo.ponderacioninsuficiente;
-    }
+    } 
+    */
 
     setRubrosEdit([
       ...rubrosEdit,
       {
         id_rubro: `new_${Date.now()}`,
         nombre_rubro: "",
-        ponderacion: defaultPonderacion,
-        ponderacioninsuficiente: defaultInsuficiente, // Usar minúsculas
+        ponderacion: defaultPonderacion, // Inicia en 100
+        ponderacioninsuficiente: defaultInsuficiente, // Inicia en 100
         materia_clave: materiaClave,
         fecha_limite: fechaHoy,
       },
     ]);
   };
 
-  // Elimina un rúbro de la lista
   const handleDeleteRubro = (index) => {
     const nuevosRubros = rubrosEdit.filter((_, i) => i !== index);
     setRubrosEdit(nuevosRubros);
@@ -106,49 +118,31 @@ function GestionTrabajos({
     try {
       for (let i = 0; i < rubrosEdit.length; i++) {
         const rubro = rubrosEdit[i];
-        const numRubro = i + 1;
-
-        // 1. Validar nombre vacío
         if (!rubro.nombre_rubro || rubro.nombre_rubro.trim() === "") {
-          alert(
-            `El nombre de la actividad en la fila ${numRubro} es obligatorio.`,
-          );
-          return; // Detiene la ejecución
-        }
-
-        /*// 2. Validar que las ponderaciones no sean 0
-        const pRetardo = Number(rubro.ponderacion);
-        const pInsuficiente = Number(rubro.ponderacioninsuficiente);
-   if (pRetardo <= 0) {
-          alert(
-            `El % de Retardo en la actividad "${rubro.nombre_rubro}" debe ser mayor a 0.`,
-          );
+          alert(`El nombre de la actividad en la fila ${i + 1} es obligatorio.`);
           return;
         }
-
-        if (pInsuficiente <= 0) {
-          alert(
-            `El % Insuficiente en la actividad "${rubro.nombre_rubro}" debe ser mayor a 0.`,
-          );
-          return;
-        }*/
       }
+
+      const rubrosParaEnviar = rubrosEdit.map(r => ({
+        ...r,
+        ponderacion: (Number(r.ponderacion) / 100).toFixed(2),
+        ponderacioninsuficiente: (Number(r.ponderacioninsuficiente) / 100).toFixed(2)
+      }));
 
       const payload = {
         materiaClave: materiaClave,
         idGrupo: idGrupo,
         parcial: parcial,
         yearC: yearC,
-        rubros: rubrosEdit, // El array ahora usa 'idrubrotc'
+        rubros: rubrosParaEnviar, 
       };
 
-      console.log("Enviando Rúbros TC para guardar:", payload);
-
+      console.log("Enviando:", payload);
       await fetchRubrosTCUpdate(payload, token);
-
-      onGuardar(); // Cierra el modal y refresca los datos
+      onGuardar(); 
     } catch (err) {
-      console.error("Error al guardar rúbros TC:", err);
+      console.error("Error al guardar:", err);
     }
   };
 
@@ -158,12 +152,9 @@ function GestionTrabajos({
         Gestionar Trabajos Cotidianos de {nombreMateria}
       </DialogTitle>
       <DialogContent>
-        {/* --- LISTA DE RÚBROS EDITABLES --- */}
         <Stack spacing={2} sx={{ mt: 2 }}>
           {rubrosEdit.map((rubro, index) => (
-            // --- CORRECCIÓN 2 ---
-            // Leemos 'idrubrotc' para el key
-            <Stack direction="row" spacing={2} key={rubro.idrubrotc}>
+            <Stack direction="row" spacing={2} key={rubro.idrubrotc || rubro.id_rubro}>
               <TextField
                 label="Nombre de la actividad"
                 value={rubro.nombre_rubro}
@@ -176,66 +167,36 @@ function GestionTrabajos({
               <TextField
                 label="Fecha de entrega"
                 type="date"
-                value={
-                  rubro.fecha_limite ? rubro.fecha_limite.split("T")[0] : ""
-                }
+                value={rubro.fecha_limite ? rubro.fecha_limite.split("T")[0] : ""}
                 onChange={(e) =>
                   handleRubroChange(index, "fecha_limite", e.target.value)
                 }
                 sx={{ width: 250 }}
-                InputLabelProps={{
-                  shrink: true,
-                }}
+                InputLabelProps={{ shrink: true }}
               />
 
               <TextField
-                // --- CAMBIO 1: Actualizar Label ---
                 label="% Retardo"
                 type="text"
-                // --- CAMBIO 1: Convertir "0.5" a "50" para MOSTRAR ---
-                value={Number(rubro.ponderacion) * 100}
-                onChange={(e) => {
-                  const value = e.target.value;
-
-                  if (/^\d*$/.test(value)) {
-                    const number = Number(value);
-                    if (number <= 100) {
-                      handleRubroChange(index, "ponderacion", value);
-                    }
-                  }
-                }}
+                value={rubro.ponderacion}
+                onChange={(e) => handleRubroChange(index, "ponderacion", e.target.value)}
                 sx={{ width: 200 }}
-                // --- CAMBIO 1: Añadir el símbolo % ---
                 InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">%</InputAdornment>
-                  ),
+                  endAdornment: <InputAdornment position="end">%</InputAdornment>,
                 }}
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
               />
+              
               <TextField
                 label="% Insuficiente"
                 type="text"
-                value={Number(rubro.ponderacioninsuficiente) * 100}
-                onChange={(e) => {
-                  const value = e.target.value;
-
-                  if (/^\d*$/.test(value)) {
-                    const number = Number(value);
-                    if (number <= 100) {
-                      handleRubroChange(
-                        index,
-                        "ponderacioninsuficiente",
-                        value,
-                      );
-                    }
-                  }
-                }}
+                value={rubro.ponderacioninsuficiente}
+                onChange={(e) => handleRubroChange(index, "ponderacioninsuficiente", e.target.value)}
                 sx={{ width: 200 }}
                 InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">%</InputAdornment>
-                  ),
+                  endAdornment: <InputAdornment position="end">%</InputAdornment>,
                 }}
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
               />
 
               <IconButton

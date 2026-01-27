@@ -26,6 +26,9 @@ import {
   Select,
   MenuItem,
   Stack,
+  Menu, // Nuevo
+  ListItemIcon, // Nuevo
+  ListItemText // Nuevo
 } from "@mui/material";
 
 // Icons
@@ -34,20 +37,25 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import DescriptionIcon from "@mui/icons-material/Description";
 import InfoIcon from "@mui/icons-material/Info";
+import FileDownloadIcon from "@mui/icons-material/FileDownload"; // Nuevo
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf"; // Nuevo
+import TableViewIcon from "@mui/icons-material/TableView"; // Nuevo
 
 // Modal y Notificaciones
 import NuevaAsistencia from "../../components/modals/Grupo/NuevaAsistencia";
-// Asegúrate de que este path sea correcto para tu proyecto
 import { useNotification } from "../../components/modals/NotificationModal.jsx";
 
-// Servicios (Importamos TODOS los necesarios)
+// Servicios
 import {
-  fetchDatosAsistencia, // General
-  fetchPostAsistencia, // General POST
-  fetchDatosAsistenciaMateria, // Materia Normal
-  fetchPostAsistenciaMateria, // Materia POST
-  fetchDatosAsistenciaMateriaPerfil, // Materia Perfil
+  fetchDatosAsistencia,
+  fetchPostAsistencia,
+  fetchDatosAsistenciaMateria,
+  fetchPostAsistenciaMateria,
+  fetchDatosAsistenciaMateriaPerfil,
 } from "../../services/asistenciaService.js";
+
+// Importar Hook de Exportación (Asegúrate de la ruta correcta)
+import { useExport } from "../../utils/useExport.js"
 
 // --- SUBCOMPONENTE DE ÍCONO ---
 const IconoEstatus = ({ estatus }) => {
@@ -87,24 +95,21 @@ const IconoEstatus = ({ estatus }) => {
 const ListaAsistencia = () => {
   const { token } = useAuth();
   const location = useLocation();
-  // Usamos useNotification si está disponible en tu proyecto (tomado del archivo General)
-  // Si no tienes este hook configurado globalmente, puedes volver a usar alert() o Snackbar simple.
   const { showNotification, NotificationComponent } = useNotification();
+  const { exportar } = useExport(); // Usamos el hook
 
   // 1. Extracción de parámetros y Detección de MODO
   const {
     grupoId,
     year: initialYear,
-    materiaClave, // Solo en modos Materia/Perfil
-    nombreMateria, // Solo en modos Materia/Perfil
-    idNormalizado, // Solo en modo Perfil
-    semestre, // Solo en modo Perfil
+    materiaClave,
+    nombreMateria,
+    idNormalizado,
+    semestre,
   } = location.state || {};
 
-  // Lógica para determinar en qué modo estamos
   const isPerfil = Boolean(idNormalizado && semestre && materiaClave);
   const isMateria = Boolean(materiaClave && !isPerfil);
-  // Si no hay materiaClave, asumimos que es el pase de lista general del grupo
   const isGeneral = Boolean(!materiaClave);
 
   // Estados
@@ -115,6 +120,10 @@ const ListaAsistencia = () => {
   const [error, setError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Estados para el Menú de Exportación
+  const [anchorElExport, setAnchorElExport] = useState(null);
+  const openExportMenu = Boolean(anchorElExport);
+
   // Filtros de fecha
   const [selectedYear, setSelectedYear] = useState(
     initialYear || new Date().getFullYear(),
@@ -122,7 +131,7 @@ const ListaAsistencia = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
 
   // -----------------------------------------------------------------------
-  // CARGA DE DATOS (Switch de Servicios)
+  // CARGA DE DATOS
   // -----------------------------------------------------------------------
   const cargarDatos = useCallback(async () => {
     if (!grupoId) {
@@ -134,39 +143,20 @@ const ListaAsistencia = () => {
     setError(null);
 
     try {
-      if (!token)
-        throw new Error("Autorización rechazada. No se encontró el token.");
+      if (!token) throw new Error("Autorización rechazada.");
 
       let data;
-
-      // >>> AQUÍ OCURRE LA MAGIA DE LA UNIFICACIÓN <<<
       if (isPerfil) {
-        console.log("Cargando modo PERFIL");
         data = await fetchDatosAsistenciaMateriaPerfil(
-          grupoId,
-          idNormalizado,
-          semestre,
-          materiaClave,
-          selectedYear,
-          selectedMonth,
-          token,
+          grupoId, idNormalizado, semestre, materiaClave, selectedYear, selectedMonth, token
         );
       } else if (isMateria) {
-        console.log("Cargando modo MATERIA");
         data = await fetchDatosAsistenciaMateria(
-          grupoId,
-          materiaClave,
-          selectedYear,
-          selectedMonth,
-          token,
+          grupoId, materiaClave, selectedYear, selectedMonth, token
         );
       } else {
-        console.log("Cargando modo GENERAL");
         data = await fetchDatosAsistencia(
-          grupoId,
-          selectedYear,
-          selectedMonth,
-          token,
+          grupoId, selectedYear, selectedMonth, token
         );
       }
 
@@ -178,63 +168,36 @@ const ListaAsistencia = () => {
     } finally {
       setLoading(false);
     }
-  }, [
-    grupoId,
-    token,
-    selectedYear,
-    selectedMonth,
-    isPerfil,
-    isMateria,
-    materiaClave,
-    idNormalizado,
-    semestre,
-  ]);
+  }, [grupoId, token, selectedYear, selectedMonth, isPerfil, isMateria, materiaClave, idNormalizado, semestre]);
 
   useEffect(() => {
     cargarDatos();
   }, [cargarDatos]);
 
   // -----------------------------------------------------------------------
-  // GUARDADO DE DATOS (Switch de Servicios)
+  // GUARDADO
   // -----------------------------------------------------------------------
   const handleSaveAsistencia = async (estatusAsistencia) => {
     setIsSaving(true);
     try {
       if (isMateria || isPerfil) {
-        // Asumiendo que Perfil y Materia usan el mismo endpoint de guardado por materia
-        await fetchPostAsistenciaMateria(
-          token,
-          grupoId,
-          materiaClave,
-          estatusAsistencia,
-        );
+        await fetchPostAsistenciaMateria(token, grupoId, materiaClave, estatusAsistencia);
       } else {
-        // Modo General
         await fetchPostAsistencia(token, grupoId, estatusAsistencia);
       }
-
-      if (showNotification) {
-        showNotification("Asistencia guardada con éxito", "success");
-      } else {
-        alert("Asistencia guardada con éxito");
-      }
-
+      if (showNotification) showNotification("Asistencia guardada", "success");
       setModalOpen(false);
       cargarDatos();
     } catch (error) {
       console.error("Error saving:", error);
-      if (showNotification) {
-        showNotification("Error al guardar asistencia", "error");
-      } else {
-        alert("Error al guardar asistencia");
-      }
+      if (showNotification) showNotification("Error al guardar", "error");
     } finally {
       setIsSaving(false);
     }
   };
 
   // -----------------------------------------------------------------------
-  // PROCESAMIENTO DE DATOS (Igual para todos)
+  // PROCESAMIENTO
   // -----------------------------------------------------------------------
   const asistenciaMap = useMemo(() => {
     const map = {};
@@ -251,30 +214,108 @@ const ListaAsistencia = () => {
     [asistenciaMap],
   );
 
-  //Editar lista
-  // 1. Añade un estado para la fecha seleccionada (edición)
   const [selectedDateToEdit, setSelectedDateToEdit] = useState(null);
 
-  // 2. Función para abrir el modal con datos existentes
   const handleEditAsistencia = (fecha) => {
     setSelectedDateToEdit(fecha);
     setModalOpen(true);
   };
 
-  // 3. Limpiar la fecha al cerrar
   const handleCloseModal = () => {
     setModalOpen(false);
     setSelectedDateToEdit(null);
   };
 
   // -----------------------------------------------------------------------
+  // LÓGICA DE EXPORTACIÓN
+  // -----------------------------------------------------------------------
+  const handleExportClick = (event) => {
+    setAnchorElExport(event.currentTarget);
+  };
+  const handleExportClose = () => {
+    setAnchorElExport(null);
+  };
+
+  const getNombreArchivoBase = (tipo) => {
+    // Genera un nombre como: Asistencia_Matematicas_GrupoA_Reporte
+    const mat = nombreMateria || materiaClave || "General";
+    const mesStr = new Date(selectedYear, selectedMonth - 1).toLocaleString("es-MX", { month: "long" });
+    return `Asistencia_${mat}_Gpo${grupoId}_${mesStr}_${tipo}`;
+  };
+
+  const getTituloDocumento = () => {
+    const mat = nombreMateria || materiaClave || "General";
+    // Este string aparecerá en el encabezado del PDF (gracias a tu hook)
+    return `Lista: ${mat} - Grupo: ${grupoId} - ${selectedYear}`;
+  };
+
+  // Opción 1: Exportar CON DATOS (Reporte Mensual)
+  const handleExportData = (format) => {
+    if (estudiantes.length === 0) {
+      alert("No hay estudiantes para exportar.");
+      return;
+    }
+
+    // Transformamos los datos para que sean planos
+    const dataExport = estudiantes.map((est) => {
+      const row = {
+        "Matrícula": est.matricula,
+        "Nombre Completo": `${est.apellidop} ${est.apellidom} ${est.nombres}`,
+      };
+
+      // Añadimos columnas dinámicas por fecha
+      fechasUnicas.forEach(fecha => {
+        const estado = asistenciaMap[fecha]?.[est.matricula];
+        // Convertimos códigos a texto legible
+        let textoEstado = "-";
+        if (estado === "asistio") textoEstado = "A"; // O "Asistencia"
+        if (estado === "falta") textoEstado = "F";
+        if (estado === "demorado") textoEstado = "R"; // Retardo
+        if (estado === "antes") textoEstado = "S.A"; // Salida Anticipada
+        
+        row[fecha] = textoEstado;
+      });
+
+      return row;
+    });
+
+    const titulo = getTituloDocumento(); // Usamos el título como "FileNameBase" para el PDF
+    exportar(dataExport, titulo, format);
+    handleExportClose();
+  };
+
+  // Opción 2: Exportar LISTA VACÍA (Formato para imprimir)
+  const handleExportVacia = (format) => {
+    if (estudiantes.length === 0) {
+      alert("No hay estudiantes.");
+      return;
+    }
+
+    // Creamos columnas vacías para que el profe llene a mano
+
+    
+    const dataExport = estudiantes.map((est) => {
+      const row = {
+        "Matrícula": est.matricula,
+        "Nombre del Estudiante": `${est.apellidop} ${est.apellidom} ${est.nombres}`,
+      };
+
+     
+      return row;
+    });
+
+    // El nombre del archivo servirá de encabezado en el PDF
+    const titulo = `LISTA DE ASISTENCIA - ${nombreMateria || "General"} - Gpo ${grupoId}`;
+    exportar(dataExport, titulo, format);
+    handleExportClose();
+  };
+
+  // -----------------------------------------------------------------------
   // RENDER
   // -----------------------------------------------------------------------
 
-  // Título y Subtítulo dinámicos
   const getTitulo = () => {
-    if (isPerfil || isMateria)
-      return `Asistencia - ${nombreMateria || materiaClave}`;
+    if (isPerfil || isMateria) return `Asistencia - ${nombreMateria || materiaClave}`;
     return `Asistencia General - Grupo ${grupoId}`;
   };
 
@@ -284,85 +325,84 @@ const ListaAsistencia = () => {
     return `Vista General`;
   };
 
-  if (loading)
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
-        <CircularProgress />
-      </Box>
-    );
-  if (error)
-    return (
-      <Typography color="error" align="center" sx={{ my: 4 }}>
-        {error}
-      </Typography>
-    );
+  if (loading) return <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}><CircularProgress /></Box>;
+  if (error) return <Typography color="error" align="center" sx={{ my: 4 }}>{error}</Typography>;
 
   return (
-    <Box
-      sx={{
-        p: 3,
-        height: "calc(100vh - 64px)",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <Box sx={{ p: 3, height: "calc(100vh - 64px)", display: "flex", flexDirection: "column" }}>
       {/* Header */}
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
         <Box>
           <Typography variant="h5">{getTitulo()}</Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            {getSubtitulo()}
-          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">{getSubtitulo()}</Typography>
           <Typography variant="subtitle2" color="text.secondary">
-            Mostrando:{" "}
-            {new Date(selectedYear, selectedMonth - 1).toLocaleString("es-MX", {
-              month: "long",
-              year: "numeric",
-            })}
+            Mostrando: {new Date(selectedYear, selectedMonth - 1).toLocaleString("es-MX", { month: "long", year: "numeric" })}
           </Typography>
         </Box>
 
         <Stack direction="row" spacing={2} alignItems="center">
-          <FormControl sx={{ m: 1, minWidth: 100 }} size="small">
-            <InputLabel>Año</InputLabel>
-            <Select
-              value={selectedYear}
-              label="Año"
-              onChange={(e) => setSelectedYear(e.target.value)}
-            >
-              {[0, 1, 2, 3].map((off) => {
-                const y = new Date().getFullYear() - off;
-                return (
-                  <MenuItem key={y} value={y}>
-                    {y}
-                  </MenuItem>
-                );
-              })}
-            </Select>
-          </FormControl>
+          
+          {/* --- SELECTORES DE FECHA EXISTENTES (Resumido) --- */}
+           <FormControl sx={{ m: 1, minWidth: 100 }} size="small">
+             <InputLabel>Año</InputLabel>
+             <Select value={selectedYear} label="Año" onChange={(e) => setSelectedYear(e.target.value)}>
+               {[0, 1, 2, 3].map((off) => <MenuItem key={off} value={new Date().getFullYear() - off}>{new Date().getFullYear() - off}</MenuItem>)}
+             </Select>
+           </FormControl>
 
-          <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
-            <InputLabel>Mes</InputLabel>
-            <Select
-              value={selectedMonth}
-              label="Mes"
-              onChange={(e) => setSelectedMonth(e.target.value)}
-            >
-              {Array.from({ length: 12 }, (_, i) => (
-                <MenuItem key={i + 1} value={i + 1}>
-                  {new Date(0, i).toLocaleString("es-MX", { month: "long" })}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+           <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
+             <InputLabel>Mes</InputLabel>
+             <Select value={selectedMonth} label="Mes" onChange={(e) => setSelectedMonth(e.target.value)}>
+               {Array.from({ length: 12 }, (_, i) => <MenuItem key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString("es-MX", { month: "long" })}</MenuItem>)}
+             </Select>
+           </FormControl>
 
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setModalOpen(true)}
-          >
+          {/* --- BOTÓN NUEVA ENTRADA --- */}
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setModalOpen(true)}>
             Nueva Entrada
           </Button>
+
+          {/* --- BOTÓN EXPORTAR --- */}
+          <Button
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExportClick}
+            color="secondary"
+          >
+            Exportar
+          </Button>
+
+          {/* --- MENÚ DESPLEGABLE DE EXPORTACIÓN --- */}
+          <Menu
+            anchorEl={anchorElExport}
+            open={openExportMenu}
+            onClose={handleExportClose}
+          >
+            <MenuItem disabled>
+              <Typography variant="caption">Reporte Actual</Typography>
+            </MenuItem>
+            <MenuItem onClick={() => handleExportData("xlsx")}>
+              <ListItemIcon><TableViewIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>Excel (Con Datos)</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => handleExportData("pdf")}>
+              <ListItemIcon><PictureAsPdfIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>PDF (Con Datos)</ListItemText>
+            </MenuItem>
+            
+            <MenuItem disabled sx={{mt: 1}}>
+              <Typography variant="caption">Lista en Blanco</Typography>
+            </MenuItem>
+            <MenuItem onClick={() => handleExportVacia("pdf")}>
+              <ListItemIcon><PictureAsPdfIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>PDF (Lista Vacía)</ListItemText>
+            </MenuItem>
+             <MenuItem onClick={() => handleExportVacia("xlsx")}>
+              <ListItemIcon><TableViewIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>Excel (Lista Vacía)</ListItemText>
+            </MenuItem>
+          </Menu>
+
         </Stack>
       </Box>
 
@@ -370,42 +410,21 @@ const ListaAsistencia = () => {
       {estudiantes.length === 0 ? (
         <Paper sx={{ p: 3, textAlign: "center" }}>
           <InfoIcon color="action" sx={{ mr: 1, verticalAlign: "middle" }} />
-          <Typography variant="subtitle1" component="span">
-            No se encontraron estudiantes.
-          </Typography>
+          <Typography variant="subtitle1" component="span">No se encontraron estudiantes.</Typography>
         </Paper>
       ) : (
         <TableContainer component={Paper} sx={{ flexGrow: 1 }}>
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                {/* --- COLUMNA FIJA (STICKY) DE ALUMNO --- */}
-                <TableCell
-                  sx={{
-                    position: "sticky",
-                    left: 0,
-                    backgroundColor: "#ffffff", // Fondo sólido necesario
-                    zIndex: 101, // Mayor que las celdas normales
-                    fontWeight: "bold",
-                    minWidth: 250,
-                    borderRight: "2px solid rgba(224, 224, 224, 1)",
-                    boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)",
-                  }}
-                >
+                <TableCell sx={{ position: "sticky", left: 0, backgroundColor: "#ffffff", zIndex: 101, fontWeight: "bold", minWidth: 250, borderRight: "2px solid rgba(224, 224, 224, 1)", boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)" }}>
                   Nombre del Estudiante
                 </TableCell>
-                {/* --- COLUMNAS DE FECHAS --- */}
                 {fechasUnicas.map((fecha) => (
-                  <TableCell
-                    key={fecha}
-                    align="center"
-                    sx={{ fontWeight: "bold", minWidth: 80 }}
-                    onClick={() => handleEditAsistencia(fecha)}
-                  >
-                    {new Date(fecha + "T00:00:00").toLocaleDateString("es-MX", {
-                      day: "2-digit",
-                      month: "short",
-                    })}
+                  <TableCell key={fecha} align="center" sx={{ fontWeight: "bold", minWidth: 80 }} onClick={() => handleEditAsistencia(fecha)} style={{cursor: 'pointer'}}>
+                     <Tooltip title="Click para editar">
+                        <span>{new Date(fecha + "T00:00:00").toLocaleDateString("es-MX", { day: "2-digit", month: "short" })}</span>
+                     </Tooltip>
                   </TableCell>
                 ))}
               </TableRow>
@@ -413,29 +432,12 @@ const ListaAsistencia = () => {
             <TableBody>
               {estudiantes.map((est) => (
                 <TableRow key={est.matricula} hover>
-                  {/* --- CELDA FIJA (STICKY) DE ALUMNO EN EL CUERPO --- */}
-                  <TableCell
-                    component="th"
-                    scope="row"
-                    sx={{
-                      position: "sticky",
-                      left: 0,
-                      backgroundColor: "#ffffff", // Fondo sólido (IMPORTANTE)
-                      zIndex: 1, // Menor que header (101), mayor que resto (0)
-                      fontWeight: "500",
-                      borderRight: "2px solid rgba(224, 224, 224, 1)",
-                      boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)",
-                    }}
-                  >
+                  <TableCell component="th" scope="row" sx={{ position: "sticky", left: 0, backgroundColor: "#ffffff", zIndex: 1, fontWeight: "500", borderRight: "2px solid rgba(224, 224, 224, 1)", boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)" }}>
                     {`${est.apellidop} ${est.apellidom} ${est.nombres}`}
                   </TableCell>
-
-                  {/* --- CELDAS DE ASISTENCIA --- */}
                   {fechasUnicas.map((fecha) => (
                     <TableCell key={`${est.matricula}-${fecha}`} align="center">
-                      <IconoEstatus
-                        estatus={asistenciaMap[fecha]?.[est.matricula]}
-                      />
+                      <IconoEstatus estatus={asistenciaMap[fecha]?.[est.matricula]} />
                     </TableCell>
                   ))}
                 </TableRow>
@@ -445,7 +447,7 @@ const ListaAsistencia = () => {
         </TableContainer>
       )}
 
-      {/* Modal */}
+      {/* Modals */}
       <NuevaAsistencia
         open={modalOpen}
         onClose={handleCloseModal}
@@ -453,9 +455,7 @@ const ListaAsistencia = () => {
         onSave={handleSaveAsistencia}
         editDate={selectedDateToEdit}
         isSaving={isSaving}
-        asistenciaActual={
-          selectedDateToEdit ? asistenciaMap[selectedDateToEdit] : {}
-        }
+        asistenciaActual={selectedDateToEdit ? asistenciaMap[selectedDateToEdit] : {}}
       />
       {NotificationComponent}
     </Box>
