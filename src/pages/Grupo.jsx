@@ -5,8 +5,10 @@
 
 // Importaciones de React, hooks y componentes.
 import { useState, useEffect, useCallback } from "react";
-import UserGrupo from "../components/users/UserGrupo.jsx";
-import UserPerfil from "../components/users/UserPerfil.jsx";
+
+// --- CAMBIO AQUÍ: Importamos el componente unificado ---
+import MateriasManager from "../components/users/UserGrupoU.jsx"; 
+
 import { useAuth } from "../context/AuthContext.jsx";
 import { fetchGrupoGet, fetchPerfilGet } from "../services/grupoService.js";
 
@@ -31,8 +33,11 @@ export default function Grupo() {
   const [Grupos, setGrupos] = useState([]);
   const [perfiles, setPerfiles] = useState([]);
   const [resultados, setResultados] = useState([]);
+  
+  // Estados de selección
   const [selectGrupo, setSelectGrupo] = useState(null);
   const [selectPerfil, setSelectPerfil] = useState(null);
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -57,19 +62,18 @@ export default function Grupo() {
       const { grupos } = dataGrupos;
       const { perfiles } = dataPerfiles;
 
-      const idGrupoOcultar = ["EG","BI"];
+      const idGrupoOcultar = ["EG", "BI"];
 
       const perfilesFiltrados = perfiles.filter((perfil) => {
         const tieneNumero = /^\d+-/.test(perfil.idperfil); // verifica si inicia con número y guion
         const esBC = perfil.idperfil.includes("BC");
-
         return tieneNumero && !esBC;
       });
 
       setPerfiles(perfilesFiltrados);
 
       const gruposFiltrados = grupos.filter(
-         (grupo) => !idGrupoOcultar.includes(grupo.idgrupo)
+        (grupo) => !idGrupoOcultar.includes(grupo.idgrupo)
       );
       setGrupos(gruposFiltrados);
     } catch (error) {
@@ -81,74 +85,59 @@ export default function Grupo() {
   }, [token]);
 
   /**
-   * @effect
-   * Se ejecuta al montar el componente (y si `fetchGrupo` cambia) para cargar la lista inicial de grupos.
+   * @effect Carga inicial
    */
-  // Este es el useEffect que llama a la API.
   useEffect(() => {
     fetchGrupo();
   }, [fetchGrupo]);
 
   /**
-   * @effect
-   * Se ejecuta CADA VEZ que la búsqueda, los datos, o el filtro de PARIDAD cambian.
-   * Combina, filtra por búsqueda y filtra por paridad.
+   * @effect Filtrado y Búsqueda
    */
   useEffect(() => {
     // 1. Estandarizar Grupos
     const gruposConFormato = Grupos.map((g) => ({
       id: g.idgrupo,
-      label: g.idgrupo, // El texto a mostrar y buscar
-      type: "grupo", // Para saber en qué hicimos clic
+      label: g.idgrupo,
+      type: "grupo",
     }));
 
     // 2. Estandarizar Perfiles
     const perfilesConFormato = perfiles.map((p) => ({
       id: p.idperfil,
-      label: p.idperfil, // El texto a mostrar y buscar
-      type: "perfil", // Para saber en qué hicimos clic
+      label: p.idperfil,
+      type: "perfil",
     }));
 
-    // 3. Combinarlos en una sola lista
+    // 3. Combinarlos
     const itemsCombinados = [...gruposConFormato, ...perfilesConFormato];
 
     // 4. Filtrar por término de búsqueda
     const resultadosDeBusqueda = search
       ? itemsCombinados.filter((item) =>
-          String(item.label ?? "") // Conversión segura a string
+          String(item.label ?? "")
             .toLowerCase()
             .includes(search.toLowerCase())
         )
-      : itemsCombinados; // Si no hay búsqueda, muestra todos.
+      : itemsCombinados;
 
-    //: Filtrar por paridad (Pares/Impares)
+    // 5. Filtrar por paridad (Pares/Impares)
     const resultadosFinales = resultadosDeBusqueda.filter((item) => {
-      // Si el filtro es "todos", no hagas nada
-      if (filtroParidad === "todos") {
-        return true;
-      }
+      if (filtroParidad === "todos") return true;
 
-      // Obtener el primer carácter del ID (ej: "5" de "5B" o "5-EA")
       const primerChar = String(item.id ?? "").charAt(0);
       const numero = parseInt(primerChar, 10);
 
-      // Si el primer carácter no es un número, lo descartamos
-      if (isNaN(numero)) {
-        return false;
-      }
+      if (isNaN(numero)) return false;
 
-      // Aplicar el filtro de paridad
-      if (filtroParidad === "pares") {
-        return numero % 2 === 0; // Es Par
-      }
-      if (filtroParidad === "impares") {
-        return numero % 2 !== 0; // Es Impar
-      }
-      return true; // (fallback, no debería llegar aquí)
+      if (filtroParidad === "pares") return numero % 2 === 0;
+      if (filtroParidad === "impares") return numero % 2 !== 0;
+      
+      return true;
     });
 
     setResultados(resultadosFinales);
-  }, [search, Grupos, perfiles, filtroParidad]); // 'filtroParidad' es una dependencia
+  }, [search, Grupos, perfiles, filtroParidad]);
 
   // --- MANEJADORES DE EVENTOS ---
 
@@ -162,14 +151,11 @@ export default function Grupo() {
     }
   };
 
-  //  Manejador para los botones de filtro
   const handleFiltroParidadChange = (event, newFiltro) => {
-    // El 'ToggleButtonGroup' exclusivo permite deseleccionar (valor null).
-    // Forzamos a que siempre haya uno seleccionado (mínimo "todos").
     if (newFiltro !== null) {
       setFiltroParidad(newFiltro);
     } else {
-      setFiltroParidad("todos"); // Si el usuario deselecciona, vuelve a "todos"
+      setFiltroParidad("todos");
     }
   };
 
@@ -177,7 +163,7 @@ export default function Grupo() {
 
   return (
     <Box sx={{ display: "flex", width: "100%", height: "calc(100vh - 80px)" }}>
-      {/* Panel Izquierdo (20%): Búsqueda y Lista de Grupos (Maestro) */}
+      {/* Panel Izquierdo (20%): Búsqueda y Lista */}
       <Paper
         sx={{
           width: "20%",
@@ -212,17 +198,12 @@ export default function Grupo() {
           <ToggleButton value="pares" aria-label="pares" sx={{ flexGrow: 1 }}>
             Par
           </ToggleButton>
-          <ToggleButton
-            value="impares"
-            aria-label="impares"
-            sx={{ flexGrow: 1 }}
-          >
+          <ToggleButton value="impares" aria-label="impares" sx={{ flexGrow: 1 }}>
             Impar
           </ToggleButton>
         </ToggleButtonGroup>
 
         <List sx={{ width: "100%", flexGrow: 1, overflowY: "auto" }}>
-          {/* Muestra un spinner, un error, o la lista de resultados */}
           {loading ? (
             <Box
               sx={{
@@ -272,12 +253,14 @@ export default function Grupo() {
         </List>
       </Paper>
 
-      {/* Panel Derecho (80%): Detalles del Grupo (Detalle) */}
+      {/* Panel Derecho (80%): Detalles del Grupo/Perfil */}
       <Box sx={{ width: "80%", height: "100%", p: 2, overflowY: "auto" }}>
+        
+        {/* --- CAMBIO AQUÍ: Usamos el componente unificado --- */}
         {selectGrupo ? (
-          <UserGrupo id={selectGrupo} />
+          <MateriasManager id={selectGrupo} mode="grupo" />
         ) : selectPerfil ? (
-          <UserPerfil id={selectPerfil} />
+          <MateriasManager id={selectPerfil} mode="perfil" />
         ) : (
           <Box
             sx={{
@@ -292,6 +275,7 @@ export default function Grupo() {
             </Typography>
           </Box>
         )}
+        
       </Box>
     </Box>
   );

@@ -135,8 +135,8 @@ export default function UserDocente({ id }) {
   const handleNavigateToListaMateria = (materia) => {
     procesarNavegacion(
       materia,
-      "/listaAsistenciamateria",
-      "/listaAsistenciamateriaPerfil",
+      "/listaAsistencia",
+      "/listaAsistencia",
     );
   };
 

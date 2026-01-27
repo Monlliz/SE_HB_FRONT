@@ -10,7 +10,7 @@ import { fetchMateriasPerfil } from "../../services/materiasService.js";
 //Iconos
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import ChecklistIcon from "@mui/icons-material/Checklist";
-import AutoStoriesIcon from '@mui/icons-material/AutoStories';
+import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 import {
   Box,
   Button,
@@ -45,7 +45,7 @@ export default function UserPerfil({ id }) {
   const handleNavigateToListaMateria = () => {
     // 1. Encuentra el nombre de la materia seleccionada
     const materiaSeleccionada = materias.find(
-      (m) => m.clave === selectedMateriaClave
+      (m) => m.clave === selectedMateriaClave,
     );
     if (!materiaSeleccionada) {
       setSelectedMateriaClave(null);
@@ -66,7 +66,7 @@ export default function UserPerfil({ id }) {
   const handleNavigateToCalifacacionesParcilaes = () => {
     // 1. Encuentra el nombre de la materia seleccionada
     const materiaSeleccionada = materias.find(
-      (m) => m.clave === selectedMateriaClave
+      (m) => m.clave === selectedMateriaClave,
     );
     if (!materiaSeleccionada) {
       setSelectedMateriaClave(null);
@@ -85,6 +85,7 @@ export default function UserPerfil({ id }) {
     navigate("/rubrosperfil", { state: datosParaEnviar });
   };
 
+  /*Mantener
   const handleNavigateToActividades = () => {
     // 1. Encuentra el nombre de la materia seleccionada
     const materiaSeleccionada = materias.find(
@@ -106,7 +107,33 @@ export default function UserPerfil({ id }) {
     console.log(datosParaEnviar);
     navigate("/trabajoperfil", { state: datosParaEnviar });
   };
+*/
 
+  const handleNavigateToActividades = () => {
+    const materiaSeleccionada = materias.find(
+      (m) => m.clave === selectedMateriaClave,
+    );
+
+    if (!materiaSeleccionada && !selectedMateriaClave) return;
+
+    const datosParaEnviar = {
+      grupoId: id, // ID numérico (si lo usas para rubros)
+      materiaClave: selectedMateriaClave,
+      year: new Date().getFullYear(),
+      nombreMateria: materiaSeleccionada?.asignatura || "Materia Desconocida",
+
+      // --- ESTOS SON LOS CAMPOS CLAVE PARA ACTIVAR EL MODO PERFIL ---
+      semestre: semestre,
+      idNormalizado: grupoId, // O la variable que contenga el ID tipo string ("1A", "2B")
+    };
+
+    console.log("Navegando modo PERFIL:", datosParaEnviar);
+
+    // USAMOS LA MISMA RUTA UNIFICADA (IMPORTANTE: No usar /trabajoperfil)
+    navigate("/trabajo", { state: datosParaEnviar });
+  };
+
+  
   // Función para obtener las materias del grupo
   const fetchMaterias = useCallback(async () => {
     if (!id) return;
@@ -216,7 +243,7 @@ export default function UserPerfil({ id }) {
           disabled={!selectedMateriaClave}
           onClick={handleNavigateToActividades}
         >
-               <AutoStoriesIcon />
+          <AutoStoriesIcon />
         </IconButton>
         <IconButton
           aria-label="calificaciones_parciales"

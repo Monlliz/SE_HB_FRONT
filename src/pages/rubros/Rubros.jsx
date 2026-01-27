@@ -61,7 +61,7 @@ const GestionarRubros = () => {
     year: initialYear,
   } = location.state || {};
 
-  // --- NUEVO: Usar el hook de exportación ---
+  //  Usar el hook de exportación ---
   const { exportar } = useExport();
 
   // --- ESTADOS DE DATOS ---
@@ -219,7 +219,7 @@ const GestionarRubros = () => {
     });
   }, [alumnos, calificaciones, rubros]);
 
-  // --- LÓGICA DE EXPORTACIÓN (NUEVO) ---
+
   /**
    * Transforma los datos de la tabla en un formato plano
    * adecuado para la exportación a Excel o PDF.
@@ -284,7 +284,6 @@ const GestionarRubros = () => {
 
   /**
    * Manejador que llama al hook de exportación.
-   * @param {'xlsx' | 'pdf'} format
    */
   const handleExport = useCallback(
     (format) => {

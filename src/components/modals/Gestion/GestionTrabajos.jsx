@@ -50,8 +50,6 @@ function GestionTrabajos({
     }
   }, [open, rubrosActuales]);
 
-
-
   // --- MANEJADORES DE CAMBIOS ---
 
   // Maneja el cambio en un TextField (nombre o ponderación)
@@ -118,11 +116,10 @@ function GestionTrabajos({
           return; // Detiene la ejecución
         }
 
-        // 2. Validar que las ponderaciones no sean 0
+        /*// 2. Validar que las ponderaciones no sean 0
         const pRetardo = Number(rubro.ponderacion);
         const pInsuficiente = Number(rubro.ponderacioninsuficiente);
-
-        if (pRetardo <= 0) {
+   if (pRetardo <= 0) {
           alert(
             `El % de Retardo en la actividad "${rubro.nombre_rubro}" debe ser mayor a 0.`,
           );
@@ -134,7 +131,7 @@ function GestionTrabajos({
             `El % Insuficiente en la actividad "${rubro.nombre_rubro}" debe ser mayor a 0.`,
           );
           return;
-        }
+        }*/
       }
 
       const payload = {

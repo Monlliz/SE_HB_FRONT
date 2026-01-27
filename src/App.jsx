@@ -1,9 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login.jsx";
 import Docente from "./pages/Docente.jsx";
+
 import Grupo from "./pages/Grupo.jsx";
 import Materias from "./pages/Materias.jsx";
-import ListaAsistencia from "./pages/listaAsistencia/ListaAsistencia.jsx";
+//Modifique este  
+import ListaAsistencia from "./pages/listaAsistencia/ListaAsisntenciaU.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import Alumno from "./pages/Alumno.jsx";
 import ReportePDF from "./pages/ReportePDF.jsx";
@@ -12,7 +14,9 @@ import ListaAsistenciaMateriaPerfil from "./pages/listaAsistencia/ListaAsistenci
 import Rubros from "./pages/rubros/Rubros.jsx";
 import RubrosPerfil from "./pages/rubros/RubrosPerfil.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
-import TrabajoCotidiano from "./pages/trabajoCotidiano/TrabajoCotidiano.jsx";
+
+//Modifque este
+import TrabajoCotidiano from "./pages/trabajoCotidiano/TrabajoCotidinanoU.jsx";
 import TrabajoCotidianoP from "./pages/trabajoCotidiano/TrabajoCotidianoPerfil.jsx";
 import GestionData from "./pages/GestionData.jsx";
 import GeneracionDeCuentas from "./pages/GeneracionDeCuentas.jsx";

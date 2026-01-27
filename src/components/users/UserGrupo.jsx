@@ -46,7 +46,7 @@ export default function UserGrupo({ id }) {
   const handleNavigateToLista = () => {
     // 1. Encuentra el nombre de la materia seleccionada
     const materiaSeleccionada = materias.find(
-      (m) => m.clave === selectedMateriaClave
+      (m) => m.clave === selectedMateriaClave,
     );
     if (!materiaSeleccionada) {
       setSelectedMateriaClave(null);
@@ -64,7 +64,7 @@ export default function UserGrupo({ id }) {
   const handleNavigateToListaMateria = () => {
     // 1. Encuentra el nombre de la materia seleccionada
     const materiaSeleccionada = materias.find(
-      (m) => m.clave === selectedMateriaClave
+      (m) => m.clave === selectedMateriaClave,
     );
     if (!materiaSeleccionada) {
       setSelectedMateriaClave(null);
@@ -80,7 +80,8 @@ export default function UserGrupo({ id }) {
     navigate("/listaAsistenciamateria", { state: datosParaEnviar });
   };
 
-  const handleNavigateToActividades = () => {
+  //MANTENER
+  /*const handleNavigateToActividades = () => {
     // 1. Encuentra el nombre de la materia seleccionada
     const materiaSeleccionada = materias.find(
       (m) => m.clave === selectedMateriaClave
@@ -98,12 +99,33 @@ export default function UserGrupo({ id }) {
     };
     console.log(datosParaEnviar);
     navigate("/trabajo", { state: datosParaEnviar });
-  };
+  };*/
 
+  const handleNavigateToActividades = () => {
+    const materiaSeleccionada = materias.find(
+      (m) => m.clave === selectedMateriaClave,
+    );
+
+    // Validación opcional
+    if (!materiaSeleccionada && !selectedMateriaClave) return;
+
+    const datosParaEnviar = {
+      grupoId: id,
+      materiaClave: selectedMateriaClave,
+      year: new Date().getFullYear(),
+      nombreMateria: materiaSeleccionada?.asignatura || "Materia Desconocida",
+      // NOTA: Aquí NO enviamos 'semestre' ni 'idNormalizado'
+    };
+
+    console.log("Navegando modo GRUPO:", datosParaEnviar);
+
+    // USAMOS LA MISMA RUTA UNIFICADA
+    navigate("/trabajo", { state: datosParaEnviar });
+  };
   const handleNavigateToCalifacacionesParcilaes = () => {
     // 1. Encuentra el nombre de la materia seleccionada
     const materiaSeleccionada = materias.find(
-      (m) => m.clave === selectedMateriaClave
+      (m) => m.clave === selectedMateriaClave,
     );
     if (!materiaSeleccionada) {
       setSelectedMateriaClave(null);
@@ -191,7 +213,11 @@ export default function UserGrupo({ id }) {
             <ListAltIcon />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Cambio de alumnos del grupo" enterTouchDelay={0} leaveTouchDelay={3000}>
+        <Tooltip
+          title="Cambio de alumnos del grupo"
+          enterTouchDelay={0}
+          leaveTouchDelay={3000}
+        >
           <IconButton
             aria-label="lista"
             onClick={() => setModalGrupoCambio(true)}

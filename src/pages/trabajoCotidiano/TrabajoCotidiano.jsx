@@ -3,7 +3,8 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import GestionTrabajos from "../../components/modals/Gestion/GestionTrabajos.jsx";
-
+import { useExport } from "../../utils/useExport.js";
+import DownloadIcon from "@mui/icons-material/Download";
 // Importa tus servicios reales
 import {
   fetchRubrosTCGet,
@@ -48,6 +49,7 @@ const years = Array.from(new Array(3), (val, index) => currentYear - index);
  * Componente principal para gestionar calificaciones de un grupo.
  */
 const TrabajoCotidiano = () => {
+  // --- CONTEXTO Y PARÁMETROS DE RUTA ---
   const { token } = useAuth();
   const location = useLocation();
   const {
@@ -80,6 +82,9 @@ const TrabajoCotidiano = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
+
+  // --- EXPORTACIÓN ---
+  const { exportar } = useExport();
 
   // --- CARGA 1: RÚBROS (CONFIGURACIÓN DE COLUMNAS) ---
   const cargarRubros = useCallback(async () => {
@@ -396,6 +401,82 @@ const TrabajoCotidiano = () => {
     }
   };
 
+  //exportar
+  const transformarDatosParaExportar = useCallback(() => {
+    if (!datosTabla.length) return [];
+
+    // 1. Definir la lista ORDENADA de TODOS los encabezados que usaremos.
+    // MODIFICADO: Sustituimos 'Nombre del Alumno' por los 3 campos separados.
+    const headers = [
+      "Matrícula",
+      "Primer Apellido", // Nuevo
+      "Segundo Apellido", // Nuevo
+      "Nombres", // Nuevo
+      // Agregamos los encabezados de los rubros dinámicamente
+      ...rubros.map(
+        (rubro) =>
+          `Rúbro: ${rubro.nombre_rubro} (${Number(rubro.ponderacion) * 100}%)`,
+      ),
+      "Promedio Final",
+    ];
+
+    // 2. Crear los datos de las filas, asegurando el orden correcto
+    return datosTabla.map((alumno) => {
+      const row = {};
+
+      // a) Datos fijos y separados del alumno
+      row["Matrícula"] = alumno.alumno_matricula;
+      // NUEVOS CAMPOS SEPARADOS
+      row["Primer Apellido"] = alumno.apellidop || "";
+      row["Segundo Apellido"] = alumno.apellidom || "";
+      row["Nombres"] = alumno.nombres || "";
+
+      // b) Agregar las calificaciones de cada rubro en el orden correcto
+      // Empezamos la indexación de encabezados dinámicos en la posición 4 (después de Matrícula, Apellidop, Apellidom, Nombres)
+      rubros.forEach((rubro, index) => {
+        const idRubro = rubro.idrubrotc;
+        const valorDelMapa = alumno.calificacionesMap.get(idRubro);
+
+        // Conversión y validación de la calificación (solución del paso anterior)
+        const calificacionNumerica = valorDelMapa;
+
+        // El índice en `headers` debe sumar 4, ya que las 4 primeras columnas son fijas (Matrícula, 3x Nombres)
+        const headerKey = headers[index + 4];
+
+        if (
+          typeof calificacionNumerica === "string" &&
+          calificacionNumerica.trim() !== ""
+        ) {
+          row[headerKey] = calificacionNumerica;
+        } else {
+          row[headerKey] = "-";
+        }
+      });
+
+      // c) Agregar el promedio final
+      row["Promedio Final"] = alumno.promedio.toFixed(2);
+
+      return row;
+    });
+  }, [datosTabla, rubros]); // Dependencias
+
+  const handleExport = useCallback(
+    (format) => {
+      const dataToExport = transformarDatosParaExportar();
+      const fileNameBase = `Calificaciones_${materiaClave}_P${parcial}_${selectedYear}`;
+      exportar(dataToExport, fileNameBase, format);
+    },
+    [
+      transformarDatosParaExportar,
+      materiaClave,
+      parcial,
+      selectedYear,
+      exportar,
+    ],
+  );
+  const isExportDisabled =
+    isEssentialLoading || loadingCalificaciones || datosTabla.length === 0;
+
   return (
     <Box
       sx={{
@@ -405,7 +486,7 @@ const TrabajoCotidiano = () => {
         height: "calc(100vh - 64px)",
       }}
     >
-      {/* Encabezado con título y botones de acción */}
+
       <Box
         sx={{
           width: "100%",
@@ -442,6 +523,17 @@ const TrabajoCotidiano = () => {
             </FormControl>
           </Stack>
         </Box>
+        <span>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={() => handleExport("xlsx")}
+            disabled={isExportDisabled}
+          >
+            {" "}
+            Exportar XLSX
+          </Button>
+        </span>
         <Stack direction="row" spacing={1} alignItems="flex-start">
           {/* Bloque de botones de Edición/Guardado */}
           {isEditing ? (
@@ -618,12 +710,12 @@ const TrabajoCotidiano = () => {
                       sx={{
                         left: 0,
                         position: "sticky",
-                       
+
                         backgroundColor: "#f9f9f9",
                         zIndex: 100,
-                        fontWeight: "500", 
-                        borderRight: "2px solid rgba(224, 224, 224, 1)", 
-                        boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)", 
+                        fontWeight: "500",
+                        borderRight: "2px solid rgba(224, 224, 224, 1)",
+                        boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)",
                       }}
                     >
                       {`${alumno.apellidop} ${alumno.apellidom} ${alumno.nombres} `}
