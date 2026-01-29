@@ -86,7 +86,7 @@ const EventTicker = ({ events = [] }) => {
             
           }}
         >
-          {capitalizarPrimeraLetra(event.etiqueta)}
+          {event.etiqueta}
         </Typography>
       </Box>
     );
