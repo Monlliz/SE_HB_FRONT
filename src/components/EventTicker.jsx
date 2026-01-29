@@ -86,7 +86,7 @@ const EventTicker = ({ events = [] }) => {
             
           }}
         >
-          {capitalizarPrimeraLetra(event.etiqueta)}
+          {event.etiqueta}
         </Typography>
       </Box>
     );
@@ -102,7 +102,7 @@ const EventTicker = ({ events = [] }) => {
       <Box
         sx={{
           display: "flex",
-          //width: "fit-content", // Se ajusta al ancho de los eventos
+          width: "fit-content", // Se ajusta al ancho de los eventos
           // Aplica la animación
           whiteSpace: "nowrap",
           animation: `ticker ${animationDuration}s linear infinite`,

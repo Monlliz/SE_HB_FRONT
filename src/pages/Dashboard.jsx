@@ -7,6 +7,9 @@ import { capitalizarPrimeraLetra, getFirstText } from '../utils/fornatters.js';
 //Mis materias
 import MisMaterias from "../components/MisMaterias.jsx";
 import { fetchDocenteMaterias } from "../services/docenteService.js";
+//Notificaciones--Eventos
+import { useNotification } from "../components/modals/NotificationModal.jsx";
+import ConfirmModal from "../components/modals/ConfirmModal.jsx";
 // Componentes de Material-UI
 import {
   Grid,
@@ -31,7 +34,7 @@ import { format } from "date-fns";
 import { appLinks } from "../config/NavConfig.jsx";
 
 //Servicio de fechas
-import { fetchFechasGet } from "../services/fechasService.js";
+import { fetchFechasGet, fetchDeleteEvent } from "../services/fechasService.js";
 
 //tipos de eventos
 import { EVENT_TYPES } from "../data/eventTypes.jsx";
@@ -151,7 +154,49 @@ function Dashboard() {
       setLoading(false);
     }
   }, [token]);
+  //----------------------------------------------------------------------------
+  // ======================================================================
+  //  ELIMINAR EVENTO
+  // ======================================================================
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState(null);
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
+  // A. Función que se llama al dar click en el bote de basura (Abre el Modal)
+  const handleRequestDelete = (event) => {
+    setEventToDelete(event);
+    setIsConfirmOpen(true);
+  };
 
+  // B. Función que ejecuta el borrado real (Se pasa al ConfirmModal)
+  const handleExecuteDelete = async () => {
+    if (!eventToDelete) return;
+
+    setIsDeletingEvent(true);
+    try {
+      const idEvento = eventToDelete.id;
+
+      // 1. Llamada a la API
+      await fetchDeleteEvent(token, idEvento);
+
+      // 2. Actualizar estado GLOBAL (Calendario)
+      await fetchFechas();
+
+      // 3. Actualizar estado LOCAL (Lista dentro del EventDetailsDialog)
+      setModalEvents((prevEvents) =>
+        prevEvents.filter((e) => (e.id || e.id_fecha) !== idEvento)
+      );
+
+      // 4. Cerrar el modal de confirmación y limpiar
+      setIsConfirmOpen(false);
+      setEventToDelete(null);
+
+    } catch (error) {
+      console.error("Error eliminando:", error);
+      useNotification(`Error: ${error.message}`, "error");
+    } finally {
+      setIsDeletingEvent(false);
+    }
+  };
 
   //--------Estados y funciones para el modal de detalles de fecha -----
   // ======================================================================
@@ -359,14 +404,18 @@ function Dashboard() {
               display: "flex",
               flexDirection: "column", // <-- CAMBIO: Apila verticalmente
               alignItems: "center",
-              justifyContent: "stretch", // <-- CAMBIO: Alinea arriba
+              justifyContent: "flex-start", // <-- CAMBIO: Alinea arriba
               gap: 4, // <-- CAMBIO: Añade espacio entre los items
               maxWidth: "40%",
+              minWidth: existsingEvents
+                ? { xs: "100%", sm: "40%" } // Si hay eventos (Ancho total o el que necesites)
+                : { xs: "100%", sm: "20%" },
               overflow: "hidden" // Seguridad extra
             }}
           >
             {/* --- 2a. BARRA DE NOTIFICACIONES (NUEVA POSICIÓN) --- */}
             <Box sx={{
+
               width: existsingEvents
                 ? { xs: "100%", sm: "90%" } // Si hay eventos (Ancho total o el que necesites)
                 : { xs: "100%", sm: "98%" }
@@ -384,9 +433,9 @@ function Dashboard() {
                 overflow: "hidden",
                 pb: "4rem",
                 clipPath: "polygon(0% 0%, 100% 0%, 100% 75%, 50% 100%, 0% 75%)",
-                width: existsingEvents 
-                ? { xs: "100%", sm: "40%", lg: "30%" } 
-                : { xs: "90%", sm: "60%", lg: "60%" },
+                width: existsingEvents
+                  ? { xs: "100%", sm: "40%", lg: "30%" }
+                  : { xs: "90%", sm: "60%", lg: "60%" },
               }}
             >
               <Typography
@@ -489,8 +538,24 @@ function Dashboard() {
         onClose={handleCloseModal}
         date={modalDate}
         events={modalEvents}
+        onDeleteEvent={handleRequestDelete}
       />
-
+      {/*MODAL DE CONFIRMACIÓN */}
+      <ConfirmModal
+        open={isConfirmOpen}
+        onClose={() => {
+          setIsConfirmOpen(false);
+          setEventToDelete(null);
+        }}
+        onConfirm={handleExecuteDelete}
+        isLoading={isDeletingEvent}
+        title="ELIMINAR EVENTO"
+        message={
+          <span>
+            ¿Estás seguro de eliminar el evento <strong>{eventToDelete?.etiqueta}</strong>?
+          </span>
+        }
+      />
     </LocalizationProvider>
   );
 }

@@ -47,3 +47,23 @@ export const fetchFechasGet = async (token) => {
       throw error;
     }
   };
+  export const fetchDeleteEvent = async (token, id) => {
+    try {
+      const response = await fetch(`${apiUrl}/fechas/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-auth-token": token,
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Error al eliminar un evento");
+      }
+      
+      return response.json();
+      
+    } catch (error) {
+      console.error("Error en el servicio createEvent:", error.message);
+      throw error;
+    }
+  };

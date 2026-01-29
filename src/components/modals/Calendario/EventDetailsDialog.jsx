@@ -11,14 +11,16 @@ import {
     Button,
     Box,
     Typography,
+    IconButton
 } from "@mui/material";
 
 import { EVENT_TYPES } from "../../../data/eventTypes"; // importa el JSON
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { color, motion } from "framer-motion";
+import { motion } from "framer-motion";
+import { Trash2 } from 'lucide-react';
 
-function EventDetailsDialog({ open, onClose, date, events = [] }) {
+function EventDetailsDialog({ open, onClose, date, events = [], onDeleteEvent }) {
     // Busca el evento "prioritario" para definir el color del encabezado
     const priorityEvent =
         events.find((f) => f.tipo === "festivo") ||
@@ -106,6 +108,17 @@ function EventDetailsDialog({ open, onClose, date, events = [] }) {
                                             primary={event.etiqueta}
                                             secondary={typeInfo.label}
                                         />
+                                        <IconButton 
+                                                    edge="end" 
+                                                    aria-label="delete"
+                                                    onClick={() => onDeleteEvent(event)} // <--- LA MAGIA
+                                                    sx={{ 
+                                                        color: "#d32f2f", // Un rojo suave
+                                                        "&:hover": { color: "#ffffff", bgcolor: "#d32f2f" }
+                                                    }}
+                                                >
+                                                    <Trash2 size={20} />
+                                                </IconButton>
                                     </ListItem>
                                 </motion.div>
                             );
