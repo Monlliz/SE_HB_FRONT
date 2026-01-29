@@ -40,7 +40,7 @@ export const fetchRubrosCalificacionesGet = async (
   materia,
   parcial,
   yearc,
-  token
+  token,
 ) => {
   const response = await fetch(
     `${apiUrl}/rubro/calificaciones/${materia}/${parcial}/${yearc}`,
@@ -49,13 +49,13 @@ export const fetchRubrosCalificacionesGet = async (
       headers: {
         "x-auth-token": token,
       },
-    }
+    },
   );
 
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(
-      errorData.message || "Error al sincronizar las calificaciones"
+      errorData.message || "Error al sincronizar las calificaciones",
     );
   }
 
@@ -75,19 +75,18 @@ export const syncCalificaciones_service = async (batchData, token) => {
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(
-      errorData.message || "Error al sincronizar las calificaciones"
+      errorData.message || "Error al sincronizar las calificaciones",
     );
   }
 
   return response.json();
 };
 
-
 //rubros
 export const fetchRubrosTCGet = async (context, token) => {
-  console.log(context)
+  console.log(context);
   const { materiaClave, idGrupo, parcial, yearC } = context;
-  
+
   // Construimos los query parameters
   const queryParams = new URLSearchParams({
     materiaClave,
@@ -98,15 +97,18 @@ export const fetchRubrosTCGet = async (context, token) => {
 
   try {
     console.log(queryParams.toString());
-    const response = await fetch(`${apiUrl}/rubro/tc?${queryParams.toString()}`, {
-      headers: {
-        "x-auth-token": token,
+    const response = await fetch(
+      `${apiUrl}/rubro/tc?${queryParams.toString()}`,
+      {
+        headers: {
+          "x-auth-token": token,
+        },
       },
-    });
+    );
     if (!response.ok) throw new Error("Error al cargar los rubros de TC");
-    
+
     // El controlador devuelve directamente el array de rubros
-    return await response.json(); 
+    return await response.json();
   } catch (error) {
     console.error("Error en el servicio fetchRubrosTCGet:", error.message);
     throw error;
@@ -127,10 +129,12 @@ export const fetchRubrosTCUpdate = async (datos, token) => {
       },
       body: JSON.stringify(datos), // 'datos' ya contiene el contexto y los rubros
     });
-    
+
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Error del servidor al guardar Rubros TC");
+      throw new Error(
+        errorData.message || "Error del servidor al guardar Rubros TC",
+      );
     }
     return response.json();
   } catch (error) {
@@ -159,13 +163,13 @@ export const fetchCalificacionesTCGet = async (context, token) => {
       headers: {
         "x-auth-token": token,
       },
-    }
+    },
   );
 
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(
-      errorData.message || "Error al obtener las calificaciones de TC"
+      errorData.message || "Error al obtener las calificaciones de TC",
     );
   }
 
@@ -189,7 +193,30 @@ export const syncCalificacionesTC_service = async (batchData, token) => {
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(
-      errorData.message || "Error al sincronizar las calificaciones de TC"
+      errorData.message || "Error al sincronizar las calificaciones de TC",
+    );
+  }
+
+  return response.json();
+};
+
+//Copiar rubros
+export const copyRubrosTC_service = async (datos, token) => {
+  // datos debe ser: { materiaClave, idGrupo, parcial, yearC, rubros: [...] }
+
+  const response = await fetch(`${apiUrl}/rubro/tc/copy`, {
+    method: "POST",
+    headers: {
+      "x-auth-token": token,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(datos),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(
+      errorData.message || "Error al copiar las actividades de TC", // <--- Texto corregido
     );
   }
 

@@ -17,27 +17,50 @@ import {
   MenuItem,
 } from "@mui/material";
 
-function NuevoIncidente({ open, onClose, onAccept, matricula }) {
-  const apiUrl = import.meta.env.VITE_API_URL;
+//necesito una archvivo para esto
+const toTitleCase = (str) => {
+  return str
+    .toLowerCase()
+    .trim()
+    .split(/\s+/) // Esto elimina cualquier cantidad de espacios extra
+    .map((word) => {
+      // Capitaliza la primera letra de CADA palabra
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(" "); // Cámbialo a "" si lo quieres sin espacios
+};
+
+//Datos por default
+const datosInicialesFormulario = {
+  solicitante: "",
+  motivo_incidencia: "",
+  descripcion: "",
+  fecha: new Date().toISOString().split("T")[0],
+  numero_strike: "",
+};
+
+function NuevoIncidente({ open, onClose, onAccept, matricula, numero_strike }) {
+  console.log("numero" + numero_strike);
   const { token, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState(null); // Estado para errores de API
-  const [formulario, setFormulario] = useState({
-    solicitante: "",
-    motivo_incidencia: "",
-    descripcion: "",
-    fecha: "",
-    numero_strike: "",
-  });
+  const [formulario, setFormulario] = useState(datosInicialesFormulario);
   const [errors, setErrors] = useState({}); // Estado para los errores de validación
 
+  if (user.nombres != null) {
+    const nombre_Completo = `${user.nombres} ${user.apellidop} ${user.apellidom}`;
+    datosInicialesFormulario.solicitante = toTitleCase(nombre_Completo);
+  } else {
+    datosInicialesFormulario.solicitante = user.username;
+  }
+  datosInicialesFormulario.numero_strike = numero_strike + 1;
   //Limpiar formulario
   useEffect(() => {
     // Si la prop 'open' es false (es decir, el modal se está cerrando)
     if (!open) {
       // Resetea el estado del formulario y de los errores a su valor inicial
-      setFormulario({});
+      setFormulario(datosInicialesFormulario);
       setApiError(null);
       setErrors({});
     }
@@ -131,7 +154,6 @@ function NuevoIncidente({ open, onClose, onAccept, matricula }) {
       "motivo_incidencia",
       "descripcion",
       "fecha",
-      "numero_strike",
     ];
     requiredFields.forEach((field) => {
       if (!formulario[field] || formulario[field].trim() === "") {
@@ -261,7 +283,7 @@ function NuevoIncidente({ open, onClose, onAccept, matricula }) {
           }}
         />
         <TextField
-          required
+          disabled
           name="numero_strike"
           label="numero_strike"
           type="number"

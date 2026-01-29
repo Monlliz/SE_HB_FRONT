@@ -17,6 +17,8 @@ import {
   fetchCalificacionesTCGet,
 } from "../../services/rubroService.js";
 
+import CopiarActividadesModal from "../../components/modals/Gestion/CopiarTrabajosModal.jsx";
+
 // Importaciones de MUI (Iconos y Componentes)
 import {
   Table,
@@ -42,7 +44,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
-
+import { ClipboardPaste } from "lucide-react";
 const currentYear = new Date().getFullYear();
 
 const TrabajoCotidiano = () => {
@@ -60,6 +62,20 @@ const TrabajoCotidiano = () => {
     semestre, // Específico de Perfil
   } = location.state || {};
 
+  //Chance truena
+  const listaGruposDisponibles = useMemo(() => {
+    if (!grupoId || grupoId.length < 2) return [];
+
+    // Extraemos la letra (último caracter) y el grado (todo lo anterior)
+    const letra = grupoId.slice(-1).toUpperCase(); // "A" o "B"
+    const grado = grupoId.slice(0, -1); // "2", "4", "10", etc.
+
+    // Si estoy en A, mi "otro" grupo es B. Si estoy en B, es A.
+    const letraContraria = letra === "A" ? "B" : "A";
+
+    // Retornamos un array con la única opción disponible
+    return [`${grado}${letraContraria}`];
+  }, [grupoId]);
   // 2. DETECCIÓN DE MODO
   // Si existen estas variables, estamos en "Perfil", si no, en "Grupo Normal"
   const isPerfilMode = Boolean(idNormalizado && semestre);
@@ -82,6 +98,7 @@ const TrabajoCotidiano = () => {
   const [loadingCalificaciones, setLoadingCalificaciones] = useState(false);
   const [errorCalificaciones, setErrorCalificaciones] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false); // Para gestión de rubros
+  const [modalCopiarAbierto, setModalCopiarAbierto] = useState(false);
 
   // --- EDICIÓN Y EXPORTACIÓN ---
   const [isEditing, setIsEditing] = useState(false);
@@ -110,18 +127,14 @@ const TrabajoCotidiano = () => {
 
       const data = await fetchRubrosTCGet(datosEnviar, token);
 
-
       const rubrosOrdenados = (data || []).sort((a, b) => {
-
         const fechaA = new Date(a.fecha_limite || 0);
         const fechaB = new Date(b.fecha_limite || 0);
 
-      
         return fechaB - fechaA;
       });
 
       setRubros(rubrosOrdenados);
-
     } catch (err) {
       setErrorRubros(err.message);
     } finally {
@@ -435,6 +448,17 @@ const TrabajoCotidiano = () => {
         </Box>
 
         <Stack direction="row" spacing={2} alignItems="flex-start">
+          {isPerfilMode ? null : (
+            <Button
+              startIcon={<ClipboardPaste />}
+              onClick={() => setModalCopiarAbierto(true)} // ABRIR MODAL
+              variant="outlined" // Le puse estilo para que se vea
+              color="primary"
+            >
+              Copiar
+            </Button>
+          )}
+
           <Button
             variant="outlined"
             startIcon={<DownloadIcon />}
@@ -635,6 +659,22 @@ const TrabajoCotidiano = () => {
           onGuardar={() => {
             setModalAbierto(false);
             cargarRubros();
+          }}
+        />
+      )}
+
+      {modalCopiarAbierto && (
+        <CopiarActividadesModal
+          open={modalCopiarAbierto}
+          onClose={() => setModalCopiarAbierto(false)}
+          materiaClave={materiaClave}
+          grupoActualId={grupoId} // El grupo destino es donde estamos parados
+          parcial={parcial}
+          yearC={selectedYear}
+          token={token}
+          listaGrupos={listaGruposDisponibles} // Pasa tu lista de grupos aquí
+          onSuccess={() => {
+            cargarRubros(); // Recargamos la tabla al terminar
           }}
         />
       )}

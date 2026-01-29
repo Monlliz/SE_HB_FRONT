@@ -24,8 +24,10 @@ import {
   Checkbox,
 } from "@mui/material";
 //Funcion principal
-export default function UserDocente({ matricula }) {
+
+export default function userAlumno({ matricula }) {
   //Todos los estados necesarios
+
   // Estado para guardar los datos que vendrían de la API
   const [alumno, setAlumno] = useState(null);
   const [selectedMateriaClave, setSelectedMateriaClave] = useState(null);
@@ -34,7 +36,6 @@ export default function UserDocente({ matricula }) {
   const [modalDesactivarOpen, setModalDesactivarOpen] = useState(false);
   const [altaBaja, setAltaBaja] = useState(false);
 
-  const [modalBorrarMateriaOpen, setModalBorrarMateriaOpen] = useState(false);
   const [incidente, setIncidentes] = useState([]);
 
   //Para la navegacion a Reportes
@@ -122,7 +123,10 @@ export default function UserDocente({ matricula }) {
   if (!alumno) {
     return <Typography>Cargando alumno...</Typography>;
   }
-
+  const numeroStrike =
+    incidente.length > 0
+      ? Math.max(...incidente.map((i) => i.numero_strike ?? 0))
+      : 0;
   return (
     <Box
       sx={{
@@ -277,6 +281,7 @@ export default function UserDocente({ matricula }) {
             onClose={() => setModalIncidenteOpen(false)}
             onAccept={handleAcceptEdit}
             matricula={matricula}
+            numero_strike={numeroStrike}
           />
           <Button
             variant="outlined"
@@ -347,6 +352,7 @@ export default function UserDocente({ matricula }) {
                   <TableBody>
                     {incidente.map((incidente) => {
                       const isItemSelected = isSelected(incidente.id);
+
                       return (
                         <TableRow
                           key={incidente.id}
