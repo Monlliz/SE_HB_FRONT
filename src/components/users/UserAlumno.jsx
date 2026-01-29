@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 //los modales
 import EditAlumno from "../modals/Alumno/EditAlumno.jsx";
@@ -23,14 +23,14 @@ import {
   TableContainer,
   Checkbox,
 } from "@mui/material";
-//Funcion principal
 
+//Funcion principal
 export default function userAlumno({ matricula }) {
   //Todos los estados necesarios
 
   // Estado para guardar los datos que vendrían de la API
   const [alumno, setAlumno] = useState(null);
-  const [selectedMateriaClave, setSelectedMateriaClave] = useState(null);
+  const [selectedMateriaClave, setSelectedMateriaClave] = useState(false);
   const [modalIncidenteOpen, setModalIncidenteOpen] = useState(false);
   const [modalEditOpen, setModalEditOpen] = useState(false);
   const [modalDesactivarOpen, setModalDesactivarOpen] = useState(false);
@@ -40,32 +40,108 @@ export default function userAlumno({ matricula }) {
 
   //Para la navegacion a Reportes
   const navigate = useNavigate();
+  
+  //URL de la API y Auth
+  const apiUrl = import.meta.env.VITE_API_URL;
+  const { token } = useAuth();
+
   const fetchIncidente = async () => {
+    // Nota: Asegúrate de que tu backend devuelva los incidentes ordenados cronológicamente
     const { incidentes } = await fetchIncidenteGet(token, matricula);
     setIncidentes(incidentes);
   };
+  
   // Estado para guardar los IDs de las filas seleccionadas
   const [selected, setSelected] = useState([]);
 
-  const handleClick = (event, id) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected = [];
+  // --- LOGICA NUEVA PARA FILAS VIRTUALES ---
 
-    if (selectedIndex === -1) {
-      // Si no está seleccionado, se agrega
-      newSelected = newSelected.concat(selected, id);
+  // 1. Calculamos las filas a mostrar
+  const processedRows = useMemo(() => {
+    let rows = [];
+    incidente.forEach((item, index) => {
+      // Agregamos el incidente real
+      rows.push({ ...item, isVirtual: false });
+
+      // Si es múltiplo de 5, agregamos la fila virtual
+      if ((index + 1) % 5 === 0) {
+        const grupoIds = incidente.slice(index - 4, index + 1).map((i) => i.id);
+        const numReporte = (index + 1) / 5; // Calculamos el número para mostrarlo visualmente también
+        
+        rows.push({
+          id: `virtual-group-${index}`,
+          isVirtual: true,
+          groupIds: grupoIds,
+          solicitante: "SISTEMA",
+          // Mostramos visualmente qué reporte es
+          motivo_incidencia: `>> REPORTE ACUMULADO #${numReporte} (Incidentes ${index - 3} al ${index + 1})`,
+          fecha: item.fecha, 
+          numero_strike: "N/A",
+        });
+      }
+    });
+    return rows;
+  }, [incidente]);
+
+  // 2. Manejador de Clics
+  const handleClick = (event, row) => {
+    let newSelected = [...selected];
+
+    if (row.isVirtual) {
+        const allSelected = row.groupIds.every(id => selected.includes(id));
+        
+        if (allSelected) {
+            newSelected = newSelected.filter(id => !row.groupIds.includes(id));
+        } else {
+            const idsToAdd = row.groupIds.filter(id => !selected.includes(id));
+            newSelected = [...newSelected, ...idsToAdd];
+        }
+
     } else {
-      // Si ya está seleccionado, se quita
-      newSelected = selected.filter((selectedId) => selectedId !== id);
+        const selectedIndex = selected.indexOf(row.id);
+        if (selectedIndex === -1) {
+            newSelected.push(row.id);
+        } else {
+            newSelected = newSelected.filter((selectedId) => selectedId !== row.id);
+        }
     }
+
     setSelected(newSelected);
     setSelectedMateriaClave(newSelected.length >= 5);
   };
 
+  const isRowSelected = (row) => {
+    if (row.isVirtual) {
+        return row.groupIds.every(id => selected.includes(id));
+    }
+    return selected.indexOf(row.id) !== -1;
+  };
+
+  // ------------------------------------------
+  // LÓGICA AGREGADA AQUÍ PARA NUMERO Y FECHA DE INFORME
+  // ------------------------------------------
   const handleNavigateToReporte = () => {
+    // 1. Obtenemos los incidentes seleccionados reales
+    // Nota: El filter respeta el orden del array original 'incidente'
     const incidentesSeleccionados = incidente.filter((item) =>
       selected.includes(item.id),
     );
+
+    if (incidentesSeleccionados.length === 0) return;
+
+    // 2. Identificamos el último incidente para sacar los cálculos
+    const ultimoIncidente = incidentesSeleccionados[incidentesSeleccionados.length - 1];
+
+    // 3. Calculamos la Fecha de Informe (Fecha del último incidente seleccionado)
+    const fechaInforme = ultimoIncidente.fecha;
+
+    // 4. Calculamos el Numero de Informe
+    // Buscamos en qué posición estaba ese último incidente en la lista global
+    const indiceOriginal = incidente.indexOf(ultimoIncidente); 
+    // (Indice + 1) / 5 y redondeamos hacia arriba.
+    // Ejemplo: Indice 4 (5to elemento) -> 5/5 = 1.
+    // Ejemplo: Indice 9 (10mo elemento) -> 10/5 = 2.
+    const numeroInforme = Math.ceil((indiceOriginal + 1) / 5);
 
     const datosParaEnviar = {
       R_MATRICULA: matricula,
@@ -73,18 +149,15 @@ export default function userAlumno({ matricula }) {
       R_APELLIDOP: alumno.apellidop,
       R_APELLIDM: alumno.apellidom,
       R_INCIDENTES: incidentesSeleccionados,
+      // CAMPOS NUEVOS AGREGADOS:
+      numero_informe: numeroInforme,
+      fecha_informe: fechaInforme
     };
-    console.log(datosParaEnviar);
+    
+    console.log("Datos enviados a reporte:", datosParaEnviar);
     navigate("/reporte", { state: datosParaEnviar });
   };
 
-  const isSelected = (id) => selected.indexOf(id) !== -1;
-
-  //URL de la API
-  const apiUrl = import.meta.env.VITE_API_URL;
-  const { token } = useAuth();
-
-  // la Api pa' docentes
   const fetchAlumno = useCallback(async () => {
     if (!matricula) return;
 
@@ -93,7 +166,6 @@ export default function userAlumno({ matricula }) {
         if (!token) {
           throw new Error("Autorización rechazada. No se encontró el token.");
         }
-        //LLamamos al servicio
         const { alumno } = await fetchAlumnoGetOne(token, matricula);
         setAlumno(alumno);
       } catch (err) {
@@ -104,18 +176,12 @@ export default function userAlumno({ matricula }) {
     fetchInitialData();
   }, [matricula, apiUrl]);
 
-  //El renderizado inicial
   useEffect(() => {
     fetchAlumno();
   }, [fetchAlumno]);
 
-  //Funciones aceptar modales
-
-  //Función para manejar el "Aceptar" del modal de agregar materia y borrar materia
-
-  //La uso tambien para desactivar alumno.
   const handleAcceptEdit = () => {
-    setModalEditOpen(false); // Cierra el modal
+    setModalEditOpen(false);
     setModalIncidenteOpen(false);
     fetchAlumno();
   };
@@ -123,10 +189,12 @@ export default function userAlumno({ matricula }) {
   if (!alumno) {
     return <Typography>Cargando alumno...</Typography>;
   }
+  
   const numeroStrike =
     incidente.length > 0
       ? Math.max(...incidente.map((i) => i.numero_strike ?? 0))
       : 0;
+
   return (
     <Box
       sx={{
@@ -258,7 +326,6 @@ export default function userAlumno({ matricula }) {
             display: "flex",
             height: "40%",
             width: "100%",
-
             borderRadius: 2,
             p: 2,
             alignItems: "center",
@@ -296,13 +363,11 @@ export default function userAlumno({ matricula }) {
         <Box
           sx={{
             display: "flex",
-            // height: "60%", // Considera si esta altura es fija o puede ser más flexible
             width: "100%",
             justifyContent: "center",
             borderRadius: 2,
             p: 2,
             alignItems: "center",
-
             gap: 2,
           }}
         >
@@ -313,7 +378,6 @@ export default function userAlumno({ matricula }) {
               </Typography>
             </Paper>
           ) : (
-            // Para que el layout funcione bien, hacemos que el Paper use flexbox en columna
             <Paper
               sx={{
                 width: "100%",
@@ -350,18 +414,24 @@ export default function userAlumno({ matricula }) {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {incidente.map((incidente) => {
-                      const isItemSelected = isSelected(incidente.id);
+                    {processedRows.map((row) => {
+                      const isItemSelected = isRowSelected(row);
 
                       return (
                         <TableRow
-                          key={incidente.id}
+                          key={row.id}
                           hover
-                          onClick={(event) => handleClick(event, incidente.id)}
+                          onClick={(event) => handleClick(event, row)}
                           role="checkbox"
                           aria-checked={isItemSelected}
                           selected={isItemSelected}
-                          sx={{ cursor: "pointer" }}
+                          sx={{ 
+                            cursor: "pointer",
+                            backgroundColor: row.isVirtual ? "#e3f2fd" : "inherit",
+                            "&.Mui-selected": {
+                                backgroundColor: row.isVirtual ? "#bbdefb" : "rgba(25, 118, 210, 0.08)"
+                            }
+                          }}
                         >
                           <TableCell padding="checkbox">
                             <Checkbox
@@ -369,21 +439,42 @@ export default function userAlumno({ matricula }) {
                               checked={isItemSelected}
                             />
                           </TableCell>
-                          <TableCell>{incidente.solicitante}</TableCell>
-                          <TableCell>{incidente.motivo_incidencia}</TableCell>
-                          <TableCell>
-                            {new Date(incidente.fecha).toLocaleDateString(
-                              "es-MX",
-                              {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              },
-                            )}
-                          </TableCell>
-                          <TableCell align="center">
-                            {incidente.numero_strike}
-                          </TableCell>
+                          
+                          {row.isVirtual ? (
+                             <>
+                                <TableCell colSpan={1}>
+                                    <Typography variant="body2" fontWeight="bold" color="primary">
+                                        {row.solicitante}
+                                    </Typography>
+                                </TableCell>
+                                <TableCell>
+                                    <Typography variant="body2" fontWeight="bold" sx={{ fontStyle: 'italic' }}>
+                                        {row.motivo_incidencia}
+                                    </Typography>
+                                </TableCell>
+                                <TableCell>
+                                    {new Date(row.fecha).toLocaleDateString("es-MX")}
+                                </TableCell>
+                                <TableCell align="center">
+                                    <strong>---</strong>
+                                </TableCell>
+                             </>
+                          ) : (
+                             <>
+                                <TableCell>{row.solicitante}</TableCell>
+                                <TableCell>{row.motivo_incidencia}</TableCell>
+                                <TableCell>
+                                    {new Date(row.fecha).toLocaleDateString("es-MX", {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                    })}
+                                </TableCell>
+                                <TableCell align="center">
+                                    {row.numero_strike}
+                                </TableCell>
+                             </>
+                          )}
                         </TableRow>
                       );
                     })}

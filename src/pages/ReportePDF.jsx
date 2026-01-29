@@ -158,19 +158,32 @@ const styles = StyleSheet.create({
 
 const MiDocumentoPDF = ({ datos }) => {
   // Fecha actual formateada para la línea de generación (DD/MM/AAAA HH:MM:SS)
-  const fechaGeneracion = new Date().toLocaleString("es-MX");
-  //año 
+  // Validamos si la fecha existe y es válida, si no, usamos la actual
+  const fechaBase =
+    datos.fecha_informe && !isNaN(new Date(datos.fecha_informe))
+      ? new Date(datos.fecha_informe)
+      : new Date();
+
+  // Formato: 29 de enero de 2026 (o el formato que prefieras)
+  const fechaGeneracion = fechaBase.toLocaleDateString("es-MX", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  //año
   const anioActual = new Date().getFullYear();
   //periodo escolar
-  const periodoEscolar = new Date().getMonth() >= 7 ? `AGOSTO - DICIEMBRE ${anioActual}` : `ENERO - JULIO ${anioActual}`;
+  const periodoEscolar =
+    new Date().getMonth() >= 7
+      ? `AGOSTO - DICIEMBRE ${anioActual}`
+      : `ENERO - JULIO ${anioActual}`;
 
   // Simulamos un número de informe (puedes pasarlo en 'datos' si lo tienes)
-  const numeroInforme = datos.numero_informe || "1"; 
+  const numeroInforme = datos.numero_informe || "1";
 
   return (
     <Document>
       <Page size="Letter" style={styles.page}>
-        
         {/* --- NUEVO ENCABEZADO --- */}
         <View style={styles.headerContainer}>
           {/* Columna Izquierda: Logo */}
@@ -180,7 +193,9 @@ const MiDocumentoPDF = ({ datos }) => {
 
           {/* Columna Derecha: Textos Institucionales Centrados */}
           <View style={styles.institutionTextContainer}>
-            <Text style={styles.schoolName}>COLEGIO JUAN FEDERICO HERBART PREPARATORIA</Text>
+            <Text style={styles.schoolName}>
+              COLEGIO JUAN FEDERICO HERBART PREPARATORIA
+            </Text>
             <Text style={styles.departmentName}>DIRECCIÓN ACADÉMICA</Text>
             <Text style={styles.periodText}>{periodoEscolar}</Text>
           </View>
@@ -191,21 +206,26 @@ const MiDocumentoPDF = ({ datos }) => {
 
         {/* Línea de Folio y Fecha (Alineada a la derecha) */}
         <Text style={styles.folioDateLine}>
-            Informe No. {numeroInforme} generado el: {fechaGeneracion}
+          Informe No. {numeroInforme} generado el: {fechaGeneracion}
         </Text>
 
         {/* --- CUERPO DEL DOCUMENTO --- */}
-        
+
         <View style={{ marginTop: 20, marginBottom: 10 }}>
-            <Text style={styles.bold}>A QUIEN CORRESPONDA</Text>
-            <Text style={styles.bold}>P R E S E N T E</Text>
+          <Text style={styles.bold}>A QUIEN CORRESPONDA</Text>
+          <Text style={styles.bold}>P R E S E N T E</Text>
         </View>
 
         <View style={styles.infoSection}>
           <Text style={styles.text}>
-            Por este medio le informo que <Text style={styles.bold}>{datos.R_NOMBRE} {datos.R_APELLIDOP} {datos.R_APELLIDM}</Text> ha sido 
-            acreedor a un <Text style={styles.bold}>INFORME DE INCIDENCIA MENOR</Text> según la siguiente información confirmada y validada 
-            por los miembros de la Dirección de Preparatoria:
+            Por este medio le informo que{" "}
+            <Text style={styles.bold}>
+              {datos.R_NOMBRE} {datos.R_APELLIDOP} {datos.R_APELLIDM}
+            </Text>{" "}
+            ha sido acreedor a un{" "}
+            <Text style={styles.bold}>INFORME DE INCIDENCIA MENOR</Text> según
+            la siguiente información confirmada y validada por los miembros de
+            la Dirección de Preparatoria:
           </Text>
         </View>
 
@@ -228,12 +248,12 @@ const MiDocumentoPDF = ({ datos }) => {
         </View>
 
         {/* Pie de página / Advertencia */}
-       {/* --- PIE DE PÁGINA / TEXTO FINAL --- */}
+        {/* --- PIE DE PÁGINA / TEXTO FINAL --- */}
         <View style={styles.footerTextContainer}>
           <Text style={styles.text}>
             Le solicito que atienda a la brevedad esta información, pues es de
-            nuestro interés trabajar en conjunto con su familia para el beneficio
-            académico y bienestar integral de{" "}
+            nuestro interés trabajar en conjunto con su familia para el
+            beneficio académico y bienestar integral de{" "}
             <Text style={styles.bold}>{datos.R_NOMBRE}</Text>. En caso de
             requerir alguna aclaración de este informe, puede hacerlo a través
             de los canales de comunicación establecidos por nuestra Institución.
@@ -265,17 +285,17 @@ const MiDocumentoPDF = ({ datos }) => {
 
 // ... El resto del componente ReportePDF se mantiene igual ...
 const ReportePDF = () => {
-    // ... lógica del botón de descarga y visualizador ...
-    const location = useLocation();
-    const datosReporte = location.state;
-    // ... (sin cambios aquí)
-    if (!datosReporte) return null; // versión simplificada para el ejemplo
-    
-    // ... return del componente ReportePDF ...
-    // (Copiar el return del componente ReportePDF original)
-     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  // ... lógica del botón de descarga y visualizador ...
+  const location = useLocation();
+  const datosReporte = location.state;
+  // ... (sin cambios aquí)
+  if (!datosReporte) return null; // versión simplificada para el ejemplo
 
-    return (
+  // ... return del componente ReportePDF ...
+  // (Copiar el return del componente ReportePDF original)
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  return (
     <Box
       sx={{
         display: "flex",
@@ -283,7 +303,7 @@ const ReportePDF = () => {
         width: "100%",
         height: "calc(100vh - 8vh)",
         marginTop: "8vh",
-        alignItems: "center", 
+        alignItems: "center",
       }}
     >
       <Box sx={{ my: 2 }}>
