@@ -1,18 +1,15 @@
 /**
  * @file Grupo.jsx
- * @description Componente de interfaz Maestro-Detalle para buscar y visualizar grupos.
  */
-
-// Importaciones de React, hooks y componentes.
 import { useState, useEffect, useCallback } from "react";
+// 1. IMPORTANTE: Importamos useSearchParams
+import { useSearchParams } from "react-router-dom";
 
-// --- CAMBIO AQUÍ: Importamos el componente unificado ---
-import MateriasManager from "../components/users/UserGrupoU.jsx"; 
-
+import MateriasManager from "../components/users/UserGrupoU.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { fetchGrupoGet, fetchPerfilGet } from "../services/grupoService.js";
+import { codificarParams, decodificarParams } from "../utils/cifrado.js";
 
-//  Imports para los botones de filtro
 import {
   Box,
   TextField,
@@ -26,34 +23,44 @@ import {
   ToggleButtonGroup,
 } from "@mui/material";
 
+
+
 export default function Grupo() {
-  // --- ESTADOS Y CONTEXTO ---
   const { token } = useAuth();
+
+  // 2. Hook para manipular la URL
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [search, setSearch] = useState("");
   const [Grupos, setGrupos] = useState([]);
   const [perfiles, setPerfiles] = useState([]);
   const [resultados, setResultados] = useState([]);
-  
-  // Estados de selección
-  const [selectGrupo, setSelectGrupo] = useState(null);
-  const [selectPerfil, setSelectPerfil] = useState(null);
-  
+
+  // 3. ELIMINAMOS los useState locales de selección:
+  // const [selectGrupo, setSelectGrupo] = useState(null);
+  // const [selectPerfil, setSelectPerfil] = useState(null);
+
+  // 4. CREAMOS variables derivadas directamente de la URL.
+  // Si la URL es /grupo?id=EG-202&type=grupo, estas variables lo capturan automáticamente.
+
+  const paramQ = searchParams.get("q");
+  const { id: currentId, type: currentType } = paramQ
+    ? decodificarParams(paramQ)
+    : { id: null, type: null };
+
+  const selectGrupo = currentType === "grupo" ? currentId : null;
+  const selectPerfil = currentType === "perfil" ? currentId : null;
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  //  Estado para el filtro de paridad
-  const [filtroParidad, setFiltroParidad] = useState("todos"); // "todos", "pares", "impares"
-
-  // --- LÓGICA DE DATOS (EFECTOS Y CALLBACKS) ---
+  const [filtroParidad, setFiltroParidad] = useState("todos");
 
   const fetchGrupo = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      if (!token)
-        throw new Error("Autorización rechazada. No se encontró el token.");
+      if (!token) throw new Error("Autorización rechazada.");
 
-      // Llamadas en paralelo para más eficiencia
       const [dataGrupos, dataPerfiles] = await Promise.all([
         fetchGrupoGet(token),
         fetchPerfilGet(token),
@@ -61,19 +68,17 @@ export default function Grupo() {
 
       const { grupos } = dataGrupos;
       const { perfiles } = dataPerfiles;
-
       const idGrupoOcultar = ["EG", "BI"];
 
       const perfilesFiltrados = perfiles.filter((perfil) => {
-        const tieneNumero = /^\d+-/.test(perfil.idperfil); // verifica si inicia con número y guion
+        const tieneNumero = /^\d+-/.test(perfil.idperfil);
         const esBC = perfil.idperfil.includes("BC");
         return tieneNumero && !esBC;
       });
 
       setPerfiles(perfilesFiltrados);
-
       const gruposFiltrados = grupos.filter(
-        (grupo) => !idGrupoOcultar.includes(grupo.idgrupo)
+        (grupo) => !idGrupoOcultar.includes(grupo.idgrupo),
       );
       setGrupos(gruposFiltrados);
     } catch (error) {
@@ -84,71 +89,51 @@ export default function Grupo() {
     }
   }, [token]);
 
-  /**
-   * @effect Carga inicial
-   */
   useEffect(() => {
     fetchGrupo();
   }, [fetchGrupo]);
 
-  /**
-   * @effect Filtrado y Búsqueda
-   */
   useEffect(() => {
-    // 1. Estandarizar Grupos
     const gruposConFormato = Grupos.map((g) => ({
       id: g.idgrupo,
       label: g.idgrupo,
       type: "grupo",
     }));
 
-    // 2. Estandarizar Perfiles
     const perfilesConFormato = perfiles.map((p) => ({
       id: p.idperfil,
       label: p.idperfil,
       type: "perfil",
     }));
 
-    // 3. Combinarlos
     const itemsCombinados = [...gruposConFormato, ...perfilesConFormato];
 
-    // 4. Filtrar por término de búsqueda
     const resultadosDeBusqueda = search
       ? itemsCombinados.filter((item) =>
           String(item.label ?? "")
             .toLowerCase()
-            .includes(search.toLowerCase())
+            .includes(search.toLowerCase()),
         )
       : itemsCombinados;
 
-    // 5. Filtrar por paridad (Pares/Impares)
     const resultadosFinales = resultadosDeBusqueda.filter((item) => {
       if (filtroParidad === "todos") return true;
-
       const primerChar = String(item.id ?? "").charAt(0);
       const numero = parseInt(primerChar, 10);
-
       if (isNaN(numero)) return false;
-
       if (filtroParidad === "pares") return numero % 2 === 0;
       if (filtroParidad === "impares") return numero % 2 !== 0;
-      
       return true;
     });
 
     setResultados(resultadosFinales);
   }, [search, Grupos, perfiles, filtroParidad]);
 
-  // --- MANEJADORES DE EVENTOS ---
-
+  // 5. MODIFICAMOS el handleClick para guardar en la URL
   const handleClick = (item) => {
-    if (item.type === "grupo") {
-      setSelectGrupo(item.id);
-      setSelectPerfil(null);
-    } else if (item.type === "perfil") {
-      setSelectPerfil(item.id);
-      setSelectGrupo(null);
-    }
+    // En lugar de pasar id y type legibles, los codificamos
+    const hash = codificarParams(item.id, item.type);
+    setSearchParams({ q: hash });
   };
 
   const handleFiltroParidadChange = (event, newFiltro) => {
@@ -159,11 +144,8 @@ export default function Grupo() {
     }
   };
 
-  // --- RENDERIZADO DEL COMPONENTE ---
-
   return (
     <Box sx={{ display: "flex", width: "100%", height: "calc(100vh - 80px)" }}>
-      {/* Panel Izquierdo (20%): Búsqueda y Lista */}
       <Paper
         sx={{
           width: "20%",
@@ -182,7 +164,6 @@ export default function Grupo() {
           sx={{ mb: 2 }}
         />
 
-        {/* Botones de Filtro Pares/Impares */}
         <ToggleButtonGroup
           value={filtroParidad}
           exclusive
@@ -192,15 +173,9 @@ export default function Grupo() {
           size="small"
           sx={{ mb: 2 }}
         >
-          <ToggleButton value="todos" aria-label="todos" sx={{ flexGrow: 1 }}>
-            Todos
-          </ToggleButton>
-          <ToggleButton value="pares" aria-label="pares" sx={{ flexGrow: 1 }}>
-            Par
-          </ToggleButton>
-          <ToggleButton value="impares" aria-label="impares" sx={{ flexGrow: 1 }}>
-            Impar
-          </ToggleButton>
+          <ToggleButton value="todos">Todos</ToggleButton>
+          <ToggleButton value="pares">Par</ToggleButton>
+          <ToggleButton value="impares">Impar</ToggleButton>
         </ToggleButtonGroup>
 
         <List sx={{ width: "100%", flexGrow: 1, overflowY: "auto" }}>
@@ -232,7 +207,8 @@ export default function Grupo() {
               <ListItem
                 key={item.type + "-" + item.id}
                 onClick={() => handleClick(item)}
-                selected={selectGrupo === item.id || selectPerfil === item.id}
+                // 6. Usamos las variables derivadas para saber si está seleccionado
+                selected={currentId === item.id && currentType === item.type}
                 sx={{
                   cursor: "pointer",
                   "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.04)" },
@@ -253,10 +229,9 @@ export default function Grupo() {
         </List>
       </Paper>
 
-      {/* Panel Derecho (80%): Detalles del Grupo/Perfil */}
       <Box sx={{ width: "80%", height: "100%", p: 2, overflowY: "auto" }}>
-        
-        {/* --- CAMBIO AQUÍ: Usamos el componente unificado --- */}
+        {/* Como selectGrupo y selectPerfil ahora vienen de la URL, 
+            al dar "Atrás" el navegador restaura la URL y esto se renderiza automáticamente */}
         {selectGrupo ? (
           <MateriasManager id={selectGrupo} mode="grupo" />
         ) : selectPerfil ? (
@@ -275,7 +250,6 @@ export default function Grupo() {
             </Typography>
           </Box>
         )}
-        
       </Box>
     </Box>
   );

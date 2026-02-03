@@ -1,8 +1,11 @@
 /**
  * @file alumno.jsx
- * @description Componente para buscar, visualizar y añadir nuevos alumnos.
+ * @description Componente para buscar, visualizar y añadir nuevos alumnos con Estado en URL.
  */
 import { useState, useEffect, useCallback } from "react";
+// 1. Importamos useSearchParams
+import { useSearchParams } from "react-router-dom";
+
 import { useAuth } from "../context/AuthContext.jsx";
 import { fetchAlumnoGet } from "../services/alumnosService.js";
 import {
@@ -16,41 +19,54 @@ import {
   Tooltip,
 } from "@mui/material";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
-import UserDocente from "../components/users/UserDocente.jsx"; // Componente 'Detalle'
 import UserAlumno from "../components/users/UserAlumno.jsx";
 import PostAlumno from "../components/modals/Alumno/PostAlumno.jsx";
-import NewDocente from "../components/modals/Docente/NewDocente.jsx"; // Modal para crear alumno
+
+// --- HELPERS PARA "CIFRAR" URL (Fuera del componente) ---
+const codificarParams = (id) => {
+  const data = JSON.stringify({ id });
+  return btoa(data); 
+};
+
+const decodificarParams = (encodedStr) => {
+  try {
+    const jsonStr = atob(encodedStr);
+    return JSON.parse(jsonStr);
+  } catch (e) {
+    return { id: null };
+  }
+};
 
 /**
  * Componente principal que gestiona la interfaz de alumnos.
  * @returns {JSX.Element}
  */
 export default function alumno() {
-  // --- ESTADOS Y CONTEXTO ---
-
   const { token } = useAuth();
-  /** @state {string} search - Almacena el término de búsqueda introducido por el usuario. */
+  
+  // 2. Hook para manipular la URL
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // --- ESTADOS LOCALES ---
   const [search, setSearch] = useState("");
-  /** @state {Array} alumnos - Almacena la lista completa de alumnos obtenida de la API. (Nota: por convención, debería llamarse 'alumnos' en minúscula). */
   const [alumnos, setAlumnos] = useState([]);
-  /** @state {Array} resultados - Almacena la lista filtrada de alumnos que se muestra en la interfaz. */
   const [resultados, setResultados] = useState([]);
-  /** @state {string|null} selectedAlumnosId - Guarda el ID del alumno seleccionado para mostrar sus detalles. */
-  const [selectedAlumnosId, setSelectedAlumnosId] = useState("");
-  /** @state {boolean} modalNewOpen - Controla la visibilidad del modal para añadir un nuevo alumno. */
+  
+  // 3. ELIMINAMOS el estado local de selección
+  // const [selectedAlumnosId, setSelectedAlumnosId] = useState("");
+
+  // 4. CREAMOS la variable derivada de la URL
+  const paramQ = searchParams.get("q");
+  const { id: currentMatricula } = paramQ 
+    ? decodificarParams(paramQ) 
+    : { id: null };
+
   const [modalNewOpen, setModalNewOpen] = useState(false);
-  /** @state {boolean} loading - Indica si se están cargando los datos de la API. */
   const [loading, setLoading] = useState(false);
-  /** @state {string|null} error - Almacena mensajes de error si la carga de datos falla. */
   const [error, setError] = useState(null);
 
   // --- LÓGICA DE DATOS ---
 
-  /**
-   * @callback
-   * Carga la lista completa de alumnos desde la API.
-   * `useCallback` evita que esta función se recree en cada render, optimizando su uso en `useEffect`.
-   */
   const fetchAlumno = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -65,39 +81,23 @@ export default function alumno() {
     } finally {
       setLoading(false);
     }
-  }, [token]); // Depende del token. Se recreará si el token cambia.
+  }, [token]);
 
-  /**
-   * @effect
-   * Llama a `fetchAlumno` una vez cuando el componente se monta para obtener los datos iniciales.
-   */
   useEffect(() => {
     fetchAlumno();
   }, [fetchAlumno]);
 
-  /**
-   * @effect
-   * Filtra la lista de alumnos cada vez que el término de búsqueda (`search`) o la lista maestra (`alumnos`) cambian.
-   */
   useEffect(() => {
-    // Si no hay texto de búsqueda, la lista de resultados se vacía.
     if (!search) {
       setResultados([]);
       return;
     }
-    // Filtra la lista de alumnos si existe y el término de búsqueda no está vacío.
     const filtered = (alumnos ?? []).filter((alumno) => {
-      // Obtenemos todos los campos de forma segura
       const nombres = alumno?.nombres ?? "";
       const apellidoP = alumno?.apellidop ?? "";
       const apellidoM = alumno?.apellidom ?? "";
-
-      // Creamos un solo string con el nombre completo para buscar
       const nombreCompleto = `${nombres} ${apellidoP} ${apellidoM}`;
-
-      // Convertimos todo a minúsculas para una búsqueda sin distinción de mayúsculas/minúsculas
       const busquedaNormalizada = search.toLowerCase();
-
       return nombreCompleto.toLowerCase().includes(busquedaNormalizada);
     });
     setResultados(filtered);
@@ -106,22 +106,17 @@ export default function alumno() {
   // --- MANEJADORES DE EVENTOS ---
 
   /**
-   * Se ejecuta al hacer clic en un alumno de la lista.
-   * @param {Object} alumno - El objeto del alumno seleccionado.
+   * 5. ACTUALIZAMOS el click para escribir en la URL
    */
   const handleClick = (alumno) => {
-    setSelectedAlumnosId(alumno.matricula);
-
-    // La llamada a fetchAlumno() aquí es innecesaria y se ha eliminado.
+    // Guardamos la matrícula en la URL cifrada
+    const hash = codificarParams(alumno.matricula);
+    setSearchParams({ q: hash });
   };
 
-  /**
-   * Se ejecuta después de que el modal de "Nuevo alumno" se cierra con éxito.
-   * Vuelve a cargar la lista de alumnos para incluir el nuevo registro.
-   */
   const handleAcceptNew = () => {
-    setModalNewOpen(false); // Cierra el modal.
-    fetchAlumno(); // Actualiza la lista de alumnos.
+    setModalNewOpen(false);
+    fetchAlumno();
   };
 
   // --- RENDERIZADO DEL COMPONENTE ---
@@ -134,7 +129,7 @@ export default function alumno() {
         height: "calc(100vh - 80px)",
       }}
     >
-      {/* Panel Izquierdo (20%): Búsqueda y Lista (Maestro) */}
+      {/* Panel Izquierdo (20%): Búsqueda y Lista */}
       <Paper
         sx={{
           width: "20%",
@@ -159,7 +154,6 @@ export default function alumno() {
           </Tooltip>
         </Box>
 
-        {/* Modal para crear un nuevo alumno */}
         <PostAlumno
           open={modalNewOpen}
           onClose={() => setModalNewOpen(false)}
@@ -168,23 +162,20 @@ export default function alumno() {
 
         <List sx={{ width: "100%", flexGrow: 1, overflowY: "auto" }}>
           {loading && (
-            <ListItem>
-              <ListItemText primary="Cargando..." />
-            </ListItem>
+            <ListItem><ListItemText primary="Cargando..." /></ListItem>
           )}
           {error && (
-            <ListItem>
-              <ListItemText primary={error} sx={{ color: "red" }} />
-            </ListItem>
+            <ListItem><ListItemText primary={error} sx={{ color: "red" }} /></ListItem>
           )}
-          {!loading &&
-            !error &&
+          {!loading && !error &&
             (search && resultados.length > 0 ? (
               resultados.map((alumno) => (
                 <ListItem
                   key={alumno.matricula}
                   onClick={() => handleClick(alumno)}
-                  selected={selectedAlumnosId === alumno.matricula}
+                  // 6. Usamos currentMatricula para saber si está seleccionado
+                  selected={currentMatricula === alumno.matricula}
+                  button // Añadimos button para mejor UX
                   sx={{
                     cursor: "pointer",
                     "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.04)" },
@@ -198,21 +189,19 @@ export default function alumno() {
                 </ListItem>
               ))
             ) : search ? (
-              <ListItem>
-                <ListItemText primary="No se encontraron alumnos" />
-              </ListItem>
+              <ListItem><ListItemText primary="No se encontraron alumnos" /></ListItem>
             ) : (
-              <ListItem>
-                <ListItemText primary="Escribe un nombre para buscar..." />
-              </ListItem>
+              <ListItem><ListItemText primary="Escribe un nombre para buscar..." /></ListItem>
             ))}
         </List>
       </Paper>
 
-      {/* Panel Derecho (80%): Detalles del alumno (Detalle) */}
+      {/* Panel Derecho (80%): Detalles del alumno */}
       <Box sx={{ width: "80%", height: "100%", p: 2 }}>
-        {selectedAlumnosId ? (
-          <UserAlumno matricula={selectedAlumnosId} />
+        
+        {/* 7. Renderizamos usando la variable de la URL */}
+        {currentMatricula ? (
+          <UserAlumno matricula={currentMatricula} />
         ) : (
           <Box
             sx={{
@@ -225,6 +214,7 @@ export default function alumno() {
             <p>Selecciona un alumno de la lista para ver sus detalles.</p>
           </Box>
         )}
+
       </Box>
     </Box>
   );
