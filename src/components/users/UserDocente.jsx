@@ -10,7 +10,8 @@ import BorrarMateria from "../modals/Docente/BorrarMateria.jsx";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import AutoStoriesIcon from "@mui/icons-material/AutoStories";
-import { Pencil } from 'lucide-react';
+import { Trash2, Plus, Pencil } from "lucide-react";
+
 
 //import servicio
 
@@ -36,6 +37,7 @@ import {
   Tooltip,
 } from "@mui/material";
 
+
 //Funcion principal (El id es del docente)
 export default function UserDocente({ id }) {
   //Todos los estados necesarios
@@ -50,7 +52,7 @@ export default function UserDocente({ id }) {
   const navigate = useNavigate();
   //URL de la API
   const apiUrl = import.meta.env.VITE_API_URL;
-  const { token } = useAuth();
+  const { token, isDirector } = useAuth();
   //la Api pa' materias
   const fetchMaterias = useCallback(async () => {
     if (!id) return;
@@ -269,12 +271,15 @@ export default function UserDocente({ id }) {
             {docente.activo ? "Activo" : "Inactivo"}
           </Typography>
         </Box>
-
+            {/*SOLO DIRECTOR   */}
+        {isDirector && (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
           <Button
-            variant="contained"
+            variant="outlined"
             color="primary"
             size="small"
+            startIcon={<Pencil size={16} />}
+            sx={{ color: "#0254acff" }}
             onClick={() => setModalEditOpen(true)}
           >
             Editar
@@ -295,6 +300,7 @@ export default function UserDocente({ id }) {
             variant="outlined"
             color="error"
             size="small"
+            startIcon={<Trash2 size={17} />}
             onClick={() => setModalDeleteOpen(true)}
           >
             Desactivar
@@ -312,6 +318,7 @@ export default function UserDocente({ id }) {
             }
           />
         </Box>
+        )}
       </Box>
 
       {/* Caja de abajo Materias */}

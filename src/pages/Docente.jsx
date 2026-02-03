@@ -33,7 +33,7 @@ import { codificarParams, decodificarParams } from "../utils/cifrado.js";
  * Componente principal que gestiona la interfaz de docentes.
  */
 export default function Docente() {
-  const { token } = useAuth();
+  const { token, isDirector } = useAuth();
   
   // 2. Hook para manipular la URL
   const [searchParams, setSearchParams] = useSearchParams();
@@ -153,11 +153,13 @@ export default function Docente() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          {isDirector && (
           <Tooltip title="Añadir Nuevo Docente">
             <IconButton onClick={() => setModalNewOpen(true)} sx={{ ml: 1 }}>
               <PersonAddAlt1Icon />
             </IconButton>
           </Tooltip>
+          )}
         </Box>
         <FormControlLabel
           control={

@@ -192,7 +192,6 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      console.log(`Segundos para el modal: ${timeUntilWarning / 1000}`);
 
       if (timeUntilWarning <= 0) {
         setShowExtendModal(true);
@@ -208,6 +207,15 @@ export const AuthProvider = ({ children }) => {
     // AGREGAMOS location.pathname para que se re-ejecute al navegar
   }, [token, location.pathname]);
 
+  //ver el tipo de usuario 
+  // === AQUÍ AGREGAS LA LÓGICA GLOBAL ===
+  // Usamos ?. para que no truene si user es null (no logueado)
+  const isDocente = user?.nombre_rol === "Docente";
+  const isPrefecto = user?.nombre_rol === "Prefecto";
+  const isPsicologa = user?.nombre_rol === "Psicologa";
+  const isDirector = user?.nombre_rol === "Director";
+  //const isAdmin = user?.nombre_rol === "Administrador"; 
+
   //Modal de extensión de sesión
   return (
     <AuthContext.Provider
@@ -219,6 +227,11 @@ export const AuthProvider = ({ children }) => {
         refreshToken,
         showExtendModal,
         setShowExtendModal,
+        // Estados de rol
+        isDocente,
+        isPrefecto,
+        isPsicologa,
+        isDirector,
       }}
     >
       {children}

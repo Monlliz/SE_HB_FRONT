@@ -8,21 +8,10 @@ import {
     Presentation
 } from 'lucide-react';
 
-// Define tu lista y exporta los iconos y los enlaces
-const iconSize = 50;
-
-export const appIcons = {
-    INICIO: <Home size={iconSize} />,
-    ESTUDIANTES: <GraduationCap size={iconSize} />,
-    GRUPOS: <Users size={iconSize} />,
-    MATERIAS: <BookOpenText size={iconSize} />,
-    DOCENTES: <Presentation size={iconSize} />,
-    DEFAULT: <GraduationCap size={iconSize} />
-};
-
 export const appLinks = [
-    { label: "ESTUDIANTES", href: "/alumnos", icon: appIcons.ESTUDIANTES },
-    { label: "GRUPOS", href: "/grupos", icon: appIcons.GRUPOS },
-    { label: "MATERIAS", href: "/materias", icon: appIcons.MATERIAS },
-    { label: "DOCENTES", href: "/docentes", icon: appIcons.DOCENTES },
+    { label: "INICIO", href: "/inicio", icon: Home },
+    { label: "ESTUDIANTES", href: "/alumnos", icon: GraduationCap },
+    { label: "GRUPOS", href: "/grupos", icon: Users },
+    { label: "MATERIAS", href: "/materias", icon: BookOpenText },
+    { label: "DOCENTES", href: "/docentes", icon: Presentation },
 ];

@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { appLinks } from "../config/NavConfig.jsx";
 import {
   AppBar,
   Toolbar,
@@ -27,11 +28,6 @@ import {
 import {
   Menu as MenuIcon,
   User as UserIcon,
-  House as HomeIcon,
-  Users as GroupIcon,
-  GraduationCap as StudentIcon,
-  BookOpenText as SubjectIcon,
-  Presentation as TeacherIcon,
   LogOut as LogoutIcon, // Icono para "Salir"
   Settings as SettingsIcon, // Icono para "Gestión de Datos" (o ajustes)
   KeyRound as AccountIcon, // Icono para "Generar Cuentas"
@@ -40,9 +36,8 @@ import {
 export default function Navbar({ links = [] }) {
   const navigate = useNavigate();
 
-  const { logout, user } = useAuth();
-  const isAdminOrDirector =
-    user && (user.nombre_rol === "Director" || user.nombre_rol === "Administrador");
+  const { logout, user, isDirector, isDocente } = useAuth();
+  const isAdminOrDirector = user && isDirector; //para mostrar opciones solo a admin y director
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -80,15 +75,8 @@ export default function Navbar({ links = [] }) {
   const location = useLocation();
   const currentPath = location.pathname;
 
-  const navLinks = links.length
-    ? links
-    : [
-        { label: "INICIO", href: "/inicio", icon: <HomeIcon /> },
-        { label: "ESTUDIANTES", href: "/alumnos", icon: <StudentIcon /> },
-        { label: "GRUPOS", href: "/grupos", icon: <GroupIcon /> },
-        { label: "MATERIAS", href: "/materias", icon: <SubjectIcon /> },
-        { label: "DOCENTES", href: "/docentes", icon: <TeacherIcon /> },
-      ];
+  // Determinar los enlaces a usar
+  const navLinks = links.length ? links : appLinks;
 
   return (
     <>
@@ -163,44 +151,56 @@ export default function Navbar({ links = [] }) {
                 width: "100%",
               }}
             >
-              {navLinks.map((link) => (
-                <Button
-                  key={link.label}
-                  component={Link} // Usamos el componente Link
-                  to={link.href}
-                  variant="text"
-                  sx={{
-                    color: "primary.dark",
-                    textTransform: "none",
-                    fontWeight: 400,
-                    fontSize: 18,
-                    p: 2,
-                    height: "6vh",
-                    fontFamily: "Poppins, sans-serif",
-                    marginX: 1,
-                    "&:hover": {
-                      color: "background.paper",
-                      bgcolor: "primary.main",
-                    },
-                    // Resaltar el botón si la ruta coincide con el href
-                    ...(currentPath === link.href && {
-                      bgcolor: "primary.main",
-                      color: "background.paper",
-                    }),
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.5,
-                    }}
-                  >
-                    {link.icon}
-                    <span>{link.label}</span>
-                  </Box>
-                </Button>
-              ))}
+              {navLinks
+                .filter((link) => {
+                  // Filtro: Ocultar "GRUPOS" si es docente
+                  return !(isDocente && link.label === "GRUPOS");
+                })
+                .map((link) => {
+                  // 1. Extraemos el componente del icono
+                  const IconComponent = link.icon;
+
+                  // 2. Retornamos el JSX explícitamente
+                  return (
+                    <Button
+                      key={link.label}
+                      component={Link}
+                      to={link.href}
+                      variant="text"
+                      sx={{
+                        color: "primary.dark",
+                        textTransform: "none",
+                        fontWeight: 400,
+                        fontSize: 18,
+                        p: 2,
+                        height: "6vh",
+                        fontFamily: "Poppins, sans-serif",
+                        marginX: 1,
+                        "&:hover": {
+                          color: "background.paper",
+                          bgcolor: "primary.main",
+                        },
+                        // Resaltar el botón si la ruta coincide con el href
+                        ...(currentPath === link.href && {
+                          bgcolor: "primary.main",
+                          color: "background.paper",
+                        }),
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1.5,
+                        }}
+                      >
+                        {/* 3. Renderizamos el icono con tamaño específico para Navbar */}
+                        <IconComponent size={24} />
+                        <span>{link.label}</span>
+                      </Box>
+                    </Button>
+                  );
+                })}
             </Box>
           )}
 

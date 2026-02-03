@@ -18,6 +18,10 @@ import ListAltIcon from "@mui/icons-material/ListAlt";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import GroupIcon from "@mui/icons-material/Group";
 import AutoStoriesIcon from "@mui/icons-material/AutoStories";
+
+import { Trash2, Plus } from "lucide-react";
+
+
 import {
   Box,
   Button,
@@ -203,14 +207,15 @@ export default function MateriasManager({ id, mode = "grupo" }) {
         <Typography variant="h5" fontWeight="bold">Materias</Typography>
         
         <Tooltip title={mode === "perfil" ? "Agregar materia al perfil" : "Agregar materias al grupo"}>
-          <Button variant="contained" color="primary" onClick={() => setModalMateriaOpen(true)}>
+          <Button variant="text" startIcon={<Plus size={20} />} color="primary" onClick={() => setModalMateriaOpen(true)}>
             Agregar
           </Button>
         </Tooltip>
         
         <Tooltip title="Eliminar materia">
           <Button
-            variant="outlined"
+            variant="text"
+            startIcon={<Trash2 size={20} />}
             color="error"
             disabled={!selectedMateriaClave}
             onClick={() => setModalBorrarMateriaOpen(true)}

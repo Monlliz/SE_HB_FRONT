@@ -23,7 +23,8 @@ import {
   ToggleButtonGroup,
 } from "@mui/material";
 
-
+//import Icons
+import { Trash2, Plus, Pencil } from "lucide-react";
 
 export default function Grupo() {
   const { token } = useAuth();
@@ -35,13 +36,6 @@ export default function Grupo() {
   const [Grupos, setGrupos] = useState([]);
   const [perfiles, setPerfiles] = useState([]);
   const [resultados, setResultados] = useState([]);
-
-  // 3. ELIMINAMOS los useState locales de selección:
-  // const [selectGrupo, setSelectGrupo] = useState(null);
-  // const [selectPerfil, setSelectPerfil] = useState(null);
-
-  // 4. CREAMOS variables derivadas directamente de la URL.
-  // Si la URL es /grupo?id=EG-202&type=grupo, estas variables lo capturan automáticamente.
 
   const paramQ = searchParams.get("q");
   const { id: currentId, type: currentType } = paramQ

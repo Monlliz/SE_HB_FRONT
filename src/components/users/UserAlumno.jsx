@@ -24,6 +24,8 @@ import {
   Checkbox,
 } from "@mui/material";
 
+//Iconos
+import { Plus, FileText, Pencil, UserMinus,UserPlus} from "lucide-react";
 //Funcion principal
 export default function userAlumno({ matricula }) {
   //Todos los estados necesarios
@@ -43,7 +45,7 @@ export default function userAlumno({ matricula }) {
   
   //URL de la API y Auth
   const apiUrl = import.meta.env.VITE_API_URL;
-  const { token } = useAuth();
+  const { token, isDirector } = useAuth();
 
   const fetchIncidente = async () => {
     // Nota: Asegúrate de que tu backend devuelva los incidentes ordenados cronológicamente
@@ -258,11 +260,12 @@ export default function userAlumno({ matricula }) {
             {alumno.activo ? "Activo" : "Inactivo"}
           </Typography>
         </Box>
-
+        {isDirector && (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
           <Button
-            variant="contained"
-            color="primary"
+            variant="outlined"
+            startIcon={<Pencil size={16} />}
+            sx={{ color: "#0254acff" }}
             size="small"
             onClick={() => setModalEditOpen(true)}
           >
@@ -279,6 +282,7 @@ export default function userAlumno({ matricula }) {
             <Button
               variant="outlined"
               color="error"
+              startIcon={<UserMinus size={17} />}
               size="small"
               onClick={() => {
                 (setModalDesactivarOpen(true), setAltaBaja(false));
@@ -290,6 +294,7 @@ export default function userAlumno({ matricula }) {
             <Button
               variant="outlined"
               color="success"
+              startIcon={<UserPlus size={17} />}
               size="small"
               onClick={() => {
                 (setModalDesactivarOpen(true), setAltaBaja(true));
@@ -308,6 +313,7 @@ export default function userAlumno({ matricula }) {
             apellidop={alumno.apellidop}
           />
         </Box>
+        )}
       </Box>
 
       {/* Caja de abajo */}
@@ -337,8 +343,9 @@ export default function userAlumno({ matricula }) {
             Incidencias
           </Typography>
           <Button
-            variant="contained"
+            variant="text"
             color="primary"
+            startIcon={<Plus size={20} />}
             onClick={() => setModalIncidenteOpen(true)}
           >
             Agregar
@@ -350,14 +357,17 @@ export default function userAlumno({ matricula }) {
             matricula={matricula}
             numero_strike={numeroStrike}
           />
+          {isDirector && (
           <Button
-            variant="outlined"
+            variant="text"
             color="error"
+            startIcon={<FileText  size={20} />}
             disabled={!selectedMateriaClave}
             onClick={handleNavigateToReporte}
           >
             Generar reporte
           </Button>
+          )}
         </Box>
         {/*TABLA DE ABAJo */}
         <Box

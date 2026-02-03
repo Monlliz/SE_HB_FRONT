@@ -49,7 +49,7 @@ import { Spa } from "@mui/icons-material";
 const currentYear = new Date().getFullYear();
 
 const TrabajoCotidiano = () => {
-  const { token, user } = useAuth();
+  const { token, user,isDirector } = useAuth();
   const location = useLocation();
 
   // 1. DESESTRUCTURACIÓN INTELIGENTE
@@ -570,7 +570,7 @@ const TrabajoCotidiano = () => {
                   </Typography>
                 </TableCell>
               ))}
-              {user.nombre_rol === "Director" ? (
+              {isDirector ? (
                 <TableCell align="center" sx={{ fontWeight: "bold" }}>
                   Promedio
                 </TableCell>
@@ -591,7 +591,7 @@ const TrabajoCotidiano = () => {
                 </TableCell>
               )}
               {/*Modificar para que sea para el director */}
-              {user.nombre_rol === "Director" ? (
+              {isDirector ? (
                 <TableCell align="center" sx={{ fontWeight: "bold" }}>
                   Total Act
                 </TableCell>
@@ -672,7 +672,6 @@ const TrabajoCotidiano = () => {
                         right: 0,
                         backgroundColor: "#ffffff",
                         zIndex: 1,
-                        fontWeight: "500",
                         borderRight: "2px solid rgba(224, 224, 224, 1)",
                         boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)",
                         fontWeight: "bold",
@@ -688,7 +687,6 @@ const TrabajoCotidiano = () => {
                         right: 0,
                         backgroundColor: "#ffffff",
                         zIndex: 1,
-                        fontWeight: "500",
                         borderRight: "2px solid rgba(224, 224, 224, 1)",
                         boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)",
                         fontWeight: "bold",
@@ -697,7 +695,7 @@ const TrabajoCotidiano = () => {
                     >
                       {al.promedio.toFixed(2)}
                     </TableCell>}
-                  {user.nombre_rol === "Director" ? (
+                  {isDirector ? (
                     <TableCell align="center">
                       {ContadorCalificacionesPorAlumno[al.alumno_matricula] ||
                         0}{" "}

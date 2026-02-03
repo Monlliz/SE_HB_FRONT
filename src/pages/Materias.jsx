@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+//import { useNavigate } from "react-router-dom";
 import {
   Box,
   Table,
@@ -21,10 +21,7 @@ import {
 } from "@mui/material";
 
 // Icons
-import { BookPlus, BookOpen } from 'lucide-react';
-import EditIcon from '@mui/icons-material/ModeEditOutlined';
-import DeleteIcon from '@mui/icons-material/DeleteForeverOutlined';
-import AddIcon from '@mui/icons-material/AddOutlined';
+import { BookPlus, BookOpen,Trash2,Plus,Pencil} from 'lucide-react';
 
 // Context y servicios
 import { useAuth } from "../context/AuthContext.jsx";
@@ -36,14 +33,14 @@ import { camposNuevaMateria, camposEditMateria, headCells } from "../config/camp
 
 
 export default function Materias() {
-  const navigate = useNavigate();
+ //const navigate = useNavigate();
   const [materiasData, setMateriasData] = useState([]);
   const [search, setSearch] = useState("");
 
   // 1. ESTADO NUEVO: Para guardar el ID (clave) de la fila seleccionada
   const [selectedClave, setSelectedClave] = useState(null);
 
-  const { token } = useAuth();
+  const { token, isDirector } = useAuth();
   //-----------Busqueda de filtros avanzada------------------//
   // Nuevo estado para los filtros avanzados
   const [advancedFilters, setAdvancedFilters] = useState({
@@ -274,34 +271,35 @@ export default function Materias() {
           >
             Materias
           </Typography>
-
+          {isDirector && (
           <Button
             variant="text"
             color="primary"
-            startIcon={<AddIcon />}
+            startIcon={<Plus size={20} />}
             onClick={handleOpenCreate}
           >
             Agregar
-          </Button>
+          </Button>)}
+          {isDirector &&(
           <Button
             variant="text"
-            startIcon={<EditIcon />}
+            startIcon={<Pencil size={18} />}
             sx={{ color: "#0254acff" }}
             disabled={!selectedClave}
             onClick={handleOpenEdit}
           >
             Editar
-          </Button>
-
+          </Button>)}
+            {isDirector &&(
           <Button
             variant="text"
             color="error"
-            startIcon={<DeleteIcon />}
+            startIcon={<Trash2 size={18} />}
             disabled={!selectedClave}
             onClick={onClickDelete}
           >
             Eliminar
-          </Button>
+          </Button>)}
           {/*  <Button
             variant="contained"
             color="primary"

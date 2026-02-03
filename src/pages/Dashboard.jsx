@@ -139,7 +139,7 @@ function Dashboard() {
   //Estado para fechas fetch
   const [fechas, setFechas] = useState([]);
   const [loading, setLoading] = useState(false);
-  const { user, token } = useAuth();
+  const { user, token, isDocente, isPrefecto } = useAuth();
 
   // --- 2. ESTADO PARA MATERIAS (Solo para docentes) ---
   const [materias, setMaterias] = useState([]);
@@ -207,15 +207,10 @@ function Dashboard() {
   const [modalEvents, setModalEvents] = useState([]);
   const [modalDate, setModalDate] = useState(null);
 
-  //------------------------------------------------------------------------
-  //Verificar que es docente
-  //console.log(user);
-  const esDocente = user.nombre_rol === "Docente";
-  const esPrefecto = user.nombre_rol === "Prefecto";
-  //------------------------------------------------------------------------
+  // ======================================================================
   //Fetch de materias si es docente
   const fetchMaterias = useCallback(async () => {
-    if (!esDocente || !token) return;
+    if (!isDocente || !token) return;
     try {
       if (!token) {
         throw new Error("Autorización rechazada. No se encontró el token.");
@@ -233,9 +228,9 @@ function Dashboard() {
   //GRUPOS PREFECTO
   //---------------------------------------------------------------------
   const [gruposPrefecto, setGruposPrefecto] = useState([]);
-const fetchGruposPrefecto = useCallback(async () => {
+  const fetchGruposPrefecto = useCallback(async () => {
     // Si no es prefecto o no hay token, no hacemos nada
-    if (!esPrefecto || !token) return;
+    if (!isPrefecto || !token) return;
 
     setLoading(true);
     try {
@@ -257,7 +252,7 @@ const fetchGruposPrefecto = useCallback(async () => {
         const numeroSemestre = parseInt(grupo.idgrupo.charAt(0));
 
         // Si por alguna razón el grupo no empieza con número (ej: "ADM"), lo filtramos o lo dejas (depende de ti)
-        if (isNaN(numeroSemestre)) return false; 
+        if (isNaN(numeroSemestre)) return false;
 
         // C. Lógica de Par/Impar
         const esSemestrePar = numeroSemestre % 2 === 0;
@@ -286,8 +281,8 @@ const fetchGruposPrefecto = useCallback(async () => {
   // ======================================================================
   useEffect(() => {
     fetchFechas();
-    esDocente ? fetchMaterias() : null;
-    esPrefecto ? fetchGruposPrefecto() : null;
+    isDocente ? fetchMaterias() : null;
+    isPrefecto ? fetchGruposPrefecto() : null;
   }, [fetchFechas]);
 
   // ======================================================================
@@ -550,55 +545,74 @@ const fetchGruposPrefecto = useCallback(async () => {
                 "-ms-overflow-style": "none",
               }}
             >
-              {appLinks.map((link) => (
-                <Grid item key={link.label}>
-                  <Card
-                    sx={{
-                      borderRadius: "1rem",
-                      backgroundColor: "secondary.light",
-                    }}
-                  >
-                    <CardActionArea
-                      component={Link}
-                      to={link.href}
-                      sx={{ padding: "0.8rem" }}
-                    >
-                      <CardContent
-                        sx={{ display: "flex", alignItems: "center", gap: 3 }}
+              {appLinks
+                .filter((link) => {
+                  // 1. Ocultar SIEMPRE la etiqueta "INICIO"
+                  if (link.label === "INICIO") return false;
+
+                  // 2. Ocultar "GRUPOS" solo si es docente
+                  if (isDocente && link.label === "GRUPOS") return false;
+
+                  // Mostrar el resto
+                  return true;
+                })
+                .map((link) => {
+                  // Definimos el componente del icono antes del return
+                  const IconComponent = link.icon;
+
+                  return (
+                    <Grid item key={link.label}>
+                      <Card
+                        sx={{
+                          borderRadius: "1rem",
+                          backgroundColor: "secondary.light",
+                        }}
                       >
-                        <Box sx={{ color: "primary.main" }}>{link.icon}</Box>
-                        <Typography
-                          variant="h1"
-                          fontSize="1.2rem"
-                          fontWeight="400"
-                          color="primary.main"
+                        <CardActionArea
+                          component={Link}
+                          to={link.href}
+                          sx={{ padding: "0.8rem" }}
                         >
-                          {capitalizarPrimeraLetra(link.label)}
-                        </Typography>
-                      </CardContent>
-                    </CardActionArea>
-                  </Card>
-                </Grid>
-              ))}
+                          <CardContent
+                            sx={{ display: "flex", alignItems: "center", gap: 3 }}
+                          >
+                            <Box sx={{ color: "primary.main" }}>
+                              {/* Renderizamos el icono como componente con tamaño */}
+                              <IconComponent size={50} />
+                            </Box>
+                            <Typography
+                              variant="h1"
+                              fontSize="1.2rem"
+                              fontWeight="400"
+                              color="primary.main"
+                            >
+                              {capitalizarPrimeraLetra(link.label)}
+                            </Typography>
+                          </CardContent>
+                        </CardActionArea>
+                      </Card>
+                    </Grid>
+                  );
+                })}
             </Grid>
           </Grid>
-          {esDocente && (
+          {isDocente && (
             <Grid item xs={12}>
               {/* Pasamos el array de materias al componente */}
               <MisMaterias items={materias} />
             </Grid>
           )}
           {/* CASO PREFECTO  */}
-          {esPrefecto && (
+          {isPrefecto && (
             <Grid item xs={12}>
-              <MisMaterias 
-                  items={gruposPrefecto} // Le pasamos los grupos filtrados
-                  role="Prefecto" 
+              <MisMaterias
+                items={gruposPrefecto} // Le pasamos los grupos filtrados
+                role="Prefecto"
               />
             </Grid>
           )}
         </Grid>
-        
+
       </Box>
       <EventDetailsDialog
         open={isModalOpen}
