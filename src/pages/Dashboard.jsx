@@ -7,6 +7,7 @@ import { capitalizarPrimeraLetra, getFirstText } from '../utils/fornatters.js';
 //Mis materias
 import MisMaterias from "../components/MisMaterias.jsx";
 import { fetchDocenteMaterias } from "../services/docenteService.js";
+import { fetchGrupoGet } from "../services/grupoService.js";
 //Notificaciones--Eventos
 import { useNotification } from "../components/modals/NotificationModal.jsx";
 import ConfirmModal from "../components/modals/ConfirmModal.jsx";
@@ -210,10 +211,11 @@ function Dashboard() {
   //Verificar que es docente
   //console.log(user);
   const esDocente = user.nombre_rol === "Docente";
-
+  const esPrefecto = user.nombre_rol === "Prefecto";
+  //------------------------------------------------------------------------
   //Fetch de materias si es docente
   const fetchMaterias = useCallback(async () => {
-    if (!user.iddocente) return;
+    if (!esDocente || !token) return;
     try {
       if (!token) {
         throw new Error("Autorización rechazada. No se encontró el token.");
@@ -227,10 +229,65 @@ function Dashboard() {
       setMaterias([]); // En caso de error, asegurar que materias es un array vacío
     }
   }, [user.iddocente]);
+  //-----------------------------------------------------------------------
+  //GRUPOS PREFECTO
+  //---------------------------------------------------------------------
+  const [gruposPrefecto, setGruposPrefecto] = useState([]);
+const fetchGruposPrefecto = useCallback(async () => {
+    // Si no es prefecto o no hay token, no hacemos nada
+    if (!esPrefecto || !token) return;
+
+    setLoading(true);
+    try {
+      // 1. Solo llamamos a Grupos
+      const { grupos } = await fetchGrupoGet(token);
+
+      // 2. Definir si estamos en periodo PAR (Enero-Julio) o IMPAR (Agosto-Diciembre)
+      const mesActual = new Date().getMonth(); // 0 = Enero, 6 = Julio
+      const esPeriodoPar = mesActual <= 6; // true si es Ene-Jul
+
+      const idGrupoOcultar = ["EG", "BI"];
+
+      const gruposFiltrados = grupos.filter((grupo) => {
+        // A. Ignorar los grupos prohibidos
+        if (idGrupoOcultar.includes(grupo.idgrupo)) return false;
+
+        // B. Obtener el número del semestre (ej: de "3B" saca el 3)
+        // Asumimos que el primer caracter es el número
+        const numeroSemestre = parseInt(grupo.idgrupo.charAt(0));
+
+        // Si por alguna razón el grupo no empieza con número (ej: "ADM"), lo filtramos o lo dejas (depende de ti)
+        if (isNaN(numeroSemestre)) return false; 
+
+        // C. Lógica de Par/Impar
+        const esSemestrePar = numeroSemestre % 2 === 0;
+
+        // Si es periodo Par, queremos semestres Pares.
+        // Si es periodo Impar (else), queremos semestres Impares.
+        return esPeriodoPar ? esSemestrePar : !esSemestrePar;
+      });
+
+      // 3. Formatear para que MisMaterias lo entienda
+      // MisMaterias espera objetos con 'nombre' o 'asignatura' para el texto grande
+      const gruposMapeados = gruposFiltrados.map(g => ({
+        id: g.idgrupo,
+        nombre: g.idgrupo, // Para que salga "3B" en grande
+        //grupo: `Semestre ${g.grado}`, // Texto pequeño (opcional)
+        // ... otros datos que necesites
+      }));
+
+      setGruposPrefecto(gruposMapeados);
+    } catch (error) {
+      console.error("Error cargando grupos:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, user.nombre_rol]);
   // ======================================================================
   useEffect(() => {
     fetchFechas();
     esDocente ? fetchMaterias() : null;
+    esPrefecto ? fetchGruposPrefecto() : null;
   }, [fetchFechas]);
 
   // ======================================================================
@@ -528,10 +585,20 @@ function Dashboard() {
           {esDocente && (
             <Grid item xs={12}>
               {/* Pasamos el array de materias al componente */}
-              <MisMaterias materias={materias} />
+              <MisMaterias items={materias} />
+            </Grid>
+          )}
+          {/* CASO PREFECTO  */}
+          {esPrefecto && (
+            <Grid item xs={12}>
+              <MisMaterias 
+                  items={gruposPrefecto} // Le pasamos los grupos filtrados
+                  role="Prefecto" 
+              />
             </Grid>
           )}
         </Grid>
+        
       </Box>
       <EventDetailsDialog
         open={isModalOpen}

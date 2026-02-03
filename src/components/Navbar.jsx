@@ -41,7 +41,6 @@ export default function Navbar({ links = [] }) {
   const navigate = useNavigate();
 
   const { logout, user } = useAuth();
-  console.log("Usuario en Navbar:", user);
   const isAdminOrDirector =
     user && (user.nombre_rol === "Director" || user.nombre_rol === "Administrador");
   const theme = useTheme();
@@ -94,7 +93,7 @@ export default function Navbar({ links = [] }) {
   return (
     <>
       <AppBar
-        position="fixed"
+        position="absolute"
         sx={{
           backgroundColor: "#f4fdffff",
           width: { xs: "100%", md: "88%" },
