@@ -45,10 +45,11 @@ import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { ClipboardPaste } from "lucide-react";
+import { Spa } from "@mui/icons-material";
 const currentYear = new Date().getFullYear();
 
 const TrabajoCotidiano = () => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const location = useLocation();
 
   // 1. DESESTRUCTURACIÓN INTELIGENTE
@@ -105,7 +106,9 @@ const TrabajoCotidiano = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const { exportar } = useExport();
-
+  const [totalRubros, setTotalRubros] = useState(0);
+  const [ContadorCalificacionesPorAlumno, setContadorCalificacionesPorAlumno] =
+    useState({});
   // -----------------------------------------------------------------------
   // CARGA 1: RÚBROS (CONFIGURACIÓN)
   // -----------------------------------------------------------------------
@@ -135,6 +138,7 @@ const TrabajoCotidiano = () => {
       });
 
       setRubros(rubrosOrdenados);
+      setTotalRubros(rubrosOrdenados.length);
     } catch (err) {
       setErrorRubros(err.message);
     } finally {
@@ -253,6 +257,15 @@ const TrabajoCotidiano = () => {
 
         setCalificaciones(calificacionesTransformadas);
         setOriginalCalificaciones(calificacionesTransformadas);
+        const nuevosContadores = {};
+
+        data.forEach((calif) => {
+          const key = calif.alumno_matricula;
+          if (calif.calificacion > 0) {
+            nuevosContadores[key] = (nuevosContadores[key] || 0) + 1;
+          }
+        });
+        setContadorCalificacionesPorAlumno(nuevosContadores);
       } catch (err) {
         setErrorCalificaciones("Error cargando notas: " + err.message);
       } finally {
@@ -414,7 +427,7 @@ const TrabajoCotidiano = () => {
         "@media (orientation: portrait)": {
           marginTop: 10,
         },
-        height: "calc(100vh - 20vh)",
+        height: "calc(100vh )",
         display: "flex",
         flexDirection: "column",
       }}
@@ -523,7 +536,7 @@ const TrabajoCotidiano = () => {
       )}
 
       {/* Tabla */}
-      <TableContainer component={Paper} sx={{ flexGrow: 1 }}>
+      <TableContainer component={Paper} sx={{ flexGrow: 1, overflow: "auto" }}>
         <Table stickyHeader>
           <TableHead>
             <TableRow>
@@ -557,9 +570,32 @@ const TrabajoCotidiano = () => {
                   </Typography>
                 </TableCell>
               ))}
-              <TableCell align="center" sx={{ fontWeight: "bold" }}>
-                Promedio
-              </TableCell>
+              {user.nombre_rol === "Director" ? (
+                <TableCell align="center" sx={{ fontWeight: "bold" }}>
+                  Promedio
+                </TableCell>
+              ) : (
+                <TableCell
+                  align="center"
+                  sx={{
+                    right: 0,
+                    position: "sticky",
+                    backgroundColor: "#f9f9f9",
+                    zIndex: 110,
+                    fontWeight: "bold",
+                    borderLeft: "2px solid rgba(224, 224, 224, 1)",
+                    boxShadow: "-2px 0px 5px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  Promedio
+                </TableCell>
+              )}
+              {/*Modificar para que sea para el director */}
+              {user.nombre_rol === "Director" ? (
+                <TableCell align="center" sx={{ fontWeight: "bold" }}>
+                  Total Act
+                </TableCell>
+              ) : null}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -628,15 +664,46 @@ const TrabajoCotidiano = () => {
                     </TableCell>
                   ))}
 
-                  <TableCell
-                    align="center"
-                    sx={{
-                      fontWeight: "bold",
-                      color: al.promedio >= 6 ? "success.main" : "error.main",
-                    }}
-                  >
-                    {al.promedio.toFixed(2)}
-                  </TableCell>
+                  {user.nombre_rol === "Docente" ? (
+                    <TableCell
+                      align="center"
+                      sx={{
+                        position: "sticky",
+                        right: 0,
+                        backgroundColor: "#ffffff",
+                        zIndex: 1,
+                        fontWeight: "500",
+                        borderRight: "2px solid rgba(224, 224, 224, 1)",
+                        boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)",
+                        fontWeight: "bold",
+                        color: al.promedio >= 6 ? "success.main" : "error.main",
+                      }}
+                    >
+                      {al.promedio.toFixed(2)}
+                    </TableCell>
+                  ) : <TableCell
+                      align="center"
+                      sx={{
+                        position: "sticky",
+                        right: 0,
+                        backgroundColor: "#ffffff",
+                        zIndex: 1,
+                        fontWeight: "500",
+                        borderRight: "2px solid rgba(224, 224, 224, 1)",
+                        boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)",
+                        fontWeight: "bold",
+                        color: al.promedio >= 6 ? "success.main" : "error.main",
+                      }}
+                    >
+                      {al.promedio.toFixed(2)}
+                    </TableCell>}
+                  {user.nombre_rol === "Director" ? (
+                    <TableCell align="center">
+                      {ContadorCalificacionesPorAlumno[al.alumno_matricula] ||
+                        0}{" "}
+                      / {totalRubros}
+                    </TableCell>
+                  ) : null}
                 </TableRow>
               ))
             )}
