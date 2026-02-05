@@ -36,6 +36,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
+import { is } from "date-fns/locale";
 
 
 //Funcion principal (El id es del docente)
@@ -335,9 +336,8 @@ export default function UserDocente({ id }) {
         <Box
           sx={{
             display: "flex",
-            height: "40%",
+            height: isDirector ? "40%" : "25%",
             width: "100%",
-
             borderRadius: 2,
             p: 2,
             alignItems: "center",
@@ -348,13 +348,15 @@ export default function UserDocente({ id }) {
           <Typography variant="h5" fontWeight="bold">
             Materias
           </Typography>
+         { isDirector && (
           <Button
-            variant="contained"
+            variant="text"
             color="primary"
+            startIcon={<Plus size={16} />}
             onClick={() => setModalMateriaOpen(true)}
           >
             Agregar
-          </Button>
+          </Button>)}
 
           <NuevaMateriaDocente
             open={modalMateriaOpen}
@@ -362,15 +364,17 @@ export default function UserDocente({ id }) {
             onAccept={handleAcceptMateria}
             docenteId={id}
           />
-
+          {isDirector && (
           <Button
-            variant="outlined"
+            variant="text"
             color="error"
+            startIcon={<Trash2 size={20} />}
             disabled={!selectedMateriaClave}
             onClick={() => setModalBorrarMateriaOpen(true)}
           >
             Eliminar
-          </Button>
+          </Button>)}
+
           <BorrarMateria
             open={modalBorrarMateriaOpen}
             onClose={() => setModalBorrarMateriaOpen(false)}
@@ -395,7 +399,7 @@ export default function UserDocente({ id }) {
         <Box
           sx={{
             display: "flex",
-            height: "60%",
+            height: "100%",
             width: "100%",
 
             flexDirection: "column",
