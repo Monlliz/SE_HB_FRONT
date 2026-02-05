@@ -14,7 +14,8 @@ import ListaAsistenciaMateriaPerfil from "./pages/listaAsistencia/ListaAsistenci
 import Rubros from "./pages/rubros/Rubros.jsx";
 import RubrosPerfil from "./pages/rubros/RubrosPerfil.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
-
+import ResumenTC from "./pages/ResumenTC.jsx";
+import ReportePDFTC from "./pages/ReportePDFTc.jsx";
 //Modifque este
 import TrabajoCotidiano from "./pages/trabajoCotidiano/TrabajoCotidinanoU.jsx";
 import TrabajoCotidianoP from "./pages/trabajoCotidiano/TrabajoCotidianoPerfil.jsx";
@@ -39,6 +40,8 @@ function App() {
         <Route path="/trabajoperfil" element={<TrabajoCotidianoP />} />
         <Route path="/listaAsistencia" element={<ListaAsistencia />} />
         <Route path="/gestiondatos" element={<GestionData />} />
+        <Route path="/resumenTC" element={<ResumenTC />} />
+        <Route path="/reporte-tc" element={<ReportePDFTC />} />
         <Route
           path="/listaAsistenciamateria"
           element={<ListaAsistenciaMateria />}

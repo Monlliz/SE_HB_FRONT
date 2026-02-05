@@ -4,7 +4,6 @@
 import { useState, useEffect, useCallback } from "react";
 // 1. IMPORTANTE: Importamos useSearchParams
 import { useSearchParams } from "react-router-dom";
-
 import MateriasManager from "../components/users/UserGrupoU.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { fetchGrupoGet, fetchPerfilGet } from "../services/grupoService.js";

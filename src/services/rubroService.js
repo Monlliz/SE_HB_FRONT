@@ -219,6 +219,46 @@ export const copyRubrosTC_service = async (datos, token) => {
       errorData.message || "Error al copiar las actividades de TC", // <--- Texto corregido
     );
   }
+  return response.json();
+};
 
+//Conteo de datos
+export const conteoEntregasTc_service = async (datos, token) => {
+
+  const response = await fetch(`${apiUrl}/rubro/conteo-entregas-tc`, {
+    method: "POST",
+    headers: {
+      "x-auth-token": token,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(datos),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(
+      errorData.message || "Error al contar las entregas de TC",
+    );
+  }
+  return response.json();
+};
+
+export const conteoTrabajosTc_service = async (datos, token) => {
+
+  const response = await fetch(`${apiUrl}/rubro/conteoTc`, {
+    method: "POST",
+    headers: {
+      "x-auth-token": token,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(datos),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(
+      errorData.message || "Error al contar los trabajos de TC",
+    );
+  }
   return response.json();
 };

@@ -2,7 +2,10 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 // --- SERVICIOS ---
-import { fetchMateriasPerfil, fetchMateriasGrupo } from "../../services/materiasService.js";
+import {
+  fetchMateriasPerfil,
+  fetchMateriasGrupo,
+} from "../../services/materiasService.js";
 
 // --- MODALES (Importamos todos) ---
 // Grupo
@@ -19,8 +22,7 @@ import ChecklistIcon from "@mui/icons-material/Checklist";
 import GroupIcon from "@mui/icons-material/Group";
 import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 
-import { Trash2, Plus } from "lucide-react";
-
+import { Trash2, Plus, FileUser } from "lucide-react";
 
 import {
   Box,
@@ -42,17 +44,17 @@ import {
  */
 export default function MateriasManager({ id, mode = "grupo" }) {
   const navigate = useNavigate();
-  
+
   // -- ESTADOS --
   const [materias, setMaterias] = useState([]);
   const [selectedMateriaClave, setSelectedMateriaClave] = useState(null);
-  const [selectedMateriaNombre, setSelectedMateriaNombre] = useState(null); 
-  
+  const [selectedMateriaNombre, setSelectedMateriaNombre] = useState(null);
+
   // Modales
   const [modalMateriaOpen, setModalMateriaOpen] = useState(false);
   const [modalBorrarMateriaOpen, setModalBorrarMateriaOpen] = useState(false);
   const [modalGrupoCambio, setModalGrupoCambio] = useState(false); // Solo para modo 'grupo'
-  
+
   const [loading, setLoading] = useState(true);
 
   // -- LOGICA DE ID (Parseo para Perfil) --
@@ -69,7 +71,7 @@ export default function MateriasManager({ id, mode = "grupo" }) {
   // Construye el objeto que recibirá el componente unificado
   const getNavigationPayload = (materiaClave = selectedMateriaClave) => {
     const materia = materias.find((m) => m.clave === materiaClave);
-    
+
     // Base común
     const payload = {
       grupoId: id, // ID original (usado por fetchs generales)
@@ -99,11 +101,19 @@ export default function MateriasManager({ id, mode = "grupo" }) {
       },
     });
   };
-
+  const handleNavigateToResumenTc = () => {
+    // Navegamos a la ruta unificada SIN materiaClave -> Activa Modo General
+    navigate("/resumenTC", {
+      state: {
+        grupoId: id,
+        year: new Date().getFullYear(),
+      },
+    });
+  };
   // 2. Lista de Asistencia por Materia (UNIFICADO AQUÍ)
   const handleNavigateToListaMateria = () => {
     if (!selectedMateriaClave) return;
-    
+
     // CAMBIO IMPORTANTE:
     // Antes separábamos rutas (/listaAsistenciamateria vs ...Perfil).
     // Ahora apuntamos a la misma ruta unificada.
@@ -114,7 +124,10 @@ export default function MateriasManager({ id, mode = "grupo" }) {
   // 3. Actividades (Ya estaba unificado a /trabajo)
   const handleNavigateToActividades = () => {
     if (!selectedMateriaClave) return;
-    console.log(`Navegando modo ${mode.toUpperCase()}:`, getNavigationPayload());
+    console.log(
+      `Navegando modo ${mode.toUpperCase()}:`,
+      getNavigationPayload(),
+    );
     // Recuerda que tu componente de TrabajoCotidiano también debe ser el unificado
     navigate("/trabajo", { state: getNavigationPayload() });
   };
@@ -139,7 +152,7 @@ export default function MateriasManager({ id, mode = "grupo" }) {
 
       setSelectedMateriaClave(null);
       setSelectedMateriaNombre(null);
-      
+
       const anioActual = new Date().getFullYear();
       let response;
 
@@ -150,7 +163,7 @@ export default function MateriasManager({ id, mode = "grupo" }) {
         response = await fetchMateriasGrupo(token, id, anioActual);
       }
 
-      setMaterias(response.materias?.materias || []); 
+      setMaterias(response.materias?.materias || []);
     } catch (err) {
       console.error(err);
       setMaterias([]);
@@ -177,10 +190,25 @@ export default function MateriasManager({ id, mode = "grupo" }) {
   if (loading) return <Typography>Cargando materias...</Typography>;
 
   return (
-    <Box sx={{ display: "flex", height: "100%", width: "100%", flexDirection: "column" }}>
-      
+    <Box
+      sx={{
+        display: "flex",
+        height: "100%",
+        width: "100%",
+        flexDirection: "column",
+      }}
+    >
       {/* HEADER TÍTULO */}
-      <Box sx={{ height: "10%", display: "flex", p: 2, alignItems: "center", gap: 2, flexShrink: 0 }}>
+      <Box
+        sx={{
+          height: "10%",
+          display: "flex",
+          p: 2,
+          alignItems: "center",
+          gap: 2,
+          flexShrink: 0,
+        }}
+      >
         <Typography variant="h5" fontWeight="bold">
           {mode === "perfil" ? "Perfil" : "Grupo"} - {id}
         </Typography>
@@ -189,12 +217,30 @@ export default function MateriasManager({ id, mode = "grupo" }) {
         {mode === "grupo" && (
           <>
             <Tooltip title="Lista general del grupo">
-              <IconButton aria-label="lista" onClick={handleNavigateToListaGeneral}>
+              <IconButton
+                aria-label="lista"
+                onClick={handleNavigateToListaGeneral}
+              >
                 <ListAltIcon />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Cambio de alumnos del grupo" enterTouchDelay={0} leaveTouchDelay={3000}>
-              <IconButton aria-label="grupo" onClick={() => setModalGrupoCambio(true)}>
+            <Tooltip title="Resumen de TC">
+              <IconButton
+                aria-label="Resumen Tc"
+                onClick={handleNavigateToResumenTc}
+              >
+                <FileUser />
+              </IconButton>
+            </Tooltip>
+            <Tooltip
+              title="Cambio de alumnos del grupo"
+              enterTouchDelay={0}
+              leaveTouchDelay={3000}
+            >
+              <IconButton
+                aria-label="grupo"
+                onClick={() => setModalGrupoCambio(true)}
+              >
                 <GroupIcon />
               </IconButton>
             </Tooltip>
@@ -203,15 +249,37 @@ export default function MateriasManager({ id, mode = "grupo" }) {
       </Box>
 
       {/* TOOLBAR MATERIAS */}
-      <Box sx={{ height: "10%", display: "flex", p: 2, alignItems: "center", gap: 2, flexShrink: 0 }}>
-        <Typography variant="h5" fontWeight="bold">Materias</Typography>
-        
-        <Tooltip title={mode === "perfil" ? "Agregar materia al perfil" : "Agregar materias al grupo"}>
-          <Button variant="text" startIcon={<Plus size={20} />} color="primary" onClick={() => setModalMateriaOpen(true)}>
+      <Box
+        sx={{
+          height: "10%",
+          display: "flex",
+          p: 2,
+          alignItems: "center",
+          gap: 2,
+          flexShrink: 0,
+        }}
+      >
+        <Typography variant="h5" fontWeight="bold">
+          Materias
+        </Typography>
+
+        <Tooltip
+          title={
+            mode === "perfil"
+              ? "Agregar materia al perfil"
+              : "Agregar materias al grupo"
+          }
+        >
+          <Button
+            variant="text"
+            startIcon={<Plus size={20} />}
+            color="primary"
+            onClick={() => setModalMateriaOpen(true)}
+          >
             Agregar
           </Button>
         </Tooltip>
-        
+
         <Tooltip title="Eliminar materia">
           <Button
             variant="text"
@@ -225,8 +293,11 @@ export default function MateriasManager({ id, mode = "grupo" }) {
         </Tooltip>
 
         <Tooltip title="Lista de Asistencia por Materia">
-          <span> 
-            <IconButton disabled={!selectedMateriaClave} onClick={handleNavigateToListaMateria}>
+          <span>
+            <IconButton
+              disabled={!selectedMateriaClave}
+              onClick={handleNavigateToListaMateria}
+            >
               <ListAltIcon />
             </IconButton>
           </span>
@@ -234,7 +305,10 @@ export default function MateriasManager({ id, mode = "grupo" }) {
 
         <Tooltip title="Actividades Cotidianas">
           <span>
-            <IconButton disabled={!selectedMateriaClave} onClick={handleNavigateToActividades}>
+            <IconButton
+              disabled={!selectedMateriaClave}
+              onClick={handleNavigateToActividades}
+            >
               <AutoStoriesIcon />
             </IconButton>
           </span>
@@ -242,7 +316,10 @@ export default function MateriasManager({ id, mode = "grupo" }) {
 
         <Tooltip title="Calificaciones Parciales">
           <span>
-            <IconButton disabled={!selectedMateriaClave} onClick={handleNavigateToRubros}>
+            <IconButton
+              disabled={!selectedMateriaClave}
+              onClick={handleNavigateToRubros}
+            >
               <ChecklistIcon />
             </IconButton>
           </span>
@@ -287,10 +364,10 @@ export default function MateriasManager({ id, mode = "grupo" }) {
       </Box>
 
       {/* --- RENDERIZADO CONDICIONAL DE MODALES --- */}
-      
+
       {/* Modales de AGREGAR */}
-      {modalMateriaOpen && (
-        mode === "perfil" ? (
+      {modalMateriaOpen &&
+        (mode === "perfil" ? (
           <NuevaMateriaPerfil
             open={modalMateriaOpen}
             onClose={() => setModalMateriaOpen(false)}
@@ -304,12 +381,11 @@ export default function MateriasManager({ id, mode = "grupo" }) {
             onAccept={handleAcceptMateria}
             grupoId={id}
           />
-        )
-      )}
+        ))}
 
       {/* Modales de BORRAR */}
-      {modalBorrarMateriaOpen && (
-        mode === "perfil" ? (
+      {modalBorrarMateriaOpen &&
+        (mode === "perfil" ? (
           <BorrarMateriaPerfil
             open={modalBorrarMateriaOpen}
             onClose={() => setModalBorrarMateriaOpen(false)}
@@ -327,8 +403,7 @@ export default function MateriasManager({ id, mode = "grupo" }) {
             clave={selectedMateriaClave}
             nombre={selectedMateriaNombre || ""}
           />
-        )
-      )}
+        ))}
 
       {/* Modal Extra de GRUPO */}
       {mode === "grupo" && (
