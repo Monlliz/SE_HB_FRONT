@@ -127,6 +127,7 @@ const ResumenTc = () => {
       }
     });
 
+
     navigate("/reporte-tc", {
       state: {
         estudiante: {
@@ -224,12 +225,12 @@ const ResumenTc = () => {
                 </TableCell>
 
                 {/* Columna Acciones (PDF) - NUEVA */}
-                {/*  <TableCell
+                <TableCell
                   align="center"
                   sx={{ fontWeight: "bold", bgcolor: "#f5f5f5", width: 50 }}
                 >
                   Reporte
-                </TableCell>*/}
+                </TableCell>
 
                 {/* Columnas Dinámicas */}
                 {materias.map((m) => (
@@ -274,7 +275,8 @@ const ResumenTc = () => {
                     {`${estudiante.apellidop} ${estudiante.apellidom} ${estudiante.nombres}`}
                   </TableCell>
 
-                  {/* <TableCell align="center">
+
+                  <TableCell align="center">
                     <Tooltip title="Generar Reporte PDF">
                       <IconButton
                         color="primary"
@@ -284,7 +286,7 @@ const ResumenTc = () => {
                         <PrintIcon />
                       </IconButton>
                     </Tooltip>
-                  </TableCell>*/}
+                  </TableCell>
 
                   {/* Celdas de Datos */}
                   {materias.map((m) => {
