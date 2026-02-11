@@ -585,7 +585,7 @@ export default function GestionData() {
         <Typography variant="body2" color="text.secondary">
           Solo formato CSV
         </Typography>
-        <Tooltip title="Las Fechas deben de ir en formato de Texto">
+        <Tooltip title="Las Fechas deben de ir en formato de AAAA-MM-DD">
           <HelpOutlineIcon
             sx={{ fontSize: 20, mb: 2, color: "primary.main" }}
           />
