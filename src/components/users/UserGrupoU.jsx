@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 // --- SERVICIOS ---
 import {
@@ -44,6 +45,7 @@ import {
  */
 export default function MateriasManager({ id, mode = "grupo" }) {
   const navigate = useNavigate();
+const { token, isDirector, isPrefecto } = useAuth();
 
   // -- ESTADOS --
   const [materias, setMaterias] = useState([]);
@@ -147,7 +149,6 @@ export default function MateriasManager({ id, mode = "grupo" }) {
     if (!id) return;
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
       if (!token) throw new Error("No token found");
 
       setSelectedMateriaClave(null);

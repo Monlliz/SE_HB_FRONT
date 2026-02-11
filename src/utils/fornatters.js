@@ -3,14 +3,16 @@ export function capitalizarPrimeraLetra(cadena) {
   return cadena[0].toUpperCase() + cadena.slice(1).toLowerCase();
 }
 
-export function obtenerFechaFormateada() {
+export function obtenerFechaFormateada(mesyear = null) {
   const fechaActual = new Date();
-  const opciones = {
+  const completa = {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   };
+  const opciones = mesyear ? { month: 'long', year: 'numeric' } : completa;
+  
   const fechaFormateada = fechaActual.toLocaleDateString('es-MX', opciones);
   return capitalizarPrimeraLetra(fechaFormateada);
 }

@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
-
+import {obtenerFechaFormateada} from "../../utils/fornatters.js";
 // UI Components
 import {
   Table,
@@ -26,16 +26,19 @@ import {
   Select,
   MenuItem,
   Stack,
-  Menu, // Nuevo
-  ListItemIcon, // Nuevo
-  ListItemText // Nuevo
+  Menu, 
+  ListItemIcon, 
+  ListItemText 
 } from "@mui/material";
 
 // Icons
 import AddIcon from "@mui/icons-material/Add";
+//listas de asistencia
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
-import DescriptionIcon from "@mui/icons-material/Description";
+import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
+import TimelapseIcon from '@mui/icons-material/Timelapse';
+//--------------------------------------------------------------------------
 import InfoIcon from "@mui/icons-material/Info";
 import FileDownloadIcon from "@mui/icons-material/FileDownload"; // Nuevo
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf"; // Nuevo
@@ -75,13 +78,13 @@ const IconoEstatus = ({ estatus }) => {
     case "demorado":
       return (
         <Tooltip title="Demora">
-          <DescriptionIcon color="warning" />
+          <AccessTimeFilledIcon color="warning" />
         </Tooltip>
       );
     case "antes":
       return (
         <Tooltip title="Se retiró antes">
-          <DescriptionIcon color="info" />
+          <TimelapseIcon color="info" />
         </Tooltip>
       );
     default:
@@ -336,7 +339,7 @@ const ListaAsistencia = () => {
           <Typography variant="h5">{getTitulo()}</Typography>
           <Typography variant="subtitle1" color="text.secondary">{getSubtitulo()}</Typography>
           <Typography variant="subtitle2" color="text.secondary">
-            Mostrando: {new Date(selectedYear, selectedMonth - 1).toLocaleString("es-MX", { month: "long", year: "numeric" })}
+            Mostrando: {obtenerFechaFormateada(true)} {/* Usamos la función formateadora para mostrar el mes y año, usando true como parametro, sin paraetros, la muestra completa */}
           </Typography>
         </Box>
 
