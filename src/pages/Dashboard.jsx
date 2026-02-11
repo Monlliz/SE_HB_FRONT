@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx"; // Contexto para la autenticación.
 import EventDetailsDialog from "../components/modals/Calendario/EventDetailsDialog.jsx";
 import EventTicker from "../components/EventTicker.jsx";
-import { capitalizarPrimeraLetra, getFirstText } from '../utils/fornatters.js';
+import { capitalizarPrimeraLetra, getFirstText,capitalizarCadaPalabra } from '../utils/fornatters.js';
 //Mis materias
 import MisMaterias from "../components/MisMaterias.jsx";
 import { fetchDocenteMaterias } from "../services/docenteService.js";
@@ -36,6 +36,8 @@ import { appLinks } from "../config/NavConfig.jsx";
 
 //Servicio de fechas
 import { fetchFechasGet, fetchDeleteEvent } from "../services/fechasService.js";
+import { fetchDocenteGet } from "../services/docenteService.js";
+
 
 //tipos de eventos
 import { EVENT_TYPES } from "../data/eventTypes.jsx";
@@ -134,23 +136,69 @@ function DiaConBadge(props) {
 
 //----------------------------------------------------------------
 function Dashboard() {
+
   // --- Añade el estado para la fecha seleccionada ---
   const [selectedDate, setSelectedDate] = useState(new Date());
-  //Estado para fechas fetch
+  //Estado para fechas fetch--------------------------
   const [fechas, setFechas] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [docentes, setDocentes] = useState([]);
+  //------------------------------------------------------
+  //Inicio de sesion y restriccion de cosas
   const { user, token, isDocente, isPrefecto } = useAuth();
 
   // --- 2. ESTADO PARA MATERIAS (Solo para docentes) ---
   const [materias, setMaterias] = useState([]);
-
-  const fetchFechas = useCallback(async () => {
+//-------------------------------------------------------
+  
+    // --- FUNCIÓN UNIFICADA PARA CARGAR DATOS ---
+  const fetchDatosDashboard = useCallback(async () => {
+    if (!token) return;
     setLoading(true);
     try {
-      const data = await fetchFechasGet(token);
-      setFechas(data.fechas);
+      // 1. Ejecutamos ambas peticiones en paralelo para optimizar tiempo
+      const [fechasData, docentesData] = await Promise.all([
+        fetchFechasGet(token),
+        fetchDocenteGet(token).catch(err => {
+            console.error("Error al cargar docentes:", err);
+            return { docentes: [] }; // Fallback para que no rompa si falla docentes
+        })
+      ]);
+
+      const eventosCalendario = fechasData.fechas || [];
+      const listaDocentes = docentesData.docentes || [];
+
+      // Guardamos la lista de docentes por si se usa en otro lado
+      const docentesOrdenados = [...listaDocentes].sort((a, b) => {
+         return a.apellidop.localeCompare(b.apellidop);
+      });
+      setDocentes(docentesOrdenados);
+
+      // 2. PROCESAR CUMPLEAÑOS
+      const birthdayEvents = listaDocentes
+        .filter(docente => docente.activo && docente.birthday) // Solo activos y con fecha
+        .map(docente => {
+            // Formato esperado: "2003-10-31T07:00:00.000Z"
+            // Usamos split para evitar problemas de zona horaria del navegador
+            const dateParts = docente.birthday.split('T')[0].split('-');
+            const mes = parseInt(dateParts[1], 10) - 1; // Mes en JS es 0-11
+            const dia = parseInt(dateParts[2], 10);
+
+            return {
+                id: `${docente._id}`,
+                mes: mes,
+                dia: dia,
+                // Sin yearf para que se repita anualmente
+                etiqueta: `🎉 Cumpleaños de  ${capitalizarCadaPalabra(docente.nombres +" "+ docente.apellidop)} 🎉`,
+                tipo: 'birthday'
+            };
+        });
+
+      // 3. COMBINAR EVENTOS
+      setFechas([...eventosCalendario, ...birthdayEvents]);
+
     } catch (error) {
-      console.error("Error al cargar fechas:", error);
+      console.error("Error general al cargar datos:", error);
     } finally {
       setLoading(false);
     }
@@ -180,7 +228,7 @@ function Dashboard() {
       await fetchDeleteEvent(token, idEvento);
 
       // 2. Actualizar estado GLOBAL (Calendario)
-      await fetchFechas();
+      await fetchDatosDashboard();
 
       // 3. Actualizar estado LOCAL (Lista dentro del EventDetailsDialog)
       setModalEvents((prevEvents) =>
@@ -280,10 +328,10 @@ function Dashboard() {
   }, [token, user.nombre_rol]);
   // ======================================================================
   useEffect(() => {
-    fetchFechas();
+    fetchDatosDashboard();
     isDocente ? fetchMaterias() : null;
     isPrefecto ? fetchGruposPrefecto() : null;
-  }, [fetchFechas]);
+  }, [fetchDatosDashboard]);
 
   // ======================================================================
   // 2. AÑADIR MANEJADORES PARA EL MODAL
@@ -417,7 +465,7 @@ function Dashboard() {
                 >
                   Calendario
                 </Typography>
-                <CalendarAddButton onEventAdded={fetchFechas} />
+                <CalendarAddButton onEventAdded={fetchDatosDashboard} />
               </Box>
 
               <DateCalendar

@@ -24,6 +24,10 @@ import {
 
 import { useAuth } from "../../context/AuthContext.jsx";
 import { camposNuevoDocente } from "../../config/camposDocente-Alumno.jsx"
+import { useNotification } from "../../components/modals/NotificationModal.jsx";
+
+//formatear fecha 
+import { formatearFechaISO,obtenerFechaYYYYMMDD } from "../../utils/fornatters.js";
 import {
   Box,
   Button,
@@ -51,6 +55,7 @@ export default function UserDocente({ id }) {
   const [modalEditOpen, setModalEditOpen] = useState(false);
   const [modalBorrarMateriaOpen, setModalBorrarMateriaOpen] = useState(false);
   const navigate = useNavigate();
+  const { showNotification, NotificationComponent } = useNotification();
   //URL de la API
   const apiUrl = import.meta.env.VITE_API_URL;
   const { token, isDirector } = useAuth();
@@ -83,7 +88,12 @@ export default function UserDocente({ id }) {
         }
         //LLamamos al servicio
         const { docente } = await fetchDocenteGetOne(token, id);
-        setDocente(docente);
+        const {birthday, ...dataRes} = docente;
+        const newData = {
+          birthday: obtenerFechaYYYYMMDD(birthday) ,
+          ...dataRes
+        }
+        setDocente(newData);
         // Llamamos a la función que obtiene las materias
         fetchMaterias();
       } catch (err) {
@@ -107,14 +117,15 @@ export default function UserDocente({ id }) {
   const handleUpdateDocente = async (formData) => {
     try {
       const { activo, iddocente, ...datosParaEnviar } = formData;
-      await fetchDocenteActualizar(token, id, datosParaEnviar);
-      alert("Docente actualizado con éxito");
-      setModalEditOpen(false);
 
+      await fetchDocenteActualizar(token, id, datosParaEnviar);
+      setModalEditOpen(false);
+      showNotification("Docente actualizado con éxito", "success");
       handleAcceptEdit(); // función de refresco 
 
     } catch (error) {
-      alert(`Error: ${error.message}`);
+      showNotification(`Error al guardar ${error.message}`, "error");
+
     }
   };
 
@@ -148,15 +159,15 @@ export default function UserDocente({ id }) {
       // Usamos el ID del docente seleccionado
 
       await fetchDocenteDesactivar(token, id);
-
-      alert("Docente desactivado con éxito");
-
-      // Cerramos modal y recargamos tabla
       setModalDeleteOpen(false);
+
+      showNotification("Docente desactivado con éxito", "success");
+      // Cerramos modal y recargamos tabla
+
       handleAcceptEdit(); // Reutilizamos tu función de refrescar tabla
 
     } catch (err) {
-      alert(`Error: ${err.message}`);
+      showNotification(`Error al desactivar ${err.message}`, "error");
     } finally {
       setLoadingDelete(false);
     }
@@ -257,10 +268,10 @@ export default function UserDocente({ id }) {
             {docente.nombres} {docente.apellidop} {docente.apellidom}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Correo: {docente.correo}
+            <Box component="span" fontWeight="bold">Correo:</Box> {docente.correo}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Fecha de nacimiento: {docente.birthday}
+            <Box component="span" fontWeight="bold">Fecha de nacimiento:</Box> {formatearFechaISO(docente.birthday)}
           </Typography>
           <Typography
             sx={{
@@ -272,53 +283,53 @@ export default function UserDocente({ id }) {
             {docente.activo ? "Activo" : "Inactivo"}
           </Typography>
         </Box>
-            {/*SOLO DIRECTOR   */}
+        {/*SOLO DIRECTOR   */}
         {isDirector && (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          <Button
-            variant="outlined"
-            color="primary"
-            size="small"
-            startIcon={<Pencil size={16} />}
-            sx={{ color: "#0254acff" }}
-            onClick={() => setModalEditOpen(true)}
-          >
-            Editar
-          </Button>
-          <ReusableModal
-            open={modalEditOpen}
-            onClose={() => setModalEditOpen(false)}
-            iconEntity={Pencil} // Icono de edición
-            title="Editar Docente"
-            fields={camposNuevoDocente}
-            initialValues={docente}
-            // Para validar duplicados (opcional, pasa tu lista completa de docentes)
-            //existingData={docentesData}
-            onSubmit={handleUpdateDocente}
-          />
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <Button
+              variant="outlined"
+              color="primary"
+              size="small"
+              startIcon={<Pencil size={16} />}
+              sx={{ color: "#0254acff" }}
+              onClick={() => setModalEditOpen(true)}
+            >
+              Editar
+            </Button>
+            <ReusableModal
+              open={modalEditOpen}
+              onClose={() => setModalEditOpen(false)}
+              iconEntity={Pencil} // Icono de edición
+              title="Editar Docente"
+              fields={camposNuevoDocente}
+              initialValues={docente}
+              // Para validar duplicados (opcional, pasa tu lista completa de docentes)
+              //existingData={docentesData}
+              onSubmit={handleUpdateDocente}
+            />
 
-          <Button
-            variant="outlined"
-            color="error"
-            size="small"
-            startIcon={<Trash2 size={17} />}
-            onClick={() => setModalDeleteOpen(true)}
-          >
-            Desactivar
-          </Button>
-          <ConfirmModal
-            open={modalDeleteOpen}
-            onClose={() => setModalDeleteOpen(false)}
-            onConfirm={handleConfirmDesactivar}
-            isLoading={loadingDelete}
-            title="DESACTIVAR DOCENTE"
-            message={
-              <span>
-                ¿Está seguro de desactivar al docente <strong>{docente.nombres} {docente.apellidop} {docente.apellidom}</strong>?
-              </span>
-            }
-          />
-        </Box>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              startIcon={<Trash2 size={17} />}
+              onClick={() => setModalDeleteOpen(true)}
+            >
+              Desactivar
+            </Button>
+            <ConfirmModal
+              open={modalDeleteOpen}
+              onClose={() => setModalDeleteOpen(false)}
+              onConfirm={handleConfirmDesactivar}
+              isLoading={loadingDelete}
+              title="DESACTIVAR DOCENTE"
+              message={
+                <span>
+                  ¿Está seguro de desactivar al docente <strong>{docente.nombres} {docente.apellidop} {docente.apellidom}</strong>?
+                </span>
+              }
+            />
+          </Box>
         )}
       </Box>
 
@@ -348,15 +359,15 @@ export default function UserDocente({ id }) {
           <Typography variant="h5" fontWeight="bold">
             Materias
           </Typography>
-         { isDirector && (
-          <Button
-            variant="text"
-            color="primary"
-            startIcon={<Plus size={16} />}
-            onClick={() => setModalMateriaOpen(true)}
-          >
-            Agregar
-          </Button>)}
+          {isDirector && (
+            <Button
+              variant="text"
+              color="primary"
+              startIcon={<Plus size={16} />}
+              onClick={() => setModalMateriaOpen(true)}
+            >
+              Agregar
+            </Button>)}
 
           <NuevaMateriaDocente
             open={modalMateriaOpen}
@@ -365,15 +376,15 @@ export default function UserDocente({ id }) {
             docenteId={id}
           />
           {isDirector && (
-          <Button
-            variant="text"
-            color="error"
-            startIcon={<Trash2 size={20} />}
-            disabled={!selectedMateriaClave}
-            onClick={() => setModalBorrarMateriaOpen(true)}
-          >
-            Eliminar
-          </Button>)}
+            <Button
+              variant="text"
+              color="error"
+              startIcon={<Trash2 size={20} />}
+              disabled={!selectedMateriaClave}
+              onClick={() => setModalBorrarMateriaOpen(true)}
+            >
+              Eliminar
+            </Button>)}
 
           <BorrarMateria
             open={modalBorrarMateriaOpen}
@@ -415,8 +426,10 @@ export default function UserDocente({ id }) {
                 <TableCell>Clave</TableCell>
                 <TableCell>Nombre</TableCell>
                 <TableCell>Grupo</TableCell>
-                {/* 1. Nueva columna de encabezado */}
-                <TableCell align="center">Acciones</TableCell>
+                {/* 1. Nueva columna de encabezado solo para director */}
+                {isDirector && (
+                  <TableCell align="center">Acciones</TableCell>
+                )}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -437,56 +450,59 @@ export default function UserDocente({ id }) {
                   <TableCell>{m.grupo}</TableCell>
 
                   {/* 2. Nueva celda con los botones agrupados */}
-                  <TableCell align="center">
-                    {/*stopPropagation evita que al hacer click en el botón se seleccione la fila entera*/}
-                    <div
-                      onClick={(e) => e.stopPropagation()}
-                      style={{
-                        display: "flex",
-                        gap: "5px",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Tooltip title="Lista de asistencia por materia">
-                        <IconButton
-                          aria-label="lista"
-                          size="small" // Recomiendo small para que no ensanche mucho la tabla
-                          color="primary"
-                          onClick={() => handleNavigateToListaMateria(m)}
-                        >
-                          <ListAltIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Actividades cotidianas">
-                        <IconButton
-                          aria-label="actvidades"
-                          size="small"
-                          color="secondary"
-                          onClick={() => handleNavigateToActividades(m)}
-                        >
-                          <AutoStoriesIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Calificaciones parciales">
-                        <IconButton
-                          aria-label="calificaciones_parciales"
-                          size="small"
-                          color="success"
-                          onClick={() =>
-                            handleNavigateToCalifacacionesParcilaes(m)
-                          }
-                        >
-                          <ChecklistIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </div>
-                  </TableCell>
+                  {isDirector && (
+                    <TableCell align="center">
+                      {/*stopPropagation evita que al hacer click en el botón se seleccione la fila entera*/}
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          display: "flex",
+                          gap: "5px",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Tooltip title="Lista de asistencia por materia">
+                          <IconButton
+                            aria-label="lista"
+                            size="small" // Recomiendo small para que no ensanche mucho la tabla
+                            color="primary"
+                            onClick={() => handleNavigateToListaMateria(m)}
+                          >
+                            <ListAltIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Actividades cotidianas">
+                          <IconButton
+                            aria-label="actvidades"
+                            size="small"
+                            color="secondary"
+                            onClick={() => handleNavigateToActividades(m)}
+                          >
+                            <AutoStoriesIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Calificaciones parciales">
+                          <IconButton
+                            aria-label="calificaciones_parciales"
+                            size="small"
+                            color="success"
+                            onClick={() =>
+                              handleNavigateToCalifacacionesParcilaes(m)
+                            }
+                          >
+                            <ChecklistIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </Box>
       </Box>
+      {NotificationComponent}
     </Box>
   );
 }

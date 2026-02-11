@@ -11,6 +11,7 @@ import {
   EmojiEvents,
   AssignmentTurnedIn,
   Campaign,
+  Cake,
 } from "@mui/icons-material";
 
 export const EVENT_TYPES = {
@@ -95,6 +96,13 @@ export const EVENT_TYPES = {
     icon: AssignmentTurnedIn, 
     label: "Evaluación",
     descripcion: "Valoración de desempeño académico o administrativo."
+  },
+
+  birthday: {
+    color: "#e82774",
+    icon: Cake, 
+    label: "Cumpleaños",
+    descripcion: "Cumpleaños del personal de preparatoria"
   },
 
   // --- DEFAULT ---

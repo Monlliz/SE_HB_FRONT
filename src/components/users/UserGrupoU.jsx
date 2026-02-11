@@ -225,6 +225,8 @@ const { token, isDirector, isPrefecto } = useAuth();
                 <ListAltIcon />
               </IconButton>
             </Tooltip>
+            {isDirector && (
+            <>
             <Tooltip title="Resumen de TC">
               <IconButton
                 aria-label="Resumen Tc"
@@ -245,6 +247,8 @@ const { token, isDirector, isPrefecto } = useAuth();
                 <GroupIcon />
               </IconButton>
             </Tooltip>
+            </>
+            )}
           </>
         )}
       </Box>
@@ -263,7 +267,8 @@ const { token, isDirector, isPrefecto } = useAuth();
         <Typography variant="h5" fontWeight="bold">
           Materias
         </Typography>
-
+        {isDirector && (
+        <>
         <Tooltip
           title={
             mode === "perfil"
@@ -325,6 +330,8 @@ const { token, isDirector, isPrefecto } = useAuth();
             </IconButton>
           </span>
         </Tooltip>
+        </>
+        )}
       </Box>
 
       {/* TABLA */}

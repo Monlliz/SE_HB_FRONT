@@ -108,17 +108,19 @@ function EventDetailsDialog({ open, onClose, date, events = [], onDeleteEvent })
                                             primary={event.etiqueta}
                                             secondary={typeInfo.label}
                                         />
-                                        <IconButton 
-                                                    edge="end" 
-                                                    aria-label="delete"
-                                                    onClick={() => onDeleteEvent(event)} // <--- LA MAGIA
-                                                    sx={{ 
-                                                        color: "#d32f2f", // Un rojo suave
-                                                        "&:hover": { color: "#ffffff", bgcolor: "#d32f2f" }
-                                                    }}
-                                                >
-                                                    <Trash2 size={20} />
-                                                </IconButton>
+                                        {!typeInfo == "birthday" && (
+                                            <IconButton
+                                                edge="end"
+                                                aria-label="delete"
+                                                onClick={() => onDeleteEvent(event)} // <--- LA MAGIA
+                                                sx={{
+                                                    color: "#d32f2f", // Un rojo suave
+                                                    "&:hover": { color: "#ffffff", bgcolor: "#d32f2f" }
+                                                }}
+                                            >
+                                                <Trash2 size={20} />
+                                            </IconButton>
+                                        )}
                                     </ListItem>
                                 </motion.div>
                             );
