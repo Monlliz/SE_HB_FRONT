@@ -98,11 +98,11 @@ export const fetchMateriasGrupo = async (token, id, anioActual) => {
         headers: {
           "x-auth-token": token,
         },
-      }
+      },
     );
     if (!resMaterias.ok) throw new Error("Error al cargar materias");
     const materias = await resMaterias.json();
-
+    console.log(materias);
     return { materias: materias || [] };
   } catch (error) {
     console.error("Error en el servicio fetchMateriasGrupo:", error.message);
@@ -114,7 +114,7 @@ export const fetchMateriasGrupo = async (token, id, anioActual) => {
 export const fetchBorrarMateriaDocente = async (
   token,
   docenteId,
-  idMateriaDocente
+  idMateriaDocente,
 ) => {
   console.log(token, docenteId, idMateriaDocente);
   try {
@@ -126,7 +126,7 @@ export const fetchBorrarMateriaDocente = async (
           "Content-Type": "application/json",
           "x-auth-token": token,
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -135,7 +135,7 @@ export const fetchBorrarMateriaDocente = async (
   } catch (error) {
     console.error(
       "Error en el servicio fetchBorrarMateriaDocente:",
-      error.message
+      error.message,
     );
     throw error;
   }
@@ -153,7 +153,7 @@ export const fetchBorrarMateriaGrupo = async (token, grupoId, clave) => {
           "Content-Type": "application/json",
           "x-auth-token": token,
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -174,7 +174,7 @@ export const fetchMateriasPerfil = async (token, id, anioActual) => {
         headers: {
           "x-auth-token": token,
         },
-      }
+      },
     );
     if (!resMaterias.ok) throw new Error("Error al cargar materias");
     const materias = await resMaterias.json();

@@ -19,7 +19,7 @@ import {
 
 import CopiarActividadesModal from "../../components/modals/Gestion/CopiarTrabajosModal.jsx";
 
-// Importaciones de MUI (Iconos y Componentes)
+// Importaciones de MUI
 import {
   Table,
   TableBody,
@@ -38,67 +38,57 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Tooltip,
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { ClipboardPaste } from "lucide-react";
-import { Spa } from "@mui/icons-material";
+
 const currentYear = new Date().getFullYear();
 
 const TrabajoCotidiano = () => {
-  const { token, user,isDirector } = useAuth();
+  const { token, user, isDirector } = useAuth();
   const location = useLocation();
 
-  // 1. DESESTRUCTURACIÓN INTELIGENTE
-  // Extraemos todo. Si idNormalizado/semestre vienen, los usaremos.
+  // 1. DESESTRUCTURACIÓN
   const {
     grupoId,
     materiaClave,
     nombreMateria,
     year: initialYear,
-    idNormalizado, // Específico de Perfil
-    semestre, // Específico de Perfil
+    idNormalizado,
+    semestre,
   } = location.state || {};
 
-  //Chance truena
   const listaGruposDisponibles = useMemo(() => {
     if (!grupoId || grupoId.length < 2) return [];
-
-    // Extraemos la letra (último caracter) y el grado (todo lo anterior)
-    const letra = grupoId.slice(-1).toUpperCase(); // "A" o "B"
-    const grado = grupoId.slice(0, -1); // "2", "4", "10", etc.
-
-    // Si estoy en A, mi "otro" grupo es B. Si estoy en B, es A.
+    const letra = grupoId.slice(-1).toUpperCase();
+    const grado = grupoId.slice(0, -1);
     const letraContraria = letra === "A" ? "B" : "A";
-
-    // Retornamos un array con la única opción disponible
     return [`${grado}${letraContraria}`];
   }, [grupoId]);
-  // 2. DETECCIÓN DE MODO
-  // Si existen estas variables, estamos en "Perfil", si no, en "Grupo Normal"
+
   const isPerfilMode = Boolean(idNormalizado && semestre);
 
-  // --- ESTADOS DE DATOS ---
+  // --- ESTADOS ---
   const [rubros, setRubros] = useState([]);
   const [alumnos, setAlumnos] = useState([]);
   const [calificaciones, setCalificaciones] = useState([]);
   const [originalCalificaciones, setOriginalCalificaciones] = useState([]);
 
-  // --- ESTADOS DE FILTROS ---
+  // --- FILTROS ---
   const [parcial, setParcial] = useState(1);
   const [selectedYear, setSelectedYear] = useState(initialYear || currentYear);
 
-  // --- ESTADOS DE UI ---
+  // --- UI ---
   const [loadingRubros, setLoadingRubros] = useState(true);
   const [errorRubros, setErrorRubros] = useState(null);
   const [loadingAlumnos, setLoadingAlumnos] = useState(true);
   const [errorAlumnos, setErrorAlumnos] = useState(null);
   const [loadingCalificaciones, setLoadingCalificaciones] = useState(false);
   const [errorCalificaciones, setErrorCalificaciones] = useState(null);
-  const [modalAbierto, setModalAbierto] = useState(false); // Para gestión de rubros
+  const [modalAbierto, setModalAbierto] = useState(false);
   const [modalCopiarAbierto, setModalCopiarAbierto] = useState(false);
 
   // --- EDICIÓN Y EXPORTACIÓN ---
@@ -109,8 +99,9 @@ const TrabajoCotidiano = () => {
   const [totalRubros, setTotalRubros] = useState(0);
   const [ContadorCalificacionesPorAlumno, setContadorCalificacionesPorAlumno] =
     useState({});
+
   // -----------------------------------------------------------------------
-  // CARGA 1: RÚBROS (CONFIGURACIÓN)
+  // CARGA 1: RÚBROS
   // -----------------------------------------------------------------------
   const cargarRubros = useCallback(async () => {
     if (!materiaClave) {
@@ -133,7 +124,6 @@ const TrabajoCotidiano = () => {
       const rubrosOrdenados = (data || []).sort((a, b) => {
         const fechaA = new Date(a.fecha_limite || 0);
         const fechaB = new Date(b.fecha_limite || 0);
-
         return fechaB - fechaA;
       });
 
@@ -151,7 +141,7 @@ const TrabajoCotidiano = () => {
   }, [cargarRubros]);
 
   // -----------------------------------------------------------------------
-  // CARGA 2: ALUMNOS (AQUÍ ESTÁ LA LÓGICA CONDICIONAL)
+  // CARGA 2: ALUMNOS
   // -----------------------------------------------------------------------
   useEffect(() => {
     const cargarAlumnos = async () => {
@@ -159,21 +149,15 @@ const TrabajoCotidiano = () => {
       setErrorAlumnos(null);
       try {
         let data;
-
-        // >>> SELECCIÓN DE SERVICIO SEGÚN EL MODO <<<
         if (isPerfilMode) {
-          console.log("Cargando modo PERFIL (idNormalizado/Semestre)");
           data = await fetchAlumnoPerfilGet(token, idNormalizado, semestre);
         } else {
-          console.log("Cargando modo GRUPO GENERAL");
           data = await fetchAlumnoGrupoGet(token, grupoId);
         }
 
-        // Normalizamos los datos porque a veces las APIs devuelven campos ligeramente distintos
         const alumnosNormalizados = (data.alumnos || []).map((a) => ({
           ...a,
-          alumno_matricula: a.matricula, // Aseguramos que alumno_matricula siempre exista
-          // Mantenemos otros campos que puedan venir
+          alumno_matricula: a.matricula,
         }));
 
         setAlumnos(alumnosNormalizados);
@@ -185,24 +169,26 @@ const TrabajoCotidiano = () => {
       }
     };
 
-    // Ejecutamos si tenemos los datos mínimos necesarios según el modo
     if (token && (grupoId || (idNormalizado && semestre))) {
       cargarAlumnos();
     }
   }, [grupoId, idNormalizado, semestre, token, isPerfilMode]);
 
   // -----------------------------------------------------------------------
-  // HELPERS DE VALORES (SI/NO/R/I <-> 1/0/Ponderacion)
+  // HELPERS (Lógica de negocio)
   // -----------------------------------------------------------------------
+  
+  // OPTIMIZACIÓN: Solo se usa como "fallback" si la BD no trae el estado explícito
   const getStringFromValor = (valorNumerico, rubro) => {
     if (valorNumerico === null || valorNumerico === undefined) return null;
-
     const valor = Number(valorNumerico);
     const ponderacion = Number(rubro?.ponderacion || 0);
     const pInsuficiente = Number(rubro?.ponderacioninsuficiente || 0);
 
     if (valor === 1) return "Si";
     if (valor === 0) return "No";
+    // OJO: Si ponderacion y pInsuficiente son iguales, esto podría fallar,
+    // pero gracias a la columna 'estado' ya no dependemos de esto.
     if (ponderacion > 0 && valor === ponderacion) return "R";
     if (pInsuficiente > 0 && valor === pInsuficiente) return "I";
     return null;
@@ -211,11 +197,10 @@ const TrabajoCotidiano = () => {
   const getValorNumericoParaDB = (valorString, rubro) => {
     switch (valorString) {
       case "Si":
-        return 1;
+      case "J":
+        return 1.0;
       case "No":
         return 0;
-      case "J":
-        return 1;
       case "R":
         return Number(rubro.ponderacion);
       case "I":
@@ -226,12 +211,12 @@ const TrabajoCotidiano = () => {
   };
 
   // -----------------------------------------------------------------------
-  // CARGA 3: CALIFICACIONES
+  // CARGA 3: CALIFICACIONES (OPTIMIZADO CON ESTADO)
   // -----------------------------------------------------------------------
   useEffect(() => {
     const cargarCalificaciones = async () => {
       if (!materiaClave || !parcial || !selectedYear) return;
-      if (loadingRubros || loadingAlumnos) return; // Esperar a dependencias
+      if (loadingRubros || loadingAlumnos) return;
 
       setLoadingCalificaciones(true);
 
@@ -249,19 +234,32 @@ const TrabajoCotidiano = () => {
 
         const calificacionesTransformadas = data.map((calif) => {
           const rubroInfo = rubrosMap.get(calif.idrubrotc);
+          
+          // CAMBIO CLAVE: Prioridad a 'calif.estado'. 
+          // Si existe el estado en BD, lo usamos directo (Optimización y Exactitud).
+          // Si es null (dato legacy), intentamos deducirlo con getStringFromValor.
+          let valorParaUI = calif.estado; 
+          
+          if (!valorParaUI && calif.calificacion !== null) {
+              valorParaUI = getStringFromValor(calif.calificacion, rubroInfo);
+          }
+
           return {
             ...calif,
-            calificacion: getStringFromValor(calif.calificacion, rubroInfo),
+            // En el estado de React guardamos la LETRA ('Si', 'R', etc.) para el Select
+            calificacion: valorParaUI, 
           };
         });
 
         setCalificaciones(calificacionesTransformadas);
         setOriginalCalificaciones(calificacionesTransformadas);
-        const nuevosContadores = {};
 
+        // Contador simple (si tiene letra asignada, cuenta como entregado/evaluado)
+        const nuevosContadores = {};
         data.forEach((calif) => {
           const key = calif.alumno_matricula;
-          if (calif.calificacion > 0) {
+          // Contamos si existe estado o calificación positiva
+          if (calif.estado || (calif.calificacion && calif.calificacion > 0)) {
             nuevosContadores[key] = (nuevosContadores[key] || 0) + 1;
           }
         });
@@ -286,13 +284,14 @@ const TrabajoCotidiano = () => {
   ]);
 
   // -----------------------------------------------------------------------
-  // CÁLCULO DE PROMEDIOS (MEMOIZADO)
+  // CÁLCULO DE PROMEDIOS (MEMOIZADO & ROBUSTO)
   // -----------------------------------------------------------------------
   const datosTabla = useMemo(() => {
     const califMap = new Map();
     calificaciones.forEach((c) => {
       if (!califMap.has(c.alumno_matricula))
         califMap.set(c.alumno_matricula, new Map());
+      // Aquí 'c.calificacion' ya contiene la LETRA ('Si', 'R', 'I') gracias a la carga optimizada
       califMap.get(c.alumno_matricula).set(c.idrubrotc, c.calificacion);
     });
 
@@ -302,13 +301,15 @@ const TrabajoCotidiano = () => {
       let sumaPuntos = 0;
 
       rubros.forEach((rubro) => {
+        // Obtenemos la letra directamente
         const valString = susCalificaciones.get(rubro.idrubrotc);
-        // Lógica de puntos
+        
+        // Lógica de puntos basada en la letra (No adivinamos decimales)
         let puntos = 0;
-        if (valString === "Si" || valString === "J") puntos = 1;
+        if (valString === "Si" || valString === "J") puntos = 1.0;
         else if (valString === "R") puntos = Number(rubro.ponderacion);
-        else if (valString === "I")
-          puntos = Number(rubro.ponderacioninsuficiente);
+        else if (valString === "I") puntos = Number(rubro.ponderacioninsuficiente);
+        // "No" o null suman 0
 
         sumaPuntos += puntos;
       });
@@ -338,21 +339,26 @@ const TrabajoCotidiano = () => {
     setSaveError(null);
   };
 
-  const handleGradeChange = (matricula, idRubro, valor) => {
-    const valorFinal = valor === "" ? null : valor;
+  const handleGradeChange = (matricula, idRubro, valorLetra) => {
+    // valorLetra es "Si", "R", "I", etc.
+    const valorFinal = valorLetra === "" ? null : valorLetra;
+    
     setCalificaciones((prev) => {
       const copia = [...prev];
       const idx = copia.findIndex(
         (c) =>
           c.alumno_matricula === matricula && c.idrubrotc === Number(idRubro),
       );
-      if (idx > -1) copia[idx] = { ...copia[idx], calificacion: valorFinal };
-      else
+      
+      if (idx > -1) {
+          copia[idx] = { ...copia[idx], calificacion: valorFinal };
+      } else {
         copia.push({
           alumno_matricula: matricula,
           idrubrotc: Number(idRubro),
-          calificacion: valorFinal,
+          calificacion: valorFinal, // Guardamos la letra en el estado
         });
+      }
       return copia;
     });
   };
@@ -361,17 +367,25 @@ const TrabajoCotidiano = () => {
     setIsSaving(true);
     const rubrosMap = new Map(rubros.map((r) => [r.idrubrotc, r]));
 
-    const payload = calificaciones.map((c) => ({
-      ...c,
-      calificacion: getValorNumericoParaDB(
-        c.calificacion,
-        rubrosMap.get(c.idrubrotc),
-      ),
-    }));
+    // CAMBIO IMPORTANTE: Preparar payload con ESTADO y CALIFICACIÓN
+    const payload = calificaciones.map((c) => {
+        const rubro = rubrosMap.get(c.idrubrotc);
+        const estadoLetra = c.calificacion; // En el state tenemos la letra
+
+        return {
+            idrubrotc: c.idrubrotc,
+            alumno_matricula: c.alumno_matricula,
+            // 1. Enviamos el número calculado con la regla actual
+            calificacion: getValorNumericoParaDB(estadoLetra, rubro),
+            // 2. Enviamos la letra explícita para el historial
+            estado: estadoLetra
+        };
+    });
 
     try {
       await syncCalificacionesTC_service({ grades: payload }, token);
       setIsEditing(false);
+      // Al guardar, el estado actual se convierte en el "original"
       setOriginalCalificaciones(calificaciones);
     } catch (err) {
       setSaveError(err.message);
@@ -388,9 +402,7 @@ const TrabajoCotidiano = () => {
       "Primer Apellido",
       "Segundo Apellido",
       "Nombres",
-      ...rubros.map(
-        (r) => `${r.nombre_rubro} (${Number(r.ponderacion) * 100}%)`,
-      ),
+      ...rubros.map((r) => `${r.nombre_rubro}`),
       "Promedio Final",
     ];
 
@@ -418,7 +430,7 @@ const TrabajoCotidiano = () => {
   const isEssentialLoading = loadingRubros || loadingAlumnos;
 
   // -----------------------------------------------------------------------
-  // RENDER
+  // RENDER (Sin cambios mayores, solo uso de la lógica actualizada)
   // -----------------------------------------------------------------------
   return (
     <Box
@@ -437,7 +449,6 @@ const TrabajoCotidiano = () => {
         <Box>
           <Typography variant="h5">Materia: {nombreMateria}</Typography>
           <Typography variant="subtitle1" color="text.secondary">
-            {/* Texto dinámico según modo */}
             {isPerfilMode
               ? `Trabajo Cotidiano - Perfil  ${grupoId}`
               : `Trabajo Cotidiano - Grupo ${grupoId}`}
@@ -464,9 +475,10 @@ const TrabajoCotidiano = () => {
           {isPerfilMode ? null : (
             <Button
               startIcon={<ClipboardPaste />}
-              onClick={() => setModalCopiarAbierto(true)} // ABRIR MODAL
-              variant="outlined" // Le puse estilo para que se vea
+              onClick={() => setModalCopiarAbierto(true)}
+              variant="outlined"
               color="primary"
+              disabled={isEssentialLoading || isEditing}
             >
               Copiar
             </Button>
@@ -476,7 +488,7 @@ const TrabajoCotidiano = () => {
             variant="outlined"
             startIcon={<DownloadIcon />}
             onClick={handleExport}
-            disabled={isEssentialLoading}
+            disabled={isEssentialLoading || isEditing}
           >
             Exportar
           </Button>
@@ -500,7 +512,7 @@ const TrabajoCotidiano = () => {
               </Button>
               <Button
                 variant="outlined"
-                color="secondary"
+                color="Primary"
                 onClick={handleCancel}
                 disabled={isSaving}
                 startIcon={<CancelIcon />}
@@ -544,7 +556,6 @@ const TrabajoCotidiano = () => {
                 sx={{
                   left: 0,
                   position: "sticky",
-
                   backgroundColor: "#f9f9f9",
                   zIndex: 100,
                   fontWeight: "500",
@@ -590,7 +601,6 @@ const TrabajoCotidiano = () => {
                   Promedio
                 </TableCell>
               )}
-              {/*Modificar para que sea para el director */}
               {isDirector ? (
                 <TableCell align="center" sx={{ fontWeight: "bold" }}>
                   Total Act
@@ -620,11 +630,8 @@ const TrabajoCotidiano = () => {
                     sx={{
                       position: "sticky",
                       left: 0,
-                      // 1. Color de fondo SÓLIDO (blanco o gris claro) para evitar transparencia
                       backgroundColor: "#ffffff",
-                      // 2. Z-Index intermedio (menor que el header, mayor que el resto)
                       zIndex: 1,
-                      // 3. Estilos visuales
                       fontWeight: "500",
                       borderRight: "2px solid rgba(224, 224, 224, 1)",
                       boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)",
@@ -680,7 +687,8 @@ const TrabajoCotidiano = () => {
                     >
                       {al.promedio.toFixed(2)}
                     </TableCell>
-                  ) : <TableCell
+                  ) : (
+                    <TableCell
                       align="center"
                       sx={{
                         position: "sticky",
@@ -694,7 +702,8 @@ const TrabajoCotidiano = () => {
                       }}
                     >
                       {al.promedio.toFixed(2)}
-                    </TableCell>}
+                    </TableCell>
+                  )}
                   {isDirector ? (
                     <TableCell align="center">
                       {ContadorCalificacionesPorAlumno[al.alumno_matricula] ||
@@ -709,7 +718,7 @@ const TrabajoCotidiano = () => {
         </Table>
       </TableContainer>
 
-      {/* Modal */}
+      {/* Modales */}
       {modalAbierto && (
         <GestionTrabajos
           open={modalAbierto}
@@ -733,13 +742,13 @@ const TrabajoCotidiano = () => {
           open={modalCopiarAbierto}
           onClose={() => setModalCopiarAbierto(false)}
           materiaClave={materiaClave}
-          grupoActualId={grupoId} // El grupo destino es donde estamos parados
+          grupoActualId={grupoId}
           parcial={parcial}
           yearC={selectedYear}
           token={token}
-          listaGrupos={listaGruposDisponibles} // Pasa tu lista de grupos aquí
+          listaGrupos={listaGruposDisponibles}
           onSuccess={() => {
-            cargarRubros(); // Recargamos la tabla al terminar
+            cargarRubros();
           }}
         />
       )}

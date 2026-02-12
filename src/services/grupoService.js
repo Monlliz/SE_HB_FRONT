@@ -11,6 +11,7 @@ export const fetchGrupoGet = async (token) => {
       throw new Error("La respuesta de la red no fue exitosa");
     }
     const grupos = await resGrupos.json();
+  
     return { grupos: grupos || [] };
   } catch (err) {
     throw new Error("La respuesta de la red no fue exitosa");

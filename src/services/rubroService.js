@@ -187,7 +187,7 @@ export const syncCalificacionesTC_service = async (batchData, token) => {
       "x-auth-token": token,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(batchData), // ej: { grades: [...] }
+    body: JSON.stringify(batchData), 
   });
 
   if (!response.ok) {
