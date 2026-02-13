@@ -83,6 +83,7 @@ function EventDetailsDialog({ open, onClose, date, events = [], onDeleteEvent })
                     {events.length > 0 ? (
                         events.map((event, index) => {
                             const typeInfo = EVENT_TYPES[event.tipo] || EVENT_TYPES.otro;
+                            const isBirthday = event.tipo === "birthday";
                             const Icon = typeInfo.icon;
 
                             return (
@@ -108,7 +109,7 @@ function EventDetailsDialog({ open, onClose, date, events = [], onDeleteEvent })
                                             primary={event.etiqueta}
                                             secondary={typeInfo.label}
                                         />
-                                        {!typeInfo == "birthday" && (
+                                        {!isBirthday && (
                                             <IconButton
                                                 edge="end"
                                                 aria-label="delete"

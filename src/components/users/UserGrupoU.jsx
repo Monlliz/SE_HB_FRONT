@@ -1,169 +1,61 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext.jsx";
 
 // --- SERVICIOS ---
-import {
-  fetchMateriasPerfil,
-  fetchMateriasGrupo,
-} from "../../services/materiasService.js";
+import { fetchMateriasPerfil, fetchMateriasGrupo, fetchMateriasGet,fetchBorrarMateriaGrupo } from "../../services/materiasService.js";
+import { fetchGrupoCambio, fetchGrupoMateriaPost,fetchBorrarMateriaPerfil,fetchPerfilMateriaPost } from "../../services/grupoService.js";
 
-// --- MODALES (Importamos todos) ---
-// Grupo
-import NuevaMateriaGrupo from "../modals/Grupo/NuevaMateriaGrupo.jsx";
-import BorrarMateriaGrupo from "../modals/Grupo/BorrarMateriaGrupo.jsx";
-import CambiarAlumnosGrupo from "../modals/Grupo/CambiarAlumnosGrupo.jsx";
-// Perfil
-import NuevaMateriaPerfil from "../modals/Grupo/Perfiles/NuevaMateriaPerfil.jsx";
-import BorrarMateriaPerfil from "../modals/Grupo/Perfiles/BorrarMateriaPerfil.jsx";
 
-// --- ICONOS ---
-import ListAltIcon from "@mui/icons-material/ListAlt";
-import ChecklistIcon from "@mui/icons-material/Checklist";
-import GroupIcon from "@mui/icons-material/Group";
-import AutoStoriesIcon from "@mui/icons-material/AutoStories";
+// --- HOOKS Y CONFIGURACIÓN ---
+import { useMateriasNavigation } from "../../hooks/useMateriasNavigation"; // <--- Hook Nuevo
+import {getCambioGrupoFields, getAddMateriaFields } from "../../config/camposGrupo.jsx"; // <--- Config Nueva
 
-import { Trash2, Plus, FileUser } from "lucide-react";
 
-import {
-  Box,
-  Button,
-  Typography,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  IconButton,
-  Tooltip,
-} from "@mui/material";
+// --- COMPONENTES ---
+import ReusableModal from "../modals/ReusableModal.jsx";
+import ConfirmModal from "../modals/ConfirmModal.jsx"; // Modal específico para confirmaciones
+import { useNotification } from "../modals/NotificationModal.jsx";
 
-/**
- * Componente unificado para gestionar materias.
- * @param {string} id - El ID del grupo o perfil.
- * @param {'grupo' | 'perfil'} mode - Determina el comportamiento del componente (APIs, rutas, modales).
- */
+// --- ICONOS Y UI ---
+import { ListAlt, Checklist, Group, AutoStories } from "@mui/icons-material"; // Usando imports cortos si es posible
+import { Trash2, Plus, FileUser, Users, BookOpen } from "lucide-react";
+import { Box, Button, Typography, Table, TableHead, TableRow, TableCell, TableBody, IconButton, Tooltip } from "@mui/material";
+
 export default function MateriasManager({ id, mode = "grupo" }) {
-  const navigate = useNavigate();
-const { token, isDirector, isPrefecto } = useAuth();
-
-  // -- ESTADOS --
+  const { token, isDirector } = useAuth();
+  const { showNotification, NotificationComponent } = useNotification();
+  
+  // -- ESTADOS DE DATOS --
   const [materias, setMaterias] = useState([]);
-  const [selectedMateriaClave, setSelectedMateriaClave] = useState(null);
-  const [selectedMateriaNombre, setSelectedMateriaNombre] = useState(null);
-
-  // Modales
-  const [modalMateriaOpen, setModalMateriaOpen] = useState(false);
-  const [modalBorrarMateriaOpen, setModalBorrarMateriaOpen] = useState(false);
-  const [modalGrupoCambio, setModalGrupoCambio] = useState(false); // Solo para modo 'grupo'
-
+  const [catalogoMaterias, setCatalogoMaterias] = useState([]); // Para el select de agregar
+  const [selectedMateria, setSelectedMateria] = useState({ clave: null, nombre: null });
   const [loading, setLoading] = useState(true);
 
-  // -- LOGICA DE ID (Parseo para Perfil) --
-  // Si es perfil, el ID viene como "semestre-grupoId", si es grupo viene limpio.
+  // -- ESTADO DE MODALES (Unificado) --
+ const [activeModal, setActiveModal] = useState(null); 
+  const [isSubmitting, setIsSubmitting] = useState(false); //Estado para el loading del ConfirmModal
+
+  // -- PARSEO DE ID --
   const { semestre, idNormalizado } = useMemo(() => {
     if (mode === "perfil" && id) {
-      const parts = id.split("-");
-      return { semestre: parts[0], idNormalizado: parts[1] };
+      const [s, i] = id.split("-");
+      return { semestre: s, idNormalizado: i };
     }
     return { semestre: null, idNormalizado: id };
   }, [id, mode]);
 
-  // -- HELPER PARA DATOS DE NAVEGACIÓN --
-  // Construye el objeto que recibirá el componente unificado
-  const getNavigationPayload = (materiaClave = selectedMateriaClave) => {
-    const materia = materias.find((m) => m.clave === materiaClave);
+  // -- HOOK DE NAVEGACIÓN --
+  const nav = useMateriasNavigation(id, mode, semestre, idNormalizado);
 
-    // Base común
-    const payload = {
-      grupoId: id, // ID original (usado por fetchs generales)
-      materiaClave: materiaClave,
-      year: new Date().getFullYear(),
-      nombreMateria: materia?.asignatura || selectedMateriaNombre || "Materia",
-    };
-
-    // Datos extra específicos para activar el "Modo Perfil" en el componente destino
-    if (mode === "perfil") {
-      payload.semestre = semestre;
-      payload.idNormalizado = idNormalizado;
-    }
-
-    return payload;
-  };
-
-  // -- FUNCIONES DE NAVEGACIÓN --
-
-  // 1. Lista de Asistencia General (Solo Grupo)
-  const handleNavigateToListaGeneral = () => {
-    // Navegamos a la ruta unificada SIN materiaClave -> Activa Modo General
-    navigate("/listaAsistencia", {
-      state: {
-        grupoId: id,
-        year: new Date().getFullYear(),
-      },
-    });
-  };
-  const handleNavigateToResumenTc = () => {
-    // Navegamos a la ruta unificada SIN materiaClave -> Activa Modo General
-    navigate("/resumenTC", {
-      state: {
-        grupoId: id,
-        year: new Date().getFullYear(),
-      },
-    });
-  };
-  // 2. Lista de Asistencia por Materia (UNIFICADO AQUÍ)
-  const handleNavigateToListaMateria = () => {
-    if (!selectedMateriaClave) return;
-
-    // CAMBIO IMPORTANTE:
-    // Antes separábamos rutas (/listaAsistenciamateria vs ...Perfil).
-    // Ahora apuntamos a la misma ruta unificada.
-    // El 'state' generado por getNavigationPayload() lleva la diferencia.
-    navigate("/listaAsistencia", { state: getNavigationPayload() });
-  };
-
-  // 3. Actividades (Ya estaba unificado a /trabajo)
-  const handleNavigateToActividades = () => {
-    if (!selectedMateriaClave) return;
-    console.log(
-      `Navegando modo ${mode.toUpperCase()}:`,
-      getNavigationPayload(),
-    );
-    // Recuerda que tu componente de TrabajoCotidiano también debe ser el unificado
-    navigate("/trabajo", { state: getNavigationPayload() });
-  };
-
-  // 4. Calificaciones / Rubros
-  // (Si también unificaste Rubros, podrías hacer lo mismo aquí)
-  const handleNavigateToRubros = () => {
-    if (!selectedMateriaClave) return;
-    // Asumiendo que aún tienes rutas separadas para rubros, lo dejamos igual.
-    // Si unificas rubros, cámbialo a una sola ruta.
-    const path = mode === "perfil" ? "/rubrosperfil" : "/rubros";
-    navigate(path, { state: getNavigationPayload() });
-  };
-
-  // -- API FETCH --
+  // -- CARGA DE DATOS --
   const fetchMaterias = useCallback(async () => {
-    if (!id) return;
+    if (!id || !token) return;
     setLoading(true);
     try {
-      if (!token) throw new Error("No token found");
-
-      setSelectedMateriaClave(null);
-      setSelectedMateriaNombre(null);
-
       const anioActual = new Date().getFullYear();
-      let response;
-
-      // Selección de servicio según el modo
-      if (mode === "perfil") {
-        response = await fetchMateriasPerfil(token, id, anioActual);
-      } else {
-        response = await fetchMateriasGrupo(token, id, anioActual);
-      }
-
+      const response = mode === "perfil" 
+        ? await fetchMateriasPerfil(token, id, anioActual)
+        : await fetchMateriasGrupo(token, id, anioActual);
       setMaterias(response.materias?.materias || []);
     } catch (err) {
       console.error(err);
@@ -171,257 +63,184 @@ const { token, isDirector, isPrefecto } = useAuth();
     } finally {
       setLoading(false);
     }
-  }, [id, mode]);
+  }, [id, mode, token]);
 
-  useEffect(() => {
-    fetchMaterias();
-  }, [fetchMaterias]);
+  useEffect(() => { fetchMaterias(); }, [fetchMaterias]);
 
-  // -- HANDLERS MODALES --
-  const handleAcceptMateria = () => {
-    setModalMateriaOpen(false);
-    fetchMaterias();
+  // -- LÓGICA DE MODALES (Preparación) --
+  
+  // 1. Abrir modal AGREGAR (Carga el catálogo)
+  const handleOpenAdd = async () => {
+    setActiveModal("ADD");
+    // Cargamos el catálogo solo si no lo tenemos
+    if (catalogoMaterias.length === 0) {
+        try {
+            const { materias } = await fetchMateriasGet(token);
+            const opciones = materias.map(m => ({ label: m.asignatura, value: m.clave, original: m }));
+            setCatalogoMaterias(opciones);
+        } catch (e) { showNotification("Error cargando catálogo", "error"); }
+    }
   };
 
-  const handleAcceptBorrar = () => {
-    setModalBorrarMateriaOpen(false);
-    fetchMaterias();
+  // 2. Submit AGREGAR
+  const handleSubmitAdd = async (formData) => {
+    try {
+        const materiaObj = catalogoMaterias.find(op => op.value === formData.materiaClave)?.original;
+        if (!materiaObj) throw new Error("Materia inválida");
+
+        if (mode === "grupo") {
+            await fetchGrupoMateriaPost(token, id, materiaObj);
+        } else {
+            // Lógica para perfil
+            await fetchPerfilMateriaPost(token, id, materiaObj);
+        }
+        showNotification("Materia agregada", "success");
+        fetchMaterias();
+    } catch (e) { throw e; } // ReusableModal maneja el error visualmente
   };
+
+  // 3. Submit BORRAR
+const handleSubmitDelete = async () => {
+    setIsSubmitting(true); // Activamos spinner del ConfirmModal
+    try {
+        if (mode === "grupo") {
+            await fetchBorrarMateriaGrupo(token, id, selectedMateria.clave);
+        } else {
+            await fetchBorrarMateriaPerfil(token, id, selectedMateria.clave);
+        }
+        showNotification("Materia eliminada correctamente", "success");
+        fetchMaterias();
+        setActiveModal(null); // Cerramos modal
+        setSelectedMateria({ clave: null, nombre: null });
+    } catch (e) { 
+        showNotification(`Error: ${e.message}`, "error");
+    } finally {
+        setIsSubmitting(false); // Apagamos spinner
+    }
+  };
+
+  // 4. Submit CAMBIO GRUPO
+  const handleSubmitChangeGroup = async (formData) => {
+      await fetchGrupoCambio(token, id, formData.grupo);
+      showNotification("Grupo actualizado", "success");
+  };
+
+  // -- RENDERIZADO --
+
+ const getFormConfig = () => {
+      switch(activeModal) {
+          case "ADD":
+              return {
+                  title: `Agregar Materia al ${mode}`,
+                  fields: getAddMateriaFields(catalogoMaterias, catalogoMaterias.length === 0),
+                  submitLabel: "Agregar",
+                  onSubmit: handleSubmitAdd,
+                  icon: BookOpen,
+                  initial: { materiaClave: null }
+              };
+          case "CHANGE_GROUP":
+              return {
+                  title: "Cambio de Grupo Masivo",
+                  fields: getCambioGrupoFields(id),
+                  submitLabel: "Mover Alumnos",
+                  onSubmit: handleSubmitChangeGroup,
+                  icon: Users,
+                  initial: { grupo: "" }
+              };
+          default: return null;
+      }
+  };
+  
+  const formConfig = getFormConfig();
 
   if (loading) return <Typography>Cargando materias...</Typography>;
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        height: "100%",
-        width: "100%",
-        flexDirection: "column",
-      }}
-    >
-      {/* HEADER TÍTULO */}
-      <Box
-        sx={{
-          height: "10%",
-          display: "flex",
-          p: 2,
-          alignItems: "center",
-          gap: 2,
-          flexShrink: 0,
-        }}
-      >
-        <Typography variant="h5" fontWeight="bold">
-          {mode === "perfil" ? "Perfil" : "Grupo"} - {id}
-        </Typography>
-
-        {/* Botones extra exclusivos de GRUPO */}
+    <Box sx={{ display: "flex", height: "100%", width: "100%", flexDirection: "column" }}>
+      
+      {/* HEADER */}
+      <Box sx={{ height: "10%", display: "flex", p: 2, alignItems: "center", gap: 2 }}>
+        <Typography variant="h5" fontWeight="bold">{mode === "perfil" ? "Perfil" : "Grupo"} - {id}</Typography>
         {mode === "grupo" && (
           <>
-            <Tooltip title="Lista general del grupo">
-              <IconButton
-                aria-label="lista"
-                onClick={handleNavigateToListaGeneral}
-              >
-                <ListAltIcon />
-              </IconButton>
-            </Tooltip>
+            <Tooltip title="Lista general"><IconButton onClick={nav.irAListaGeneral}><ListAlt /></IconButton></Tooltip>
             {isDirector && (
-            <>
-            <Tooltip title="Resumen de TC">
-              <IconButton
-                aria-label="Resumen Tc"
-                onClick={handleNavigateToResumenTc}
-              >
-                <FileUser />
-              </IconButton>
-            </Tooltip>
-            <Tooltip
-              title="Cambio de alumnos del grupo"
-              enterTouchDelay={0}
-              leaveTouchDelay={3000}
-            >
-              <IconButton
-                aria-label="grupo"
-                onClick={() => setModalGrupoCambio(true)}
-              >
-                <GroupIcon />
-              </IconButton>
-            </Tooltip>
-            </>
+              <>
+                <Tooltip title="Resumen TC"><IconButton onClick={nav.irAResumenTC}><FileUser /></IconButton></Tooltip>
+                <Tooltip title="Cambiar Grupo"><IconButton onClick={() => setActiveModal("CHANGE_GROUP")}><Group /></IconButton></Tooltip>
+              </>
             )}
           </>
         )}
       </Box>
 
-      {/* TOOLBAR MATERIAS */}
-      <Box
-        sx={{
-          height: "10%",
-          display: "flex",
-          p: 2,
-          alignItems: "center",
-          gap: 2,
-          flexShrink: 0,
-        }}
-      >
-        <Typography variant="h5" fontWeight="bold">
-          Materias
-        </Typography>
+      {/* TOOLBAR */}
+      <Box sx={{ height: "10%", display: "flex", p: 2, alignItems: "center", gap: 2 }}>
+        <Typography variant="h5" fontWeight="bold">Materias</Typography>
         {isDirector && (
-        <>
-        <Tooltip
-          title={
-            mode === "perfil"
-              ? "Agregar materia al perfil"
-              : "Agregar materias al grupo"
-          }
-        >
-          <Button
-            variant="text"
-            startIcon={<Plus size={20} />}
-            color="primary"
-            onClick={() => setModalMateriaOpen(true)}
-          >
-            Agregar
-          </Button>
-        </Tooltip>
-
-        <Tooltip title="Eliminar materia">
-          <Button
-            variant="text"
-            startIcon={<Trash2 size={20} />}
-            color="error"
-            disabled={!selectedMateriaClave}
-            onClick={() => setModalBorrarMateriaOpen(true)}
-          >
-            Eliminar
-          </Button>
-        </Tooltip>
-
-        <Tooltip title="Lista de Asistencia por Materia">
-          <span>
-            <IconButton
-              disabled={!selectedMateriaClave}
-              onClick={handleNavigateToListaMateria}
-            >
-              <ListAltIcon />
-            </IconButton>
-          </span>
-        </Tooltip>
-
-        <Tooltip title="Actividades Cotidianas">
-          <span>
-            <IconButton
-              disabled={!selectedMateriaClave}
-              onClick={handleNavigateToActividades}
-            >
-              <AutoStoriesIcon />
-            </IconButton>
-          </span>
-        </Tooltip>
-
-        <Tooltip title="Calificaciones Parciales">
-          <span>
-            <IconButton
-              disabled={!selectedMateriaClave}
-              onClick={handleNavigateToRubros}
-            >
-              <ChecklistIcon />
-            </IconButton>
-          </span>
-        </Tooltip>
-        </>
+            <>
+                <Tooltip title="Agregar"><Button variant="text" startIcon={<Plus />} onClick={handleOpenAdd}>Agregar</Button></Tooltip>
+                <Tooltip title="Eliminar"><Button variant="text" color="error" startIcon={<Trash2 />} disabled={!selectedMateria.clave} onClick={() => setActiveModal("DELETE")}>Eliminar</Button></Tooltip>
+                {/* Botones de navegación usando el Hook */}
+                <Tooltip title="Lista"><IconButton disabled={!selectedMateria.clave} onClick={() => nav.irAListaMateria(selectedMateria.clave, selectedMateria.nombre)}><ListAlt /></IconButton></Tooltip>
+                <Tooltip title="Actividades"><IconButton disabled={!selectedMateria.clave} onClick={() => nav.irAActividades(selectedMateria.clave, selectedMateria.nombre)}><AutoStories /></IconButton></Tooltip>
+                <Tooltip title="Rubros"><IconButton disabled={!selectedMateria.clave} onClick={() => nav.irARubros(selectedMateria.clave, selectedMateria.nombre)}><Checklist /></IconButton></Tooltip>
+            </>
         )}
       </Box>
 
       {/* TABLA */}
       <Box sx={{ flexGrow: 1, overflowY: "auto", p: 2 }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Clave</TableCell>
-              <TableCell>Nombre</TableCell>
-            </TableRow>
-          </TableHead>
+        <Table stickyHeader>
+          <TableHead><TableRow><TableCell>Clave</TableCell><TableCell>Nombre</TableCell></TableRow></TableHead>
           <TableBody>
-            {materias.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={2} align="center">
-                  No hay materias asignadas.
-                </TableCell>
+            {materias.map((m) => (
+              <TableRow 
+                key={m.clave} 
+                hover 
+                selected={m.clave === selectedMateria.clave} 
+                onClick={() => setSelectedMateria({ clave: m.clave, nombre: m.asignatura })} 
+                sx={{ cursor: "pointer" }}
+              >
+                <TableCell>{m.clave}</TableCell>
+                <TableCell>{m.asignatura}</TableCell>
               </TableRow>
-            ) : (
-              materias.map((m) => (
-                <TableRow
-                  key={m.clave}
-                  hover
-                  selected={m.clave === selectedMateriaClave}
-                  onClick={() => {
-                    setSelectedMateriaClave(m.clave);
-                    setSelectedMateriaNombre(m.asignatura);
-                  }}
-                  sx={{ cursor: "pointer" }}
-                >
-                  <TableCell>{m.clave}</TableCell>
-                  <TableCell>{m.asignatura}</TableCell>
-                </TableRow>
-              ))
-            )}
+            ))}
           </TableBody>
         </Table>
       </Box>
 
-      {/* --- RENDERIZADO CONDICIONAL DE MODALES --- */}
-
-      {/* Modales de AGREGAR */}
-      {modalMateriaOpen &&
-        (mode === "perfil" ? (
-          <NuevaMateriaPerfil
-            open={modalMateriaOpen}
-            onClose={() => setModalMateriaOpen(false)}
-            onAccept={handleAcceptMateria}
-            grupoId={id}
-          />
-        ) : (
-          <NuevaMateriaGrupo
-            open={modalMateriaOpen}
-            onClose={() => setModalMateriaOpen(false)}
-            onAccept={handleAcceptMateria}
-            grupoId={id}
-          />
-        ))}
-
-      {/* Modales de BORRAR */}
-      {modalBorrarMateriaOpen &&
-        (mode === "perfil" ? (
-          <BorrarMateriaPerfil
-            open={modalBorrarMateriaOpen}
-            onClose={() => setModalBorrarMateriaOpen(false)}
-            onAccept={handleAcceptBorrar}
-            grupoId={id}
-            clave={selectedMateriaClave}
-            nombre={selectedMateriaNombre || ""}
-          />
-        ) : (
-          <BorrarMateriaGrupo
-            open={modalBorrarMateriaOpen}
-            onClose={() => setModalBorrarMateriaOpen(false)}
-            onAccept={handleAcceptBorrar}
-            grupoId={id}
-            clave={selectedMateriaClave}
-            nombre={selectedMateriaNombre || ""}
-          />
-        ))}
-
-      {/* Modal Extra de GRUPO */}
-      {mode === "grupo" && (
-        <CambiarAlumnosGrupo
-          open={modalGrupoCambio}
-          onClose={() => setModalGrupoCambio(false)}
-          onAccept={() => setModalGrupoCambio(false)}
-          grupoId={id}
+      {/* 1. MODAL REUTILIZABLE (Para Formularios: Agregar y Cambiar Grupo) */}
+      {formConfig && (
+        <ReusableModal
+            open={!!formConfig} // Si hay config, está abierto
+            onClose={() => setActiveModal(null)}
+            title={formConfig.title}
+            fields={formConfig.fields}
+            onSubmit={formConfig.onSubmit}
+            submitLabel={formConfig.submitLabel}
+            iconEntity={formConfig.icon}
+            initialValues={formConfig.initial}
+            maxWidth="sm"
         />
       )}
+
+      {/* 2. MODAL DE CONFIRMACIÓN (Específico para Eliminar) */}
+      <ConfirmModal
+        open={activeModal === "DELETE"}
+        onClose={() => setActiveModal(null)}
+        onConfirm={handleSubmitDelete}
+        title="ELIMINAR MATERIA"
+        type={false} // false = Rojo (Peligro)
+        isLoading={isSubmitting} 
+        message={
+            <span>
+              ¿Estás seguro de que deseas eliminar la materia <strong>{selectedMateria.nombre}</strong> del {mode} <strong>{id}</strong>?
+            </span>
+        }
+      />
+
+      {NotificationComponent}
     </Box>
   );
 }

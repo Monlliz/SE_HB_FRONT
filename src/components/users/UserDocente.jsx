@@ -23,7 +23,7 @@ import {
 } from "../../services/docenteService.js";
 
 import { useAuth } from "../../context/AuthContext.jsx";
-import { camposNuevoDocente } from "../../config/camposDocente-Alumno.jsx"
+import { camposNuevoDocente } from "../../config/camposDocente.jsx"
 import { useNotification } from "../../components/modals/NotificationModal.jsx";
 
 //formatear fecha 
