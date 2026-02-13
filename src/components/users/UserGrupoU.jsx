@@ -140,7 +140,7 @@ const { token, isDirector, isPrefecto } = useAuth();
     if (!selectedMateriaClave) return;
     // Asumiendo que aún tienes rutas separadas para rubros, lo dejamos igual.
     // Si unificas rubros, cámbialo a una sola ruta.
-    const path = mode === "perfil" ? "/rubrosperfil" : "/rubros";
+    const path = mode === "perfil" ? "/rubros" : "/rubros";
     navigate(path, { state: getNavigationPayload() });
   };
 

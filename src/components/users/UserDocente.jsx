@@ -216,7 +216,7 @@ export default function UserDocente({ id }) {
   };
 
   const handleNavigateToCalifacacionesParcilaes = (materia) => {
-    procesarNavegacion(materia, "/rubros", "/rubrosperfil");
+    procesarNavegacion(materia, "/rubros", "/rubros");
   };
 
   const handleNavigateToActividades = (materia) => {

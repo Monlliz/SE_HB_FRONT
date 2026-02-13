@@ -76,7 +76,7 @@ const MisMaterias = ({ items = [], role = "Docente" }) => {
   };
 
   const handleNavigateToCalifacaciones = (item) => {
-    procesarNavegacionDocente(item, "/rubros", "/rubrosperfil");
+    procesarNavegacionDocente(item, "/rubros", "/rubros");
   };
 
   const handleNavigateToActividades = (item) => {

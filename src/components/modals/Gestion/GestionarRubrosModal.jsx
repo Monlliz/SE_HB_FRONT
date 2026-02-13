@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Alert,
   Button,
@@ -9,6 +9,7 @@ import {
   IconButton,
   Stack,
   TextField,
+  InputAdornment,
 } from "@mui/material";
 import { fetchRubrosUpdate } from "../../../services/rubroService";
 import AddIcon from "@mui/icons-material/Add";
@@ -22,61 +23,128 @@ function GestionarRubrosModal({
   rubrosActuales,
   materiaClave,
   nombreMateria,
+  idGrupo,
+  yearAcademico,
   token,
   onGuardar,
 }) {
-
-  // Estado local para editar rúbros sin afectar el estado principal
   const [rubrosEdit, setRubrosEdit] = useState([]);
   const [errorSuma, setErrorSuma] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // API Services (necesitarás crear estas funciones)
-  // const { updateRubrosMateria } = useRubroApi(); // (Ejemplo de hook)
-
-  // Cuando el modal se abre, copia los rúbros actuales al estado local
+  // 1. CARGA DE DATOS (Con Auto-Generador de Rubros por Defecto)
   useEffect(() => {
-    // Hacemos una copia profunda para evitar mutaciones
-    setRubrosEdit(JSON.parse(JSON.stringify(rubrosActuales)));
-  }, [open, rubrosActuales]);
+    if (open) {
+      if (rubrosActuales && rubrosActuales.length > 0) {
+        // Si ya existen, los copiamos y pasamos a formato entero
+        const rubrosCopiados = JSON.parse(JSON.stringify(rubrosActuales));
+        const rubrosEnteros = rubrosCopiados.map((rubro) => ({
+          ...rubro,
+          ponderacion: String(Math.round(Number(rubro.ponderacion || 0) * 100)),
+        }));
+        setRubrosEdit(rubrosEnteros);
+      } else {
+        // SI ESTÁ VACÍO: Generamos la plantilla por defecto
+        const timestamp = Date.now();
+        const rubrosPorDefecto = [
+          {
+            id_rubro: `new_${timestamp}_1`,
+            nombre_rubro: "Trabajo Cotidiano",
+            ponderacion: "25",
+            materia_clave: materiaClave,
+            id_grupo: idGrupo,
+            year_academico: yearAcademico,
+          },
+          {
+            id_rubro: `new_${timestamp}_2`,
+            nombre_rubro: "Formacion Actitudinal",
+            ponderacion: "15",
+            materia_clave: materiaClave,
+            id_grupo: idGrupo,
+            year_academico: yearAcademico,
+          },
+          {
+            id_rubro: `new_${timestamp}_3`,
+            nombre_rubro: "Trabajo Integrador",
+            ponderacion: "30",
+            materia_clave: materiaClave,
+            id_grupo: idGrupo,
+            year_academico: yearAcademico,
+          },
+          {
+            id_rubro: `new_${timestamp}_4`,
+            nombre_rubro: "Examen",
+            ponderacion: "30",
+            materia_clave: materiaClave,
+            id_grupo: idGrupo,
+            year_academico: yearAcademico,
+          }
+        ];
+        setRubrosEdit(rubrosPorDefecto);
+      }
+    }
+  }, [open, rubrosActuales, materiaClave, idGrupo, yearAcademico]);
 
-  // Calcula la suma total de ponderaciones CADA VEZ que cambian los rúbros
+  // 2. SUMATORIA
   const sumaPonderaciones = useMemo(() => {
     const total = rubrosEdit.reduce(
-      (acc, rubro) => acc + Number(rubro.ponderacion),
+      (acc, rubro) => acc + Number(rubro.ponderacion || 0),
       0
     );
-    // Redondeamos para evitar problemas con decimales de JS
-    return Math.round(total * 100) / 100;
+    return total; 
   }, [rubrosEdit]);
 
-  // Valida si la suma es 1 (100%)
   useEffect(() => {
-    setErrorSuma(sumaPonderaciones !== 1.0);
+    setErrorSuma(sumaPonderaciones !== 100);
   }, [sumaPonderaciones]);
 
   // --- MANEJADORES DE CAMBIOS ---
-
-  // Maneja el cambio en un TextField (nombre o ponderación)
   const handleRubroChange = (index, campo, valor) => {
     const nuevosRubros = [...rubrosEdit];
-    nuevosRubros[index][campo] = valor;
+
+    if (campo === "ponderacion") {
+      if (valor === "") {
+        nuevosRubros[index][campo] = "0";
+        setRubrosEdit(nuevosRubros);
+        return;
+      }
+
+      if (!/^\d+$/.test(valor)) {
+        return;
+      }
+
+      let valorLimpio = valor;
+      if (valor.length > 1 && valor.startsWith("0")) {
+        valorLimpio = valor.replace(/^0+/, "");
+        if (valorLimpio === "") valorLimpio = "0";
+      }
+
+      if (Number(valorLimpio) > 100) {
+        return;
+      }
+
+      nuevosRubros[index][campo] = valorLimpio;
+    } else {
+      nuevosRubros[index][campo] = valor;
+    }
+
     setRubrosEdit(nuevosRubros);
   };
 
-  // Añade un nuevo rúbro vacío a la lista
   const handleAddRubro = () => {
     setRubrosEdit([
       ...rubrosEdit,
       {
-        id_rubro: `new_${Date.now()}`, // ID temporal
+        id_rubro: `new_${Date.now()}`,
         nombre_rubro: "",
-        ponderacion: "0.00",
+        ponderacion: "0", 
         materia_clave: materiaClave,
+        id_grupo: idGrupo,
+        year_academico: yearAcademico,
       },
     ]);
   };
 
-  // Elimina un rúbro de la lista
   const handleDeleteRubro = (index) => {
     const nuevosRubros = rubrosEdit.filter((_, i) => i !== index);
     setRubrosEdit(nuevosRubros);
@@ -90,29 +158,40 @@ function GestionarRubrosModal({
     }
 
     try {
-      // setLoading(true); // Puedes añadir un estado de carga
+      setIsSaving(true);
+
+      const rubrosParaEnviar = rubrosEdit.map(r => ({
+        ...r,
+        ponderacion: (Number(r.ponderacion) / 100).toFixed(2)
+      }));
 
       const payload = {
-        materiaClave: materiaClave, // Viene de las props
-        rubros: rubrosEdit, // Tu array del estado
+        materiaClave: materiaClave,
+        idGrupo: idGrupo,
+        yearAcademico: yearAcademico,
+        rubros: rubrosParaEnviar, 
       };
 
-      console.log("Enviando rúbros para guardar:", payload);
       await fetchRubrosUpdate(payload, token);
       onGuardar();
     } catch (err) {
       console.error("Error al guardar rúbros:", err);
-      // setError("Hubo un error al guardar.");
+      alert(err.message || "Hubo un error al guardar los rúbros.");
     } finally {
-      // setLoading(false);
+      setIsSaving(false);
     }
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Gestionar Rúbros de {nombreMateria}</DialogTitle>
+      <DialogTitle>
+        Gestionar Rúbros de {nombreMateria}
+        <span style={{ fontSize: "0.8rem", color: "gray", display: "block" }}>
+          Grupo {idGrupo} - Ciclo {yearAcademico}
+        </span>
+      </DialogTitle>
+
       <DialogContent>
-        {/* --- LISTA DE RÚBROS EDITABLES --- */}
         <Stack spacing={2} sx={{ mt: 2 }}>
           {rubrosEdit.map((rubro, index) => (
             <Stack direction="row" spacing={2} key={rubro.id_rubro}>
@@ -123,19 +202,26 @@ function GestionarRubrosModal({
                   handleRubroChange(index, "nombre_rubro", e.target.value)
                 }
                 fullWidth
+                disabled={isSaving}
               />
               <TextField
-                label="Ponderación (ej: 0.25)"
-                type="number"
+                label="Ponderación"
+                type="text"
                 value={rubro.ponderacion}
                 onChange={(e) =>
                   handleRubroChange(index, "ponderacion", e.target.value)
                 }
-                sx={{ width: 200 }}
+                sx={{ width: 150 }}
+                disabled={isSaving}
+                InputProps={{
+                  endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                }}
+                inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               />
               <IconButton
                 onClick={() => handleDeleteRubro(index)}
                 color="error"
+                disabled={isSaving}
               >
                 <DeleteIcon />
               </IconButton>
@@ -143,32 +229,35 @@ function GestionarRubrosModal({
           ))}
         </Stack>
 
-        <Button startIcon={<AddIcon />} onClick={handleAddRubro} sx={{ mt: 2 }}>
+        <Button
+          startIcon={<AddIcon />}
+          onClick={handleAddRubro}
+          sx={{ mt: 2 }}
+          disabled={isSaving}
+        >
           Añadir Rúbro
         </Button>
 
-        {/* --- VALIDACIÓN DE SUMA --- */}
         <Alert
           severity={errorSuma ? "error" : "success"}
           icon={<InfoIcon />}
           sx={{ mt: 3 }}
         >
-          Suma de ponderaciones:{" "}
-          <strong>{Number(sumaPonderaciones * 100).toFixed(0)}%</strong>
+          Suma de ponderaciones: <strong>{sumaPonderaciones}%</strong>
           {!errorSuma ? " (¡Correcto!)" : " (Debe sumar 100%)"}
         </Alert>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="secondary">
+        <Button onClick={onClose} color="secondary" disabled={isSaving}>
           Cancelar
         </Button>
         <Button
           onClick={handleGuardar}
           variant="contained"
-          disabled={errorSuma} // Deshabilita si la suma es incorrecta
+          disabled={errorSuma || isSaving || rubrosEdit.length === 0}
           startIcon={<SaveIcon />}
         >
-          Guardar Cambios
+          {isSaving ? "Guardando..." : "Guardar Cambios"}
         </Button>
       </DialogActions>
     </Dialog>

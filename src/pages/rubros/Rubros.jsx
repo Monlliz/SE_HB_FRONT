@@ -10,8 +10,14 @@ import {
   syncCalificaciones_service,
   fetchRubrosCalificacionesGet,
 } from "../../services/rubroService.js";
-import { fetchAlumnoGrupoGet } from "../../services/alumnosService.js";
 
+// CAMBIO CRUCIAL: Importar AMBOS servicios de alumnos
+import { 
+  fetchAlumnoGrupoGet, 
+  fetchAlumnoPerfilGet 
+} from "../../services/alumnosService.js";
+
+// Hook de exportación
 import { useExport } from "../../utils/useExport.js";
 
 import {
@@ -33,42 +39,41 @@ import {
   Select,
   MenuItem,
   TextField,
-  IconButton,
   Tooltip,
 } from "@mui/material";
+
 import SettingsIcon from "@mui/icons-material/Settings";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
-// --- NUEVO: Iconos para exportación ---
 import DownloadIcon from "@mui/icons-material/Download";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 
-// Lógica para generar los años (ej. [2025, 2024, 2023])
 const currentYear = new Date().getFullYear();
 const years = Array.from(new Array(3), (val, index) => currentYear - index);
 
 /**
- * Componente principal para gestionar calificaciones de un grupo.
+ * Componente principal unificado para gestionar calificaciones de un grupo o perfil.
  */
 const GestionarRubros = () => {
   const { token } = useAuth();
   const location = useLocation();
   const {
     grupoId,
+    idNormalizado, // Existirá solo si es modo Perfil
+    semestre,      // Existirá solo si es modo Perfil
     materiaClave,
     nombreMateria,
     year: initialYear,
   } = location.state || {};
 
-  //  Usar el hook de exportación ---
+  // --- Hook de exportación ---
   const { exportar } = useExport();
 
   // --- ESTADOS DE DATOS ---
-  const [rubros, setRubros] = useState([]); // Configuración de Rubros (Columnas)
-  const [alumnos, setAlumnos] = useState([]); // Lista de Alumnos (Filas)
-  const [calificaciones, setCalificaciones] = useState([]); // Notas
-  const [originalCalificaciones, setOriginalCalificaciones] = useState([]); // Para el botón "Cancelar"
+  const [rubros, setRubros] = useState([]);
+  const [alumnos, setAlumnos] = useState([]);
+  const [calificaciones, setCalificaciones] = useState([]);
+  const [originalCalificaciones, setOriginalCalificaciones] = useState([]);
 
   // --- ESTADOS DE FILTROS ---
   const [parcial, setParcial] = useState(1);
@@ -88,40 +93,59 @@ const GestionarRubros = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
 
-  // --- LÓGICA DE CARGA (Sin cambios en tu lógica original) ---
-
+  // --- CARGA 1: RÚBROS ---
   const cargarRubros = useCallback(async () => {
-    if (!materiaClave) {
-      setErrorRubros("No se proporcionó una clave de materia.");
+    if (!materiaClave || !grupoId) {
+      setErrorRubros("Faltan datos de materia o grupo para cargar los rúbros.");
       setLoadingRubros(false);
       return;
     }
     setLoadingRubros(true);
     setErrorRubros(null);
     try {
-      const data = await fetchRubrosMateriaGet(materiaClave, token);
+      const data = await fetchRubrosMateriaGet(
+        materiaClave,
+        grupoId,
+        selectedYear,
+        token
+      );
       setRubros(data.rubros || []);
     } catch (err) {
       setErrorRubros(err.message);
     } finally {
       setLoadingRubros(false);
     }
-  }, [materiaClave, token]);
+  }, [materiaClave, grupoId, selectedYear, token]);
 
   useEffect(() => {
     cargarRubros();
   }, [cargarRubros]);
 
+  // --- CARGA 2: ALUMNOS (LÓGICA HÍBRIDA CORREGIDA) ---
   useEffect(() => {
     const cargarAlumnos = async () => {
       setLoadingAlumnos(true);
       setErrorAlumnos(null);
       try {
-        const data = await fetchAlumnoGrupoGet(token, grupoId);
+        let data;
+        
+        // Si tenemos idNormalizado y semestre, es modo PERFIL
+        if (idNormalizado && semestre) {
+          data = await fetchAlumnoPerfilGet(token, idNormalizado, semestre);
+        } 
+        // Si solo tenemos grupoId, es modo GRUPO NORMAL
+        else if (grupoId) {
+          data = await fetchAlumnoGrupoGet(token, grupoId);
+        } 
+        else {
+          throw new Error("No se proporcionaron identificadores válidos.");
+        }
+        
         const alumnosNormalizados = (data.alumnos || []).map((a) => ({
           ...a,
           alumno_matricula: a.matricula,
         }));
+        
         setAlumnos(alumnosNormalizados);
       } catch (err) {
         setErrorAlumnos(err.message);
@@ -129,17 +153,20 @@ const GestionarRubros = () => {
         setLoadingAlumnos(false);
       }
     };
-    if (grupoId) {
+    
+    // Condición de ejecución: Debe haber grupoId (para grupo) o idNormalizado+semestre (para perfil)
+    if (grupoId || (idNormalizado && semestre)) {
       cargarAlumnos();
     } else {
       setLoadingAlumnos(false);
-      setErrorAlumnos("No se proporcionó un ID de grupo.");
+      setErrorAlumnos("Faltan datos de identificación del grupo o perfil.");
     }
-  }, [grupoId, token]);
+  }, [grupoId, idNormalizado, semestre, token]);
 
+  // --- CARGA 3: CALIFICACIONES ---
   useEffect(() => {
     const cargarCalificaciones = async () => {
-      if (!materiaClave || !parcial || !selectedYear) return;
+      if (!materiaClave || !parcial || !selectedYear || !grupoId) return;
 
       setLoadingCalificaciones(true);
       setErrorCalificaciones(null);
@@ -151,16 +178,14 @@ const GestionarRubros = () => {
           materiaClave,
           parcial,
           selectedYear,
-          token,
+          grupoId,
+          token
         );
         setCalificaciones(data);
-        // Almacena la data original después de la carga exitosa
         setOriginalCalificaciones(data);
       } catch (err) {
         console.error("Error cargando calificaciones:", err);
-        setErrorCalificaciones(
-          "Error al cargar calificaciones: " + err.message,
-        );
+        setErrorCalificaciones("Error al cargar calificaciones: " + err.message);
       } finally {
         setLoadingCalificaciones(false);
       }
@@ -173,14 +198,14 @@ const GestionarRubros = () => {
     materiaClave,
     parcial,
     selectedYear,
+    grupoId,
     token,
     loadingRubros,
     loadingAlumnos,
   ]);
 
-  // --- COMBINACIÓN DE DATOS (ALUMNOS + CALIFICACIONES) ---
+  // --- COMBINACIÓN DE DATOS ---
   const datosTabla = useMemo(() => {
-    // 1. Crear un "mapa" de calificaciones para búsqueda rápida.
     const califMap = new Map();
     for (const calif of calificaciones) {
       if (!califMap.has(calif.alumno_matricula)) {
@@ -191,12 +216,9 @@ const GestionarRubros = () => {
         .set(calif.id_rubro, calif.calificacion);
     }
 
-    // 2. Mapear la lista de alumnos (fuente de verdad)
     return alumnos.map((alumno) => {
-      const susCalificaciones =
-        califMap.get(alumno.alumno_matricula) || new Map();
+      const susCalificaciones = califMap.get(alumno.alumno_matricula) || new Map();
 
-      // --- Lógica de promedio MODIFICADA (sin cambios) ---
       let sumaPonderada = 0;
       let ponderacionTotal = 0;
 
@@ -208,8 +230,7 @@ const GestionarRubros = () => {
         }
       }
 
-      const promedio =
-        ponderacionTotal > 0 ? sumaPonderada / ponderacionTotal : 0;
+      const promedio = ponderacionTotal > 0 ? sumaPonderada / ponderacionTotal : 0;
 
       return {
         ...alumno,
@@ -219,90 +240,57 @@ const GestionarRubros = () => {
     });
   }, [alumnos, calificaciones, rubros]);
 
-
-  /**
-   * Transforma los datos de la tabla en un formato plano
-   * adecuado para la exportación a Excel o PDF.
-   */
+  // --- LÓGICA DE EXPORTACIÓN ---
   const transformarDatosParaExportar = useCallback(() => {
     if (!datosTabla.length) return [];
 
-    // 1. Definir la lista ORDENADA de TODOS los encabezados que usaremos.
-    // MODIFICADO: Sustituimos 'Nombre del Alumno' por los 3 campos separados.
     const headers = [
       "Matrícula",
-      "Primer Apellido", // Nuevo
-      "Segundo Apellido", // Nuevo
-      "Nombres", // Nuevo
-      // Agregamos los encabezados de los rubros dinámicamente
+      "Primer Apellido",
+      "Segundo Apellido",
+      "Nombres",
       ...rubros.map(
-        (rubro) =>
-          `Rúbro: ${rubro.nombre_rubro} (${Number(rubro.ponderacion) * 100}%)`,
+        (rubro) => `Rúbro: ${rubro.nombre_rubro} (${Number(rubro.ponderacion) * 100}%)`
       ),
       "Promedio Final",
     ];
 
-    // 2. Crear los datos de las filas, asegurando el orden correcto
     return datosTabla.map((alumno) => {
       const row = {};
 
-      // a) Datos fijos y separados del alumno
       row["Matrícula"] = alumno.alumno_matricula;
-      // NUEVOS CAMPOS SEPARADOS
       row["Primer Apellido"] = alumno.apellidop || "";
       row["Segundo Apellido"] = alumno.apellidom || "";
       row["Nombres"] = alumno.nombres || "";
 
-      // b) Agregar las calificaciones de cada rubro en el orden correcto
-      // Empezamos la indexación de encabezados dinámicos en la posición 4 (después de Matrícula, Apellidop, Apellidom, Nombres)
       rubros.forEach((rubro, index) => {
         const idRubro = rubro.id_rubro;
         const valorDelMapa = alumno.calificacionesMap.get(idRubro);
-
-        // Conversión y validación de la calificación (solución del paso anterior)
         const calificacionNumerica = parseFloat(valorDelMapa);
-
-        // El índice en `headers` debe sumar 4, ya que las 4 primeras columnas son fijas (Matrícula, 3x Nombres)
         const headerKey = headers[index + 4];
 
-        if (
-          typeof calificacionNumerica === "number" &&
-          !isNaN(calificacionNumerica)
-        ) {
+        if (typeof calificacionNumerica === "number" && !isNaN(calificacionNumerica)) {
           row[headerKey] = calificacionNumerica.toFixed(2);
         } else {
           row[headerKey] = "-";
         }
       });
 
-      // c) Agregar el promedio final
       row["Promedio Final"] = alumno.promedio.toFixed(2);
-
       return row;
     });
-  }, [datosTabla, rubros]); // Dependencias
+  }, [datosTabla, rubros]);
 
-  /**
-   * Manejador que llama al hook de exportación.
-   */
   const handleExport = useCallback(
     (format) => {
       const dataToExport = transformarDatosParaExportar();
       const fileNameBase = `Calificaciones_${materiaClave}_P${parcial}_${selectedYear}`;
       exportar(dataToExport, fileNameBase, format);
     },
-    [
-      transformarDatosParaExportar,
-      materiaClave,
-      parcial,
-      selectedYear,
-      exportar,
-    ],
+    [transformarDatosParaExportar, materiaClave, parcial, selectedYear, exportar]
   );
 
-  // --- FIN LÓGICA DE EXPORTACIÓN ---
-
-  // --- MANEJADORES DE EVENTOS (Sin cambios) ---
+  // --- MANEJADORES DE EVENTOS ---
   const handleEdit = () => {
     setIsEditing(true);
     setSaveError(null);
@@ -310,7 +298,7 @@ const GestionarRubros = () => {
 
   const handleCancel = () => {
     setIsEditing(false);
-    setCalificaciones(originalCalificaciones); // Revierte a los datos originales
+    setCalificaciones(originalCalificaciones);
     setSaveError(null);
   };
 
@@ -327,10 +315,8 @@ const GestionarRubros = () => {
 
     try {
       await syncCalificaciones_service(batchData, token);
-
       setIsEditing(false);
       setIsSaving(false);
-      // Actualiza el original para que "cancelar" funcione después de guardar
       setOriginalCalificaciones(calificaciones);
     } catch (err) {
       console.error("Error al guardar:", err);
@@ -355,8 +341,7 @@ const GestionarRubros = () => {
     setCalificaciones((prevCalificaciones) => {
       const newState = [...prevCalificaciones];
       const index = newState.findIndex(
-        (c) =>
-          c.alumno_matricula === matricula && c.id_rubro === Number(idRubro),
+        (c) => c.alumno_matricula === matricula && c.id_rubro === Number(idRubro)
       );
 
       if (index > -1) {
@@ -373,16 +358,9 @@ const GestionarRubros = () => {
   };
 
   // --- RENDERIZADO PRINCIPAL ---
-
   const isEssentialLoading = loadingRubros || loadingAlumnos;
-  const canEdit =
-    !isEssentialLoading &&
-    !errorRubros &&
-    !errorAlumnos &&
-    datosTabla.length > 0;
-
-  const isExportDisabled =
-    isEssentialLoading || loadingCalificaciones || datosTabla.length === 0;
+  const canEdit = !isEssentialLoading && !errorRubros && !errorAlumnos && datosTabla.length > 0;
+  const isExportDisabled = isEssentialLoading || loadingCalificaciones || datosTabla.length === 0;
 
   return (
     <Box
@@ -393,7 +371,6 @@ const GestionarRubros = () => {
         height: "calc(100vh - 64px)",
       }}
     >
-      {/* Encabezado con título y botones de acción */}
       <Box
         sx={{
           width: "100%",
@@ -407,15 +384,12 @@ const GestionarRubros = () => {
         <Box>
           <Typography variant="h5">Materia: {nombreMateria}</Typography>
           <Typography variant="subtitle1" color="text.secondary">
-            Calificaciones Grupo {grupoId}
+            {/* Mostrar el título dinámico dependiendo de si es perfil o grupo */}
+            Calificaciones {idNormalizado ? `Perfil ${idNormalizado} (${semestre})` : `Grupo ${grupoId}`}
           </Typography>
 
           <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-            <FormControl
-              size="small"
-              sx={{ minWidth: 120 }}
-              disabled={isEditing}
-            >
+            <FormControl size="small" sx={{ minWidth: 120 }} disabled={isEditing}>
               <InputLabel id="parcial-select-label">Parcial</InputLabel>
               <Select
                 labelId="parcial-select-label"
@@ -431,8 +405,6 @@ const GestionarRubros = () => {
           </Stack>
         </Box>
         <Stack direction="row" spacing={1} alignItems="flex-start">
-          {/* --- BLOQUE DE BOTONES DE EXPORTACIÓN (NUEVO) --- */}
-
           <span>
             <Button
               variant="outlined"
@@ -440,26 +412,16 @@ const GestionarRubros = () => {
               onClick={() => handleExport("xlsx")}
               disabled={isExportDisabled}
             >
-              {" "}
               Exportar XLSX
             </Button>
           </span>
 
-          {/* --- FIN BOTONES DE EXPORTACIÓN --- */}
-
-          {/* Bloque de botones de Edición/Guardado (Modificado) */}
           {isEditing ? (
             <>
               <Button
                 variant="contained"
                 color="success"
-                startIcon={
-                  isSaving ? (
-                    <CircularProgress size={20} color="inherit" />
-                  ) : (
-                    <SaveIcon />
-                  )
-                }
+                startIcon={isSaving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
                 onClick={handleSave}
                 disabled={isSaving}
               >
@@ -497,16 +459,12 @@ const GestionarRubros = () => {
         </Stack>
       </Box>
 
-      {/* ... (El resto del renderizado es idéntico a tu código original) ... */}
-
-      {/* Alerta de Error de Guardado */}
       {saveError && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {saveError}
         </Alert>
       )}
 
-      {/* Contenedor de la Tabla */}
       <Box
         sx={{
           flexGrow: 1,
@@ -516,10 +474,7 @@ const GestionarRubros = () => {
           overflow: "hidden",
         }}
       >
-        <TableContainer
-          component={Paper}
-          sx={{ flexGrow: 1, overflow: "auto" }}
-        >
+        <TableContainer component={Paper} sx={{ flexGrow: 1, overflow: "auto" }}>
           <Table stickyHeader aria-label="tabla de calificaciones">
             <TableHead>
               <TableRow>
@@ -552,21 +507,14 @@ const GestionarRubros = () => {
                       sx={{ fontWeight: "bold", minWidth: 150 }}
                     >
                       {rubro.nombre_rubro}
-                      <Typography
-                        variant="caption"
-                        display="block"
-                        color="text.secondary"
-                      >
+                      <Typography variant="caption" display="block" color="text.secondary">
                         ({Number(rubro.ponderacion) * 100}%)
                       </Typography>
                     </TableCell>
                   ))
                 )}
 
-                <TableCell
-                  sx={{ fontWeight: "bold", minWidth: 100 }}
-                  align="center"
-                >
+                <TableCell sx={{ fontWeight: "bold", minWidth: 100 }} align="center">
                   Promedio
                 </TableCell>
               </TableRow>
@@ -610,13 +558,8 @@ const GestionarRubros = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                // Renderizado final de datos
                 datosTabla.map((alumno) => (
-                  <TableRow
-                    key={alumno.alumno_matricula}
-                    hover
-                    sx={{ height: "35px" }}
-                  >
+                  <TableRow key={alumno.alumno_matricula} hover sx={{ height: "35px" }}>
                     <TableCell
                       component="th"
                       scope="row"
@@ -635,23 +578,18 @@ const GestionarRubros = () => {
                     </TableCell>
 
                     {rubros.map((rubro) => (
-                      <TableCell
-                        key={`${alumno.alumno_matricula}-${rubro.id_rubro}`}
-                        align="center"
-                      >
+                      <TableCell key={`${alumno.alumno_matricula}-${rubro.id_rubro}`} align="center">
                         {isEditing ? (
                           <TextField
                             type="number"
                             fullWidth
                             variant="standard"
-                            value={
-                              alumno.calificacionesMap.get(rubro.id_rubro) ?? ""
-                            }
+                            value={alumno.calificacionesMap.get(rubro.id_rubro) ?? ""}
                             onChange={(e) =>
                               handleGradeChange(
                                 alumno.alumno_matricula,
                                 rubro.id_rubro,
-                                e.target.value,
+                                e.target.value
                               )
                             }
                             InputProps={{
@@ -671,11 +609,8 @@ const GestionarRubros = () => {
                             disabled={isSaving}
                           />
                         ) : (
-                          <div
-                            style={{ fontSize: "0.85rem", padding: "5px 0" }}
-                          >
-                            {alumno.calificacionesMap.get(rubro.id_rubro) ??
-                              "-"}
+                          <div style={{ fontSize: "0.85rem", padding: "5px 0" }}>
+                            {alumno.calificacionesMap.get(rubro.id_rubro) ?? "-"}
                           </div>
                         )}
                       </TableCell>
@@ -688,19 +623,12 @@ const GestionarRubros = () => {
                         padding: "4px",
                         fontWeight: "bold",
                         fontSize: "0.85rem",
-                        color:
-                          alumno.promedio >= 6 ? "success.main" : "error.main",
+                        color: alumno.promedio >= 6 ? "success.main" : "error.main",
                       }}
                     >
                       {isEditing ? (
                         <Tooltip title="El promedio final se actualizará al guardar">
-                          <span
-                            style={{
-                              fontStyle: "italic",
-                              color: "gray",
-                              opacity: 0.7,
-                            }}
-                          >
+                          <span style={{ fontStyle: "italic", color: "gray", opacity: 0.7 }}>
                             {alumno.promedio.toFixed(2)}
                           </span>
                         </Tooltip>
@@ -723,11 +651,13 @@ const GestionarRubros = () => {
           onClose={() => setModalAbierto(false)}
           rubrosActuales={rubros}
           materiaClave={materiaClave}
-          nombreMateria={nombreMateria} // Corregido: Usar nombreMateria, no materiaClave
+          nombreMateria={nombreMateria}
+          idGrupo={grupoId}
+          yearAcademico={selectedYear}
           token={token}
           onGuardar={() => {
             setModalAbierto(false);
-            cargarRubros(); // Recarga la configuración de rubros
+            cargarRubros(); // Recarga la configuración
           }}
         />
       )}

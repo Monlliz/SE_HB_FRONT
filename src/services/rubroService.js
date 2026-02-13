@@ -1,21 +1,27 @@
 const apiUrl = import.meta.env.VITE_API_URL;
 
-export const fetchRubrosMateriaGet = async (materia, token) => {
+// 1. Obtener Rubros (Agregamos idGrupo y yearAcademico)
+export const fetchRubrosMateriaGet = async (materia, idGrupo, yearAcademico, token) => {
   try {
-    const resRubros = await fetch(`${apiUrl}/rubro/${materia}`, {
+    // Usamos Query Strings para pasar los parámetros de filtro
+    const url = `${apiUrl}/rubro/${materia}?idGrupo=${idGrupo}&yearAcademico=${yearAcademico}`;
+    
+    const resRubros = await fetch(url, {
       headers: {
         "x-auth-token": token,
       },
     });
+    
     if (!resRubros.ok) throw new Error("Error al cargar los rubros");
     const rubros = await resRubros.json();
     return { rubros: rubros || [] };
   } catch (error) {
-    console.error("Error en el servicio fetchRubrosMateriaGet:", error.message);
+    console.error("Error en fetchRubrosMateriaGet:", error.message);
     throw error;
   }
 };
 
+// 2. Sincronizar Rubros (El objeto 'datos' ya debe incluir idGrupo y yearAcademico)
 export const fetchRubrosUpdate = async (datos, token) => {
   try {
     const resRubros = await fetch(`${apiUrl}/rubro/sync`, {
@@ -24,26 +30,31 @@ export const fetchRubrosUpdate = async (datos, token) => {
         "x-auth-token": token,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(datos),
+      body: JSON.stringify(datos), // datos: { materiaClave, idGrupo, yearAcademico, rubros }
     });
+    
     if (!resRubros.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Error del servidor al guardar");
+      const errorData = await resRubros.json();
+      throw new Error(errorData.message || "Error del servidor al guardar rubros");
     }
+    return await resRubros.json();
   } catch (error) {
-    console.error("Error en el servicio fetchRubrosUpdate:", error.message);
+    console.error("Error en fetchRubrosUpdate:", error.message);
     throw error;
   }
 };
 
+// 3. Obtener Calificaciones (Agregamos idGrupo a la URL paramétrica)
 export const fetchRubrosCalificacionesGet = async (
   materia,
   parcial,
   yearc,
+  idGrupo, // <-- Nuevo parámetro
   token,
 ) => {
+  // Coincide con: /calificaciones/:idM/:parcial/:yearc/:idGrupo
   const response = await fetch(
-    `${apiUrl}/rubro/calificaciones/${materia}/${parcial}/${yearc}`,
+    `${apiUrl}/rubro/calificaciones/${materia}/${parcial}/${yearc}/${idGrupo}`,
     {
       method: "GET",
       headers: {
@@ -54,33 +65,37 @@ export const fetchRubrosCalificacionesGet = async (
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(
-      errorData.message || "Error al sincronizar las calificaciones",
-    );
+    throw new Error(errorData.message || "Error al obtener las calificaciones");
   }
 
   return response.json();
 };
 
+// 4. Sincronizar Calificaciones (Batch)
 export const syncCalificaciones_service = async (batchData, token) => {
-  const response = await fetch(`${apiUrl}/rubro/calificaciones`, {
-    method: "POST",
-    headers: {
-      "x-auth-token": token,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(batchData),
-  });
+  try {
+    const response = await fetch(`${apiUrl}/rubro/calificaciones`, {
+      method: "POST",
+      headers: {
+        "x-auth-token": token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(batchData), // batchData: { grades, parcial }
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(
-      errorData.message || "Error al sincronizar las calificaciones",
-    );
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Error al sincronizar las calificaciones");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error en syncCalificaciones_service:", error.message);
+    throw error;
   }
-
-  return response.json();
 };
+
+//TC
 
 //rubros
 export const fetchRubrosTCGet = async (context, token) => {
