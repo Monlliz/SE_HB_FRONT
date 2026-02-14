@@ -82,7 +82,7 @@ export const fetchPerfilGet = async (token) => {
 };
 
 //Perfil materia post
-export const fetcthPerfilMateriaPost = async (
+export const fetchPerfilMateriaPost = async (
   token,
   grupoId,
   materiaSeleccionada

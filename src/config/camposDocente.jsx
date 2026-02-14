@@ -1,3 +1,6 @@
+import React from "react";
+import { Box } from "@mui/material";
+
 //------------DOCENTE----------------------------------------------
 import { User, Mail, Calendar } from "lucide-react"; // O los iconos que uses
 // Definición de los campos para el formulario de nuevo docente
@@ -46,3 +49,9 @@ export const camposNuevoDocente = [
         })()
     },
 ];
+//------------------------------------------------------------------
+
+//------------ALUMNO----------------------------------------------
+
+//------------------------------------------------------------------
+

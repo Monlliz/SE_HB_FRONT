@@ -23,7 +23,7 @@ import {
 } from "@mui/material";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import UserDocente from "../components/users/UserDocente.jsx"; 
-import { camposNuevoDocente } from "../config/camposDocente-Alumno.jsx"; 
+import { camposNuevoDocente } from "../config/camposDocente.jsx"; 
 import ReusableModal from "../components/modals/ReusableModal.jsx";
 import { fetchDocentePost } from "../services/docenteService.js";
 import { User } from "lucide-react";

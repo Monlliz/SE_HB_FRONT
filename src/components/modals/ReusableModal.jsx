@@ -14,7 +14,9 @@ import {
     Radio,
     FormLabel,
     FormControl,
-    FormHelperText
+    FormHelperText,
+    Typography,
+    Autocomplete
 } from "@mui/material";
 
 export default function ReusableModal({
@@ -25,7 +27,8 @@ export default function ReusableModal({
     fields = [],
     onSubmit,
     iconEntity: IconE = null,
-    existingData = []
+    existingData = [],
+    maxWidth = "sm"
 }) {
     //manejador de estados para los datos del formulario
     const [formData, setFormData] = useState(initialValues);
@@ -148,28 +151,60 @@ export default function ReusableModal({
         switch (field.type) {
 
             // --- CASO 1: SELECT (Muy usado para relaciones) ---
-            case "select":
+            // --- CASO 1: AUTOCOMPLETE (Select con búsqueda) ---
+            case "autocomplete": // O puedes dejarlo como "select" si quieres reemplazarlo en todos lados
+            case "select":       // Puedes usar ambos casos si quieres que el select actúe siempre como autocomplete
+                
+                // 1. Buscamos el objeto completo que corresponde al valor guardado (ID/String)
+                const selectedOption = field.options?.find(opt => 
+                    (opt.value ?? opt.id) === formData[field.name]
+                ) || null;
+
                 return (
-                    <TextField
+                    <Autocomplete
                         key={field.name}
-                        select
-                        label={field.label}
-                        name={field.name}
-                        value={formData[field.name] || ""}
-                        onChange={handleChange}
-                        fullWidth
-                        required={field.required}
+                        // Opciones disponibles
+                        options={field.options || []}
+                        
+                        // Qué texto mostrar en la lista y en el input
+                        getOptionLabel={(option) => option.label || ""}
+                        
+                        // Cómo saber si una opción es la que está seleccionada
+                        isOptionEqualToValue={(option, value) => 
+                            (option.value ?? option.id) === (value.value ?? value.id)
+                        }
+
+                        // Valor actual (Objeto completo o null)
+                        value={selectedOption}
+
+                        // Manejo del cambio
+                        onChange={(event, newValue) => {
+                            // Simulamos el evento estándar para que tu handleChange no se rompa
+                            handleChange({
+                                target: {
+                                    name: field.name,
+                                    // Si newValue es null (limpiaron el campo), guardamos ""
+                                    // Si existe, guardamos el value o el id
+                                    value: newValue ? (newValue.value ?? newValue.id) : "" 
+                                }
+                            });
+                        }}
+
                         disabled={field.disable}
-                        //Props de error
-                        error={hasError}
-                        helperText={hasError ? errorMsg : field.helperText}
-                    >
-                        {field.options?.map((option) => (
-                            <MenuItem key={option.id} value={option.id}>
-                                {option.label}
-                            </MenuItem>
-                        ))}
-                    </TextField>
+                        fullWidth
+                        
+                        // Renderizado del Input (Aquí van los errores y labels)
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label={field.label}
+                                name={field.name}
+                                required={field.required}
+                                error={hasError}
+                                helperText={hasError ? errorMsg : field.helperText}
+                            />
+                        )}
+                    />
                 );
 
             // --- CASO 2: TEXTAREA (Para descripciones largas) ---
@@ -298,7 +333,7 @@ export default function ReusableModal({
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth={maxWidth}>
 
             <DialogTitle sx={{
                 backgroundColor: "primary.main",
@@ -345,6 +380,19 @@ export default function ReusableModal({
 
                                 {/* 3. El Input renderizado ocupa el resto del espacio */}
                                 <Box sx={{ flexGrow: 1 }}>
+                                    
+                                    {/* --- AQUÍ ESTÁ LA MAGIA --- */}
+                                    {/* Si hay una instrucción, la mostramos como texto plano arriba del input */}
+                                    {field.instruction && (
+                                        <Typography 
+                                            variant="body1" 
+                                            sx={{ mb: "1rem", color: "text.primary", fontWeight: 500 }}
+                                        >
+                                            {field.instruction}
+                                        </Typography>
+                                    )}
+                                    {/* ------------------------- */}
+
                                     {renderField(field)}
                                 </Box>
                             </Box>
