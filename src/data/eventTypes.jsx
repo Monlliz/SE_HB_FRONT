@@ -40,7 +40,7 @@ export const EVENT_TYPES = {
   },
 
   conmemoracion: {
-    color: "#0288d1",
+    color: "#046ea8",
     icon: Celebration, 
     label: "Conmemoración",
     descripcion: "Fechas simbólicas que se recuerdan o celebran."
