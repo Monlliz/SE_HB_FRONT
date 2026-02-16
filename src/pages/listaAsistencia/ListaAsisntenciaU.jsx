@@ -1,12 +1,13 @@
 /**
  * @file ListaAsistenciaUnificada.jsx
- * @description Componente unificado para gestionar asistencias (General, Materia y Perfil).
+ * @description Componente unificado para gestionar asistencias con UI/UX mejorada.
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { obtenerFechaFormateada } from "../../utils/fornatters.js";
+
 // UI Components
 import {
   Table,
@@ -22,7 +23,6 @@ import {
   Tooltip,
   Button,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
   Stack,
@@ -30,20 +30,27 @@ import {
   ListItemIcon,
   ListItemText,
   Checkbox,
+  IconButton,
+  Divider,
+  Alert
 } from "@mui/material";
 
-// Icons
+// Icons (Lógica de negocio)
 import AddIcon from "@mui/icons-material/Add";
-//listas de asistencia
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import AccessTimeFilledIcon from "@mui/icons-material/AccessTimeFilled";
 import TimelapseIcon from "@mui/icons-material/Timelapse";
-//--------------------------------------------------------------------------
+
+// Icons (UI/UX)
 import InfoIcon from "@mui/icons-material/Info";
-import FileDownloadIcon from "@mui/icons-material/FileDownload"; // Nuevo
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf"; // Nuevo
-import TableViewIcon from "@mui/icons-material/TableView"; // Nuevo
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import TableViewIcon from "@mui/icons-material/TableView";
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import SettingsIcon from '@mui/icons-material/Settings'; // Para el menú de "Más"
+import EmailIcon from '@mui/icons-material/Email';
+import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 
 // Modal y Notificaciones
 import NuevaAsistencia from "../../components/modals/Grupo/NuevaAsistencia";
@@ -58,10 +65,9 @@ import {
   fetchDatosAsistenciaMateriaPerfil,
 } from "../../services/asistenciaService.js";
 
-// Importar Hook de Exportación (Asegúrate de la ruta correcta)
 import { useExport } from "../../utils/useExport.js";
 
-// --- SUBCOMPONENTE DE ÍCONO ---
+// --- SUBCOMPONENTE DE ÍCONO (INTACTO) ---
 const IconoEstatus = ({ estatus }) => {
   switch (estatus) {
     case "asistio":
@@ -89,7 +95,7 @@ const IconoEstatus = ({ estatus }) => {
         </Tooltip>
       );
     default:
-      return <Typography variant="caption">-</Typography>;
+      return <Typography variant="caption" color="text.disabled">-</Typography>;
   }
 };
 
@@ -100,7 +106,7 @@ const ListaAsistencia = () => {
   const { token } = useAuth();
   const location = useLocation();
   const { showNotification, NotificationComponent } = useNotification();
-  const { exportar } = useExport(); // Usamos el hook
+  const { exportar } = useExport();
 
   // 1. Extracción de parámetros y Detección de MODO
   const {
@@ -114,7 +120,6 @@ const ListaAsistencia = () => {
 
   const isPerfil = Boolean(idNormalizado && semestre && materiaClave);
   const isMateria = Boolean(materiaClave && !isPerfil);
-  const isGeneral = Boolean(!materiaClave);
 
   // Estados
   const [modalOpen, setModalOpen] = useState(false);
@@ -124,15 +129,15 @@ const ListaAsistencia = () => {
   const [error, setError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [correoEnable, setCorreoEnable] = useState(false);
-  // Estados para el Menú de Exportación
+  
+  // Estados Menús
   const [anchorElExport, setAnchorElExport] = useState(null);
   const openExportMenu = Boolean(anchorElExport);
   const [anchoDetalles, setAnchoDetalles] = useState(null);
   const openDetallesMenu = Boolean(anchoDetalles);
-  // Filtros de fecha
-  const [selectedYear, setSelectedYear] = useState(
-    initialYear || new Date().getFullYear(),
-  );
+  
+  // Filtros
+  const [selectedYear] = useState(initialYear || new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
 
   // -----------------------------------------------------------------------
@@ -152,34 +157,14 @@ const ListaAsistencia = () => {
 
       let data;
       if (isPerfil) {
-        data = await fetchDatosAsistenciaMateriaPerfil(
-          grupoId,
-          idNormalizado,
-          semestre,
-          materiaClave,
-          selectedYear,
-          selectedMonth,
-          token,
-        );
+        data = await fetchDatosAsistenciaMateriaPerfil(grupoId, idNormalizado, semestre, materiaClave, selectedYear, selectedMonth, token);
       } else if (isMateria) {
-        data = await fetchDatosAsistenciaMateria(
-          grupoId,
-          materiaClave,
-          selectedYear,
-          selectedMonth,
-          token,
-        );
+        data = await fetchDatosAsistenciaMateria(grupoId, materiaClave, selectedYear, selectedMonth, token);
       } else {
-        data = await fetchDatosAsistencia(
-          grupoId,
-          selectedYear,
-          selectedMonth,
-          token,
-        );
+        data = await fetchDatosAsistencia(grupoId, selectedYear, selectedMonth, token);
       }
 
       setEstudiantes(data.estudiantes || []);
-      console.log(data.estudiantes);
       setAsistencias(data.asistencias || []);
     } catch (err) {
       console.error("Error al cargar datos:", err);
@@ -187,17 +172,7 @@ const ListaAsistencia = () => {
     } finally {
       setLoading(false);
     }
-  }, [
-    grupoId,
-    token,
-    selectedYear,
-    selectedMonth,
-    isPerfil,
-    isMateria,
-    materiaClave,
-    idNormalizado,
-    semestre,
-  ]);
+  }, [grupoId, token, selectedYear, selectedMonth, isPerfil, isMateria, materiaClave, idNormalizado, semestre]);
 
   useEffect(() => {
     cargarDatos();
@@ -210,12 +185,7 @@ const ListaAsistencia = () => {
     setIsSaving(true);
     try {
       if (isMateria || isPerfil) {
-        await fetchPostAsistenciaMateria(
-          token,
-          grupoId,
-          materiaClave,
-          estatusAsistencia,
-        );
+        await fetchPostAsistenciaMateria(token, grupoId, materiaClave, estatusAsistencia);
       } else {
         await fetchPostAsistencia(token, grupoId, estatusAsistencia);
       }
@@ -265,191 +235,124 @@ const ListaAsistencia = () => {
   //-------------------------------------------------------------------------
   const handleCopyEmails = () => {
     if (estudiantes.length === 0) return;
-
-    // Filtrar estudiantes que tengan correo y unirlos por coma o salto de línea
-    const correos = estudiantes
-      .map((est) => est.correo)
-      .filter((correo) => !!correo)
-      .join(", ");
+    const correos = estudiantes.map((est) => est.correo).filter((correo) => !!correo).join(", ");
 
     if (correos) {
-      navigator.clipboard
-        .writeText(correos)
-        .then(() => {
-          if (showNotification)
-            showNotification("Correos copiados al portapapeles", "success");
-        })
-        .catch(() => {
-          if (showNotification)
-            showNotification("Error al copiar correos", "error");
-        });
+      navigator.clipboard.writeText(correos)
+        .then(() => { if (showNotification) showNotification("Correos copiados al portapapeles", "success"); })
+        .catch(() => { if (showNotification) showNotification("Error al copiar correos", "error"); });
     } else {
-      if (showNotification)
-        showNotification("No hay correos para copiar", "info");
+      if (showNotification) showNotification("No hay correos para copiar", "info");
     }
   };
 
   // -----------------------------------------------------------------------
-  // LÓGICA DE menu detalles
+  // MENÚS
   // -----------------------------------------------------------------------
-  const handleMenuDetalles = (event) => {
-    setAnchoDetalles(event.currentTarget);
-  };
-  const handleMenuDetallesClose = () => {
-    setAnchoDetalles(null);
-  };
-
-  // -----------------------------------------------------------------------
-  // LÓGICA DE EXPORTACIÓN
-  // -----------------------------------------------------------------------
-  const handleExportClick = (event) => {
-    setAnchorElExport(event.currentTarget);
-  };
-  const handleExportClose = () => {
-    setAnchorElExport(null);
-  };
-
-  const getNombreArchivoBase = (tipo) => {
-    // Genera un nombre como: Asistencia_Matematicas_GrupoA_Reporte
-    const mat = nombreMateria || materiaClave || "General";
-    const mesStr = new Date(selectedYear, selectedMonth - 1).toLocaleString(
-      "es-MX",
-      { month: "long" },
-    );
-    return `Asistencia_${mat}_Gpo${grupoId}_${mesStr}_${tipo}`;
-  };
+  const handleMenuDetalles = (event) => setAnchoDetalles(event.currentTarget);
+  const handleMenuDetallesClose = () => setAnchoDetalles(null);
+  const handleExportClick = (event) => setAnchorElExport(event.currentTarget);
+  const handleExportClose = () => setAnchorElExport(null);
 
   const getTituloDocumento = () => {
     const mat = nombreMateria || materiaClave || "General";
-    // Este string aparecerá en el encabezado del PDF (gracias a tu hook)
     return `Lista: ${mat} - Grupo: ${grupoId} - ${selectedYear}`;
   };
 
-  // Opción 1: Exportar CON DATOS (Reporte Mensual)
+  // Exportar CON DATOS
   const handleExportData = (format) => {
-    if (estudiantes.length === 0) {
-      alert("No hay estudiantes para exportar.");
-      return;
-    }
-
-    // Transformamos los datos para que sean planos
+    if (estudiantes.length === 0) { alert("No hay estudiantes."); return; }
     const dataExport = estudiantes.map((est) => {
       const row = {
         Matrícula: est.matricula,
         "Nombre Completo": `${est.apellidop} ${est.apellidom} ${est.nombres}`,
       };
-
-      // Añadimos columnas dinámicas por fecha
       fechasUnicas.forEach((fecha) => {
         const estado = asistenciaMap[fecha]?.[est.matricula];
-        // Convertimos códigos a texto legible
         let textoEstado = "-";
-        if (estado === "asistio") textoEstado = "A"; // O "Asistencia"
+        if (estado === "asistio") textoEstado = "A";
         if (estado === "falta") textoEstado = "F";
-        if (estado === "demorado") textoEstado = "R"; // Retardo
-        if (estado === "antes") textoEstado = "S.A"; // Salida Anticipada
-
+        if (estado === "demorado") textoEstado = "R";
+        if (estado === "antes") textoEstado = "S.A";
         row[fecha] = textoEstado;
       });
-
       return row;
     });
-
-    const titulo = getTituloDocumento(); // Usamos el título como "FileNameBase" para el PDF
-    exportar(dataExport, titulo, format);
+    exportar(dataExport, getTituloDocumento(), format);
     handleExportClose();
   };
 
-  // Opción 2: Exportar LISTA VACÍA (Formato para imprimir)
+  // Exportar VACÍA
   const handleExportVacia = (format) => {
-    if (estudiantes.length === 0) {
-      alert("No hay estudiantes.");
-      return;
-    }
-
-    // Creamos columnas vacías para que el profe llene a mano
-
-    const dataExport = estudiantes.map((est) => {
-      const row = {
-        Matrícula: est.matricula,
-        "Nombre del Estudiante": `${est.apellidop} ${est.apellidom} ${est.nombres}`,
-      };
-
-      return row;
-    });
-
-    // El nombre del archivo servirá de encabezado en el PDF
+    if (estudiantes.length === 0) { alert("No hay estudiantes."); return; }
+    const dataExport = estudiantes.map((est) => ({
+      Matrícula: est.matricula,
+      "Nombre del Estudiante": `${est.apellidop} ${est.apellidom} ${est.nombres}`,
+    }));
     const titulo = `LISTA DE ASISTENCIA - ${nombreMateria || "General"} - Gpo ${grupoId}`;
     exportar(dataExport, titulo, format);
     handleExportClose();
   };
 
-  // -----------------------------------------------------------------------
-  // RENDER
-  // -----------------------------------------------------------------------
-
-  const getTitulo = () => {
-    if (isPerfil || isMateria)
-      return `Asistencia - ${nombreMateria || materiaClave}`;
-    return `Asistencia General - Grupo ${grupoId}`;
-  };
-
+  // Títulos
+  const getTitulo = () => (isPerfil || isMateria) ? `Asistencia - ${nombreMateria || materiaClave}` : `Asistencia General - Grupo ${grupoId}`;
   const getSubtitulo = () => {
     if (isPerfil) return `Perfil ${grupoId} (Semestre ${semestre})`;
     if (isMateria) return `Grupo ${grupoId}`;
     return `Vista General`;
   };
 
-  if (loading)
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
-        <CircularProgress />
-      </Box>
-    );
-  if (error)
-    return (
-      <Typography color="error" align="center" sx={{ my: 4 }}>
-        {error}
-      </Typography>
-    );
-
+  // -----------------------------------------------------------------------
+  // RENDER UI ACTUALIZADA
+  // -----------------------------------------------------------------------
   return (
-    <Box
-      sx={{
-        p: 3,
-        height: "calc(100vh - 64px)",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+    <Box sx={{ 
+      p: 3, 
+      height: "calc(100vh - 64px)", 
+      bgcolor: "#f4f6f8", // Fondo gris suave
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      
+      {/* HEADER TIPO TARJETA */}
+      <Paper 
+        elevation={0} 
+        sx={{ 
+          p: 2, 
+          mb: 2, 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center",
+          borderRadius: 2,
+          border: '1px solid #e0e0e0'
+        }}
+      >
+        {/* IZQUIERDA: TÍTULOS E INFO */}
         <Box>
-          <Typography variant="h5">{getTitulo()}</Typography>
-          <Typography variant="subtitle1" color="text.secondary">
+          <Typography variant="h6" fontWeight="bold" color="primary.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CalendarMonthIcon fontSize="small"/> {getTitulo()}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
             {getSubtitulo()}
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
-            Mostrando: {obtenerFechaFormateada(true)}{" "}
-            {/* Usamos la función formateadora para mostrar el mes y año, usando true como parametro, sin paraetros, la muestra completa */}
-          </Typography>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
+            <EventAvailableIcon fontSize="small" color="disabled" sx={{ fontSize: 16 }} />
+            <Typography variant="caption" color="text.secondary">
+              Mostrando: {obtenerFechaFormateada(true)}
+            </Typography>
+          </Stack>
         </Box>
 
+        {/* DERECHA: ACCIONES Y FILTROS */}
         <Stack direction="row" spacing={2} alignItems="center">
-          {/* --- SELECTORES DE FECHA EXISTENTES (Resumido) --- */}
-          {/*<FormControl sx={{ m: 1, minWidth: 100 }} size="small">
-             <InputLabel>Año</InputLabel>
-             <Select value={selectedYear} label="Año" onChange={(e) => setSelectedYear(e.target.value)}>
-               {[0, 1, 2, 3].map((off) => <MenuItem key={off} value={new Date().getFullYear() - off}>{new Date().getFullYear() - off}</MenuItem>)}
-             </Select>
-           </FormControl>*/}
-
-          <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
-            <InputLabel>Mes</InputLabel>
+          
+          {/* Selector de Mes (Estilo minimalista) */}
+          <FormControl variant="standard" sx={{ minWidth: 120 }}>
             <Select
               value={selectedMonth}
-              label="Mes"
               onChange={(e) => setSelectedMonth(e.target.value)}
+              disableUnderline
+              sx={{ fontWeight: 'bold', color: 'text.primary' }}
             >
               {Array.from({ length: 12 }, (_, i) => (
                 <MenuItem key={i + 1} value={i + 1}>
@@ -459,206 +362,213 @@ const ListaAsistencia = () => {
             </Select>
           </FormControl>
 
-          {/* --- BOTÓN NUEVA ENTRADA --- */}
+          <Divider orientation="vertical" flexItem sx={{ height: 20, alignSelf: 'center' }} />
+
+          {/* Botones de Icono */}
+          <Tooltip title="Configuración de vista">
+            <IconButton onClick={handleMenuDetalles} size="small">
+              <SettingsIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Exportar Lista">
+            <IconButton onClick={handleExportClick} size="small" color="secondary">
+              <FileDownloadIcon />
+            </IconButton>
+          </Tooltip>
+
+          {/* Botón Principal */}
           <Button
             variant="contained"
+            color="primary"
             startIcon={<AddIcon />}
             onClick={() => setModalOpen(true)}
+            sx={{ borderRadius: 2, textTransform: 'none', px: 3, boxShadow: 'none' }}
           >
             Nueva Entrada
           </Button>
-          {/* --- BOTÓN Filtros --- */}
-          <Button
-            variant="outlined"
-            onClick={handleMenuDetalles}
-            color="primary"
-          >
-            Mas
-          </Button>
 
-          {/* --- BOTÓN EXPORTAR --- */}
-          <Button
-            variant="outlined"
-            startIcon={<FileDownloadIcon />}
-            onClick={handleExportClick}
-            color="secondary"
-          >
-            Exportar
-          </Button>
-
-          {/* --- MENÚ DESPLEGABLE DE EXPORTACIÓN --- */}
-          <Menu
-            anchorEl={anchorElExport}
-            open={openExportMenu}
-            onClose={handleExportClose}
-          >
-            <MenuItem disabled>
-              <Typography variant="caption">Reporte Actual</Typography>
-            </MenuItem>
+          {/* --- MENÚS DESPLEGABLES (Ocultos visualmente hasta activarse) --- */}
+          <Menu anchorEl={anchorElExport} open={openExportMenu} onClose={handleExportClose}>
+            <MenuItem disabled><Typography variant="caption">Reporte Actual</Typography></MenuItem>
             <MenuItem onClick={() => handleExportData("xlsx")}>
-              <ListItemIcon>
-                <TableViewIcon fontSize="small" />
-              </ListItemIcon>
+              <ListItemIcon><TableViewIcon fontSize="small" /></ListItemIcon>
               <ListItemText>Excel (Con Datos)</ListItemText>
             </MenuItem>
             <MenuItem onClick={() => handleExportData("pdf")}>
-              <ListItemIcon>
-                <PictureAsPdfIcon fontSize="small" />
-              </ListItemIcon>
+              <ListItemIcon><PictureAsPdfIcon fontSize="small" /></ListItemIcon>
               <ListItemText>PDF (Con Datos)</ListItemText>
             </MenuItem>
-
-            <MenuItem disabled sx={{ mt: 1 }}>
-              <Typography variant="caption">Lista en Blanco</Typography>
-            </MenuItem>
+            <MenuItem disabled sx={{ mt: 1 }}><Typography variant="caption">Lista en Blanco</Typography></MenuItem>
             <MenuItem onClick={() => handleExportVacia("pdf")}>
-              <ListItemIcon>
-                <PictureAsPdfIcon fontSize="small" />
-              </ListItemIcon>
+              <ListItemIcon><PictureAsPdfIcon fontSize="small" /></ListItemIcon>
               <ListItemText>PDF (Lista Vacía)</ListItemText>
             </MenuItem>
             <MenuItem onClick={() => handleExportVacia("xlsx")}>
-              <ListItemIcon>
-                <TableViewIcon fontSize="small" />
-              </ListItemIcon>
+              <ListItemIcon><TableViewIcon fontSize="small" /></ListItemIcon>
               <ListItemText>Excel (Lista Vacía)</ListItemText>
             </MenuItem>
           </Menu>
 
-          {/* Menu detalles */}
-          <Menu
-            anchorEl={anchoDetalles}
-            open={openDetallesMenu}
-            onClose={handleMenuDetallesClose}
-            // Estas propiedades aseguran que el menú aparezca justo debajo del botón
-            anchorOrigin={{
-              vertical: "bottom",
-              horizontal: "left",
-            }}
-            transformOrigin={{
-              vertical: "top",
-              horizontal: "left",
-            }}
-          >
-            <MenuItem
-              onClick={() => {
-                setCorreoEnable(!correoEnable);
-                handleMenuDetallesClose();
-              }}
-            >
-              <Checkbox checked={correoEnable} />
-              <ListItemText>Mostrar Columna de Correos</ListItemText>
+          <Menu anchorEl={anchoDetalles} open={openDetallesMenu} onClose={handleMenuDetallesClose}>
+            <MenuItem onClick={() => { setCorreoEnable(!correoEnable); handleMenuDetallesClose(); }}>
+              <Checkbox checked={correoEnable} size="small" />
+              <ListItemText>Mostrar Correos</ListItemText>
             </MenuItem>
           </Menu>
         </Stack>
-      </Box>
+      </Paper>
 
-      {/* Tabla */}
-      {estudiantes.length === 0 ? (
-        <Paper sx={{ p: 3, textAlign: "center" }}>
-          <InfoIcon color="action" sx={{ mr: 1, verticalAlign: "middle" }} />
-          <Typography variant="subtitle1" component="span">
-            No se encontraron estudiantes.
-          </Typography>
-        </Paper>
-      ) : (
-        <TableContainer component={Paper} sx={{ flexGrow: 1 }}>
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                {correoEnable && (
-                  <TableCell
-                    sx={{
-                      fontWeight: "bold",
-                      minWidth: 200,
-                      cursor: "pointer",
-                      backgroundColor: "#f5f5f5", // Un color ligero para indicar que es interactivo
-                      "&:hover": { backgroundColor: "#eeeeee" },
-                    }}
-                    onClick={handleCopyEmails} // <--- Evento de click para copiar
-                  >
-                    <Tooltip title="Click para copiar todos los correos">
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                      >
-                        Correo <InfoIcon fontSize="inherit" />
-                      </Box>
-                    </Tooltip>
-                  </TableCell>
-                )}
-
-                <TableCell
-                  sx={{
-                    position: "sticky",
-                    left: 0,
-                    backgroundColor: "#ffffff",
-                    zIndex: 101,
-                    fontWeight: "bold",
-                    minWidth: 250,
-                    borderRight: "2px solid rgba(224, 224, 224, 1)",
-                    boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)",
-                  }}
-                >
-                  Nombre del Estudiante
-                </TableCell>
-                {fechasUnicas.map((fecha) => (
-                  <TableCell
-                    key={fecha}
-                    align="center"
-                    sx={{ fontWeight: "bold", minWidth: 80 }}
-                    onClick={() => handleEditAsistencia(fecha)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <Tooltip title="Click para editar">
-                      <span>
-                        {new Date(fecha + "T00:00:00").toLocaleDateString(
-                          "es-MX",
-                          { day: "2-digit", month: "short" },
-                        )}
-                      </span>
-                    </Tooltip>
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {estudiantes.map((est) => (
-                <TableRow key={est.matricula} hover>
-                  {correoEnable ? (
-                    <TableCell sx={{ fontWeight: "bold", minWidth: 200 }}>
-                      {est.correo || "Sin Correo"}
-                    </TableCell>
-                  ) : null}
-                  <TableCell
-                    component="th"
-                    scope="row"
-                    sx={{
-                      position: "sticky",
-                      left: 0,
-                      backgroundColor: "#ffffff",
-                      zIndex: 1,
-                      fontWeight: "500",
-                      borderRight: "2px solid rgba(224, 224, 224, 1)",
-                      boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)",
-                    }}
-                  >
-                    {`${est.apellidop} ${est.apellidom} ${est.nombres}`}
-                  </TableCell>
-                  {fechasUnicas.map((fecha) => (
-                    <TableCell key={`${est.matricula}-${fecha}`} align="center">
-                      <IconoEstatus
-                        estatus={asistenciaMap[fecha]?.[est.matricula]}
-                      />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+      {/* ESTADO DE CARGA Y ERROR */}
+      {loading && (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+          <CircularProgress />
+        </Box>
+      )}
+      
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
       )}
 
-      {/* Modals */}
+      {/* TABLA PRINCIPAL */}
+      {!loading && !error && (
+        estudiantes.length === 0 ? (
+          <Paper sx={{ p: 4, textAlign: "center", borderRadius: 2 }}>
+            <InfoIcon color="action" sx={{ fontSize: 40, mb: 1, opacity: 0.5 }} />
+            <Typography variant="subtitle1" color="text.secondary">
+              No se encontraron estudiantes en este grupo.
+            </Typography>
+          </Paper>
+        ) : (
+          <Paper 
+            elevation={2} 
+            sx={{ 
+              flexGrow: 1, 
+              overflow: "hidden", 
+              borderRadius: 2, 
+              display: 'flex', 
+              flexDirection: 'column' 
+            }}
+          >
+            <TableContainer sx={{ flexGrow: 1 }}>
+              <Table stickyHeader size="small">
+                <TableHead>
+                  <TableRow>
+                    {/* Columna Correo (Opcional) */}
+                    {correoEnable && (
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          bgcolor: '#f5f5f5',
+                          minWidth: 200,
+                          cursor: "pointer",
+                          borderBottom: '2px solid #e0e0e0',
+                          "&:hover": { backgroundColor: "#eeeeee" },
+                        }}
+                        onClick={handleCopyEmails}
+                      >
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <EmailIcon fontSize="small" color="action" /> Correo
+                        </Box>
+                      </TableCell>
+                    )}
+
+                    {/* Columna Nombre (Sticky) */}
+                    <TableCell
+                      sx={{
+                        position: "sticky",
+                        left: 0,
+                        backgroundColor: "#fcfcfc",
+                        zIndex: 101,
+                        fontWeight: "bold",
+                        minWidth: 250,
+                        borderRight: "2px solid #e0e0e0",
+                        borderBottom: '2px solid #e0e0e0',
+                        color: 'text.secondary'
+                      }}
+                    >
+                      ESTUDIANTE
+                    </TableCell>
+
+                    {/* Columnas Fechas */}
+                    {fechasUnicas.map((fecha) => (
+                      <TableCell
+                        key={fecha}
+                        align="center"
+                        sx={{ 
+                          fontWeight: "bold", 
+                          minWidth: 80, 
+                          cursor: "pointer",
+                          bgcolor: '#fcfcfc',
+                          borderBottom: '2px solid #e0e0e0',
+                          color: 'text.secondary',
+                          "&:hover": { bgcolor: "#f0f0f0" }
+                        }}
+                        onClick={() => handleEditAsistencia(fecha)}
+                      >
+                        <Tooltip title="Editar asistencia de este día">
+                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.9rem', color: '#000' }}>
+                              {new Date(fecha + "T00:00:00").toLocaleDateString("es-MX", { day: "2-digit" })}
+                            </span>
+                            <span style={{ fontSize: '0.65rem', textTransform: 'uppercase' }}>
+                              {new Date(fecha + "T00:00:00").toLocaleDateString("es-MX", { month: "short" })}
+                            </span>
+                          </Box>
+                        </Tooltip>
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {estudiantes.map((est, index) => (
+                    <TableRow 
+                      key={est.matricula} 
+                      hover
+                      sx={{ bgcolor: index % 2 === 0 ? 'white' : '#fafafa' }}
+                    >
+                      {correoEnable && (
+                        <TableCell sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
+                          {est.correo || "-"}
+                        </TableCell>
+                      )}
+
+                      <TableCell
+                        component="th"
+                        scope="row"
+                        sx={{
+                          position: "sticky",
+                          left: 0,
+                          bgcolor: index % 2 === 0 ? 'white' : '#fafafa',
+                          zIndex: 100,
+                          fontWeight: "500",
+                          borderRight: "1px solid #f0f0f0",
+                          fontSize: '0.85rem'
+                        }}
+                      >
+                        {`${est.apellidop} ${est.apellidom} ${est.nombres}`}
+                      </TableCell>
+
+                      {fechasUnicas.map((fecha) => (
+                        <TableCell 
+                          key={`${est.matricula}-${fecha}`} 
+                          align="center"
+                          sx={{ p: 0.5 }}
+                        >
+                          <IconoEstatus estatus={asistenciaMap[fecha]?.[est.matricula]} />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        )
+      )}
+
+      {/* Modales y Notificaciones */}
       <NuevaAsistencia
         open={modalOpen}
         onClose={handleCloseModal}
@@ -666,9 +576,7 @@ const ListaAsistencia = () => {
         onSave={handleSaveAsistencia}
         editDate={selectedDateToEdit}
         isSaving={isSaving}
-        asistenciaActual={
-          selectedDateToEdit ? asistenciaMap[selectedDateToEdit] : {}
-        }
+        asistenciaActual={selectedDateToEdit ? asistenciaMap[selectedDateToEdit] : {}}
       />
       {NotificationComponent}
     </Box>

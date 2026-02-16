@@ -7,8 +7,8 @@ import { useExport } from "../../utils/useExport.js";
 
 // Importa AMBOS servicios de alumnos
 import {
-  fetchAlumnoPerfilGet, // Servicio para Modo Perfil
-  fetchAlumnoGrupoGet, // Servicio para Modo General
+  fetchAlumnoPerfilGet,
+  fetchAlumnoGrupoGet,
 } from "../../services/alumnosService.js";
 
 import {
@@ -35,15 +35,23 @@ import {
   Stack,
   Alert,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
+  Tooltip,
+  IconButton,
+  Divider,
+  Chip,
 } from "@mui/material";
-import DownloadIcon from "@mui/icons-material/Download";
+
+// Iconos
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
-import CancelIcon from "@mui/icons-material/Cancel";
-import { ClipboardPaste } from "lucide-react";
+import CloseIcon from "@mui/icons-material/Close"; // Más limpio para cancelar
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import SchoolIcon from "@mui/icons-material/School";
+import AssignmentIcon from "@mui/icons-material/Assignment";
 
 const currentYear = new Date().getFullYear();
 
@@ -118,15 +126,12 @@ const TrabajoCotidiano = () => {
         parcial,
         yearC: selectedYear,
       };
-
       const data = await fetchRubrosTCGet(datosEnviar, token);
-
       const rubrosOrdenados = (data || []).sort((a, b) => {
         const fechaA = new Date(a.fecha_limite || 0);
         const fechaB = new Date(b.fecha_limite || 0);
         return fechaB - fechaA;
       });
-
       setRubros(rubrosOrdenados);
       setTotalRubros(rubrosOrdenados.length);
     } catch (err) {
@@ -149,46 +154,34 @@ const TrabajoCotidiano = () => {
       setErrorAlumnos(null);
       try {
         let data;
-        if (isPerfilMode) {
+        if (isPerfilMode)
           data = await fetchAlumnoPerfilGet(token, idNormalizado, semestre);
-        } else {
-          data = await fetchAlumnoGrupoGet(token, grupoId);
-        }
+        else data = await fetchAlumnoGrupoGet(token, grupoId);
 
         const alumnosNormalizados = (data.alumnos || []).map((a) => ({
           ...a,
           alumno_matricula: a.matricula,
         }));
-
         setAlumnos(alumnosNormalizados);
       } catch (err) {
-        console.error("Error cargando alumnos:", err);
         setErrorAlumnos(err.message);
       } finally {
         setLoadingAlumnos(false);
       }
     };
-
-    if (token && (grupoId || (idNormalizado && semestre))) {
-      cargarAlumnos();
-    }
+    if (token && (grupoId || (idNormalizado && semestre))) cargarAlumnos();
   }, [grupoId, idNormalizado, semestre, token, isPerfilMode]);
 
   // -----------------------------------------------------------------------
-  // HELPERS (Lógica de negocio)
+  // HELPERS
   // -----------------------------------------------------------------------
-  
-  // OPTIMIZACIÓN: Solo se usa como "fallback" si la BD no trae el estado explícito
   const getStringFromValor = (valorNumerico, rubro) => {
     if (valorNumerico === null || valorNumerico === undefined) return null;
     const valor = Number(valorNumerico);
     const ponderacion = Number(rubro?.ponderacion || 0);
     const pInsuficiente = Number(rubro?.ponderacioninsuficiente || 0);
-
     if (valor === 1) return "Si";
     if (valor === 0) return "No";
-    // OJO: Si ponderacion y pInsuficiente son iguales, esto podría fallar,
-    // pero gracias a la columna 'estado' ya no dependemos de esto.
     if (ponderacion > 0 && valor === ponderacion) return "R";
     if (pInsuficiente > 0 && valor === pInsuficiente) return "I";
     return null;
@@ -211,13 +204,12 @@ const TrabajoCotidiano = () => {
   };
 
   // -----------------------------------------------------------------------
-  // CARGA 3: CALIFICACIONES (OPTIMIZADO CON ESTADO)
+  // CARGA 3: CALIFICACIONES
   // -----------------------------------------------------------------------
   useEffect(() => {
     const cargarCalificaciones = async () => {
       if (!materiaClave || !parcial || !selectedYear) return;
       if (loadingRubros || loadingAlumnos) return;
-
       setLoadingCalificaciones(true);
 
       const rubrosMap = new Map();
@@ -231,34 +223,21 @@ const TrabajoCotidiano = () => {
           yearC: selectedYear,
         };
         const data = await fetchCalificacionesTCGet(context, token);
-
         const calificacionesTransformadas = data.map((calif) => {
           const rubroInfo = rubrosMap.get(calif.idrubrotc);
-          
-          // CAMBIO CLAVE: Prioridad a 'calif.estado'. 
-          // Si existe el estado en BD, lo usamos directo (Optimización y Exactitud).
-          // Si es null (dato legacy), intentamos deducirlo con getStringFromValor.
-          let valorParaUI = calif.estado; 
-          
+          let valorParaUI = calif.estado;
           if (!valorParaUI && calif.calificacion !== null) {
-              valorParaUI = getStringFromValor(calif.calificacion, rubroInfo);
+            valorParaUI = getStringFromValor(calif.calificacion, rubroInfo);
           }
-
-          return {
-            ...calif,
-            // En el estado de React guardamos la LETRA ('Si', 'R', etc.) para el Select
-            calificacion: valorParaUI, 
-          };
+          return { ...calif, calificacion: valorParaUI };
         });
 
         setCalificaciones(calificacionesTransformadas);
         setOriginalCalificaciones(calificacionesTransformadas);
 
-        // Contador simple (si tiene letra asignada, cuenta como entregado/evaluado)
         const nuevosContadores = {};
         data.forEach((calif) => {
           const key = calif.alumno_matricula;
-          // Contamos si existe estado o calificación positiva
           if (calif.estado || (calif.calificacion && calif.calificacion > 0)) {
             nuevosContadores[key] = (nuevosContadores[key] || 0) + 1;
           }
@@ -270,7 +249,6 @@ const TrabajoCotidiano = () => {
         setLoadingCalificaciones(false);
       }
     };
-
     cargarCalificaciones();
   }, [
     materiaClave,
@@ -284,14 +262,13 @@ const TrabajoCotidiano = () => {
   ]);
 
   // -----------------------------------------------------------------------
-  // CÁLCULO DE PROMEDIOS (MEMOIZADO & ROBUSTO)
+  // CÁLCULO DE PROMEDIOS
   // -----------------------------------------------------------------------
   const datosTabla = useMemo(() => {
     const califMap = new Map();
     calificaciones.forEach((c) => {
       if (!califMap.has(c.alumno_matricula))
         califMap.set(c.alumno_matricula, new Map());
-      // Aquí 'c.calificacion' ya contiene la LETRA ('Si', 'R', 'I') gracias a la carga optimizada
       califMap.get(c.alumno_matricula).set(c.idrubrotc, c.calificacion);
     });
 
@@ -299,40 +276,28 @@ const TrabajoCotidiano = () => {
       const susCalificaciones =
         califMap.get(alumno.alumno_matricula) || new Map();
       let sumaPuntos = 0;
-
       rubros.forEach((rubro) => {
-        // Obtenemos la letra directamente
         const valString = susCalificaciones.get(rubro.idrubrotc);
-        
-        // Lógica de puntos basada en la letra (No adivinamos decimales)
         let puntos = 0;
         if (valString === "Si" || valString === "J") puntos = 1.0;
         else if (valString === "R") puntos = Number(rubro.ponderacion);
-        else if (valString === "I") puntos = Number(rubro.ponderacioninsuficiente);
-        // "No" o null suman 0
-
+        else if (valString === "I")
+          puntos = Number(rubro.ponderacioninsuficiente);
         sumaPuntos += puntos;
       });
-
       const promedio =
         rubros.length > 0 ? (sumaPuntos / rubros.length) * 10 : 0;
-
-      return {
-        ...alumno,
-        calificacionesMap: susCalificaciones,
-        promedio,
-      };
+      return { ...alumno, calificacionesMap: susCalificaciones, promedio };
     });
   }, [alumnos, calificaciones, rubros]);
 
   // -----------------------------------------------------------------------
-  // MANEJADORES (HANDLERS)
+  // MANEJADORES
   // -----------------------------------------------------------------------
   const handleEdit = () => {
     setIsEditing(true);
     setSaveError(null);
   };
-
   const handleCancel = () => {
     setIsEditing(false);
     setCalificaciones(originalCalificaciones);
@@ -340,25 +305,20 @@ const TrabajoCotidiano = () => {
   };
 
   const handleGradeChange = (matricula, idRubro, valorLetra) => {
-    // valorLetra es "Si", "R", "I", etc.
     const valorFinal = valorLetra === "" ? null : valorLetra;
-    
     setCalificaciones((prev) => {
       const copia = [...prev];
       const idx = copia.findIndex(
         (c) =>
           c.alumno_matricula === matricula && c.idrubrotc === Number(idRubro),
       );
-      
-      if (idx > -1) {
-          copia[idx] = { ...copia[idx], calificacion: valorFinal };
-      } else {
+      if (idx > -1) copia[idx] = { ...copia[idx], calificacion: valorFinal };
+      else
         copia.push({
           alumno_matricula: matricula,
           idrubrotc: Number(idRubro),
-          calificacion: valorFinal, // Guardamos la letra en el estado
+          calificacion: valorFinal,
         });
-      }
       return copia;
     });
   };
@@ -366,26 +326,19 @@ const TrabajoCotidiano = () => {
   const handleSave = async () => {
     setIsSaving(true);
     const rubrosMap = new Map(rubros.map((r) => [r.idrubrotc, r]));
-
-    // CAMBIO IMPORTANTE: Preparar payload con ESTADO y CALIFICACIÓN
     const payload = calificaciones.map((c) => {
-        const rubro = rubrosMap.get(c.idrubrotc);
-        const estadoLetra = c.calificacion; // En el state tenemos la letra
-
-        return {
-            idrubrotc: c.idrubrotc,
-            alumno_matricula: c.alumno_matricula,
-            // 1. Enviamos el número calculado con la regla actual
-            calificacion: getValorNumericoParaDB(estadoLetra, rubro),
-            // 2. Enviamos la letra explícita para el historial
-            estado: estadoLetra
-        };
+      const rubro = rubrosMap.get(c.idrubrotc);
+      const estadoLetra = c.calificacion;
+      return {
+        idrubrotc: c.idrubrotc,
+        alumno_matricula: c.alumno_matricula,
+        calificacion: getValorNumericoParaDB(estadoLetra, rubro),
+        estado: estadoLetra,
+      };
     });
-
     try {
       await syncCalificacionesTC_service({ grades: payload }, token);
       setIsEditing(false);
-      // Al guardar, el estado actual se convierte en el "original"
       setOriginalCalificaciones(calificaciones);
     } catch (err) {
       setSaveError(err.message);
@@ -394,7 +347,6 @@ const TrabajoCotidiano = () => {
     }
   };
 
-  // Exportar Excel
   const handleExport = useCallback(() => {
     if (!datosTabla.length) return;
     const headers = [
@@ -405,7 +357,6 @@ const TrabajoCotidiano = () => {
       ...rubros.map((r) => `${r.nombre_rubro}`),
       "Promedio Final",
     ];
-
     const data = datosTabla.map((al) => {
       const row = {
         Matrícula: al.alumno_matricula,
@@ -419,7 +370,6 @@ const TrabajoCotidiano = () => {
       row["Promedio Final"] = al.promedio.toFixed(2);
       return row;
     });
-
     exportar(
       data,
       `TC_${materiaClave}_${isPerfilMode ? "Perfil" : "Gpo"}_${parcial}`,
@@ -428,38 +378,64 @@ const TrabajoCotidiano = () => {
   }, [datosTabla, rubros, materiaClave, parcial, isPerfilMode, exportar]);
 
   const isEssentialLoading = loadingRubros || loadingAlumnos;
+  const canEdit =
+    !isEssentialLoading &&
+    !errorRubros &&
+    !errorAlumnos &&
+    datosTabla.length > 0;
 
   // -----------------------------------------------------------------------
-  // RENDER (Sin cambios mayores, solo uso de la lógica actualizada)
+  // RENDER UI MEJORADA
   // -----------------------------------------------------------------------
   return (
     <Box
       sx={{
         p: 3,
-        "@media (orientation: portrait)": {
-          marginTop: 10,
-        },
-        height: "calc(100vh )",
+        height: "calc(100vh - 64px)",
+        bgcolor: "#f4f6f8",
         display: "flex",
         flexDirection: "column",
       }}
     >
-      {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-        <Box>
-          <Typography variant="h5">Materia: {nombreMateria}</Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            {isPerfilMode
-              ? `Trabajo Cotidiano - Perfil  ${grupoId}`
-              : `Trabajo Cotidiano - Grupo ${grupoId}`}
-          </Typography>
+      {/* HEADER TIPO TARJETA */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 2,
+          mb: 2,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderRadius: 2,
+          border: "1px solid #e0e0e0",
+        }}
+      >
+        {/* IZQUIERDA: INFORMACIÓN Y SELECTOR */}
+        <Stack direction="row" spacing={3} alignItems="center">
+          <Box>
+            <Typography
+              variant="h6"
+              fontWeight="bold"
+              color="primary.main"
+              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+            >
+              <SchoolIcon fontSize="small" /> {nombreMateria}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {isPerfilMode
+                ? `Trabajo Cotidiano - Perfil ${grupoId}`
+                : `Trabajo Cotidiano - Grupo ${grupoId}`}
+            </Typography>
+          </Box>
 
-          <FormControl size="small" sx={{ mt: 2, minWidth: 120 }}>
-            <InputLabel>Parcial</InputLabel>
+          <Divider orientation="vertical" flexItem />
+
+          <FormControl variant="standard" sx={{ minWidth: 100 }}>
             <Select
               value={parcial}
-              label="Parcial"
               onChange={(e) => setParcial(e.target.value)}
+              disableUnderline
+              sx={{ fontWeight: "bold", color: "text.primary" }}
               disabled={isEditing}
             >
               {[1, 2, 3].map((p) => (
@@ -469,37 +445,73 @@ const TrabajoCotidiano = () => {
               ))}
             </Select>
           </FormControl>
-        </Box>
+        </Stack>
 
-        <Stack direction="row" spacing={2} alignItems="flex-start">
-          {isPerfilMode ? null : (
-            <Button
-              startIcon={<ClipboardPaste />}
-              onClick={() => setModalCopiarAbierto(true)}
-              variant="outlined"
-              color="primary"
-              disabled={isEssentialLoading || isEditing}
-            >
-              Copiar
-            </Button>
+        {/* DERECHA: ACCIONES */}
+        <Stack direction="row" spacing={1} alignItems="center">
+          {/* BOTONES ICONOS */}
+          {!isPerfilMode && (
+            <Tooltip title="Copiar de otro grupo">
+              <span>
+                <IconButton
+                  onClick={() => setModalCopiarAbierto(true)}
+                  disabled={isEssentialLoading || isEditing}
+                  size="small"
+                >
+                  <ContentCopyIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
           )}
 
-          <Button
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-            onClick={handleExport}
-            disabled={isEssentialLoading || isEditing}
-          >
-            Exportar
-          </Button>
+          <Tooltip title="Exportar a Excel">
+            <span>
+              <IconButton
+                onClick={handleExport}
+                disabled={isEssentialLoading || isEditing}
+                size="small"
+              >
+                <FileDownloadIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
 
+          <Tooltip title="Nueva Actividad">
+            <span>
+              <IconButton
+                onClick={() => setModalAbierto(true)}
+                disabled={isEssentialLoading || isEditing}
+                size="small"
+                color="primary"
+              >
+                <AddCircleOutlineIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+
+          <Divider
+            orientation="vertical"
+            flexItem
+            sx={{ height: 20, alignSelf: "center" }}
+          />
+
+          {/* BOTÓN PRINCIPAL */}
           {isEditing ? (
             <>
               <Button
+                variant="outlined"
+                color="error"
+                startIcon={<CloseIcon />}
+                onClick={handleCancel}
+                disabled={isSaving}
+                size="small"
+                sx={{ borderRadius: 2, textTransform: "none" }}
+              >
+                Cancelar
+              </Button>
+              <Button
                 variant="contained"
                 color="success"
-                onClick={handleSave}
-                disabled={isSaving}
                 startIcon={
                   isSaving ? (
                     <CircularProgress size={20} color="inherit" />
@@ -507,39 +519,39 @@ const TrabajoCotidiano = () => {
                     <SaveIcon />
                   )
                 }
-              >
-                Guardar
-              </Button>
-              <Button
-                variant="outlined"
-                color="Primary"
-                onClick={handleCancel}
+                onClick={handleSave}
                 disabled={isSaving}
-                startIcon={<CancelIcon />}
+                size="small"
+                sx={{
+                  borderRadius: 2,
+                  textTransform: "none",
+                  px: 3,
+                  boxShadow: "none",
+                }}
               >
-                Cancelar
+                {isSaving ? "Guardando..." : "Guardar"}
               </Button>
             </>
           ) : (
             <Button
               variant="contained"
-              onClick={handleEdit}
-              disabled={isEssentialLoading || datosTabla.length === 0}
+              color="primary"
               startIcon={<EditIcon />}
+              onClick={handleEdit}
+              disabled={!canEdit}
+              size="small"
+              sx={{
+                borderRadius: 2,
+                textTransform: "none",
+                px: 3,
+                boxShadow: "none",
+              }}
             >
-              Editar
+              Editar Notas
             </Button>
           )}
-
-          <Button
-            variant="outlined"
-            onClick={() => setModalAbierto(true)}
-            disabled={isEssentialLoading || isEditing}
-          >
-            + Actividad
-          </Button>
         </Stack>
-      </Box>
+      </Paper>
 
       {saveError && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -547,178 +559,267 @@ const TrabajoCotidiano = () => {
         </Alert>
       )}
 
-      {/* Tabla */}
-      <TableContainer component={Paper} sx={{ flexGrow: 1, overflow: "auto" }}>
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell
-                sx={{
-                  left: 0,
-                  position: "sticky",
-                  backgroundColor: "#f9f9f9",
-                  zIndex: 100,
-                  fontWeight: "500",
-                  borderRight: "2px solid rgba(224, 224, 224, 1)",
-                  boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)",
-                }}
-              >
-                Alumno
-              </TableCell>
-              {rubros.map((r) => (
+      {/* ÁREA DE TABLA */}
+      <Paper
+        elevation={2}
+        sx={{
+          flexGrow: 1,
+          overflow: "hidden",
+          borderRadius: 2,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <TableContainer sx={{ flexGrow: 1 }}>
+          <Table stickyHeader size="small">
+            <TableHead>
+              <TableRow>
                 <TableCell
-                  key={r.idrubrotc}
-                  align="center"
-                  sx={{ fontWeight: "bold", minWidth: 100 }}
+                  sx={{
+                    fontWeight: "bold",
+                    bgcolor: "#fcfcfc",
+                    color: "text.secondary",
+                    zIndex: 101,
+                    left: 0,
+                    position: "sticky",
+                    borderBottom: "2px solid #e0e0e0",
+                    width: "250px",
+                  }}
                 >
-                  {r.nombre_rubro}
-                  <Typography
-                    variant="caption"
-                    display="block"
-                    color="text.secondary"
+                  ESTUDIANTE
+                </TableCell>
+
+                {rubros.map((r) => (
+                  <TableCell
+                    key={r.idrubrotc}
+                    align="center"
+                    sx={{
+                      fontWeight: "bold",
+                      bgcolor: "#fcfcfc",
+                      color: "text.secondary",
+                      borderBottom: "2px solid #e0e0e0",
+                      minWidth: 100,
+                    }}
                   >
-                    {r.fecha_limite?.split("T")[0] || "-"}
-                  </Typography>
-                </TableCell>
-              ))}
-              {isDirector ? (
-                <TableCell align="center" sx={{ fontWeight: "bold" }}>
-                  Promedio
-                </TableCell>
-              ) : (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "0.85rem",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <AssignmentIcon sx={{ fontSize: 14, opacity: 0.6 }} />
+                        {r.nombre_rubro}
+                      </span>
+                      <Typography
+                        variant="caption"
+                        sx={{ fontSize: "0.65rem", color: "text.disabled" }}
+                      >
+                        {r.fecha_limite?.split("T")[0] || "Sin fecha"}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                ))}
+
                 <TableCell
                   align="center"
                   sx={{
+                    fontWeight: "bold",
+                    bgcolor: "#fcfcfc",
+                    borderBottom: "2px solid #e0e0e0",
+                    width: 80,
                     right: 0,
                     position: "sticky",
-                    backgroundColor: "#f9f9f9",
-                    zIndex: 110,
-                    fontWeight: "bold",
-                    borderLeft: "2px solid rgba(224, 224, 224, 1)",
-                    boxShadow: "-2px 0px 5px rgba(0,0,0,0.1)",
+                    zIndex: 101,
+                    borderLeft: "1px solid #e0e0e0",
                   }}
                 >
-                  Promedio
+                  PROMEDIO
                 </TableCell>
-              )}
-              {isDirector ? (
-                <TableCell align="center" sx={{ fontWeight: "bold" }}>
-                  Total Act
-                </TableCell>
-              ) : null}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isEssentialLoading ? (
-              <TableRow>
-                <TableCell colSpan={rubros.length + 2} align="center">
-                  <CircularProgress />
-                </TableCell>
-              </TableRow>
-            ) : datosTabla.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={rubros.length + 2} align="center">
-                  No hay alumnos.
-                </TableCell>
-              </TableRow>
-            ) : (
-              datosTabla.map((al) => (
-                <TableRow key={al.alumno_matricula} hover>
+
+                {isDirector && (
                   <TableCell
-                    component="th"
-                    scope="row"
+                    align="center"
                     sx={{
-                      position: "sticky",
-                      left: 0,
-                      backgroundColor: "#ffffff",
-                      zIndex: 1,
-                      fontWeight: "500",
-                      borderRight: "2px solid rgba(224, 224, 224, 1)",
-                      boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)",
+                      fontWeight: "bold",
+                      bgcolor: "#fcfcfc",
+                      borderBottom: "2px solid #e0e0e0",
                     }}
                   >
-                    {al.apellidop} {al.apellidom} {al.nombres}
+                    ENTREGAS
                   </TableCell>
+                )}
+              </TableRow>
+            </TableHead>
 
-                  {rubros.map((r) => (
-                    <TableCell key={r.idrubrotc} align="center">
-                      {isEditing ? (
-                        <Select
-                          size="small"
-                          value={al.calificacionesMap.get(r.idrubrotc) ?? ""}
-                          onChange={(e) =>
-                            handleGradeChange(
-                              al.alumno_matricula,
-                              r.idrubrotc,
-                              e.target.value,
-                            )
-                          }
-                          displayEmpty
-                          sx={{ width: 100 }}
-                        >
-                          <MenuItem value="">
-                            <em>-</em>
-                          </MenuItem>
-                          <MenuItem value="Si">Si</MenuItem>
-                          <MenuItem value="No">No</MenuItem>
-                          <MenuItem value="J">J</MenuItem>
-                          <MenuItem value="R">R</MenuItem>
-                          <MenuItem value="I">I</MenuItem>
-                        </Select>
-                      ) : (
-                        (al.calificacionesMap.get(r.idrubrotc) ?? "-")
-                      )}
-                    </TableCell>
-                  ))}
-
-                  {user.nombre_rol === "Docente" ? (
-                    <TableCell
-                      align="center"
-                      sx={{
-                        position: "sticky",
-                        right: 0,
-                        backgroundColor: "#ffffff",
-                        zIndex: 1,
-                        borderRight: "2px solid rgba(224, 224, 224, 1)",
-                        boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)",
-                        fontWeight: "bold",
-                        color: al.promedio >= 6 ? "success.main" : "error.main",
-                      }}
+            <TableBody>
+              {isEssentialLoading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={rubros.length + 3}
+                    align="center"
+                    sx={{ py: 10 }}
+                  >
+                    <CircularProgress />
+                    <Typography
+                      variant="caption"
+                      display="block"
+                      sx={{ mt: 1 }}
                     >
-                      {al.promedio.toFixed(2)}
-                    </TableCell>
-                  ) : (
-                    <TableCell
-                      align="center"
-                      sx={{
-                        position: "sticky",
-                        right: 0,
-                        backgroundColor: "#ffffff",
-                        zIndex: 1,
-                        borderRight: "2px solid rgba(224, 224, 224, 1)",
-                        boxShadow: "4px 0px 8px -2px rgba(0,0,0,0.05)",
-                        fontWeight: "bold",
-                        color: al.promedio >= 6 ? "success.main" : "error.main",
-                      }}
-                    >
-                      {al.promedio.toFixed(2)}
-                    </TableCell>
-                  )}
-                  {isDirector ? (
-                    <TableCell align="center">
-                      {ContadorCalificacionesPorAlumno[al.alumno_matricula] ||
-                        0}{" "}
-                      / {totalRubros}
-                    </TableCell>
-                  ) : null}
+                      Cargando actividades...
+                    </Typography>
+                  </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              ) : (
+                datosTabla.map((al, index) => (
+                  <TableRow
+                    key={al.alumno_matricula}
+                    hover
+                    sx={{ bgcolor: index % 2 === 0 ? "white" : "#fafafa" }}
+                  >
+                    <TableCell
+                      component="th"
+                      scope="row"
+                      sx={{
+                        left: 0,
+                        position: "sticky",
+                        bgcolor: index % 2 === 0 ? "white" : "#fafafa",
+                        zIndex: 100,
+                        borderRight: "1px solid #f0f0f0",
+                        fontSize: "0.85rem",
+                      }}
+                    >
+                      {`${al.apellidop} ${al.apellidom} ${al.nombres}`}
+                    </TableCell>
 
-      {/* Modales */}
+                    {rubros.map((r) => (
+                      <TableCell key={r.idrubrotc} align="center" sx={{ p: 0 }}>
+                        {isEditing ? (
+                          <Select
+                            size="small"
+                            value={al.calificacionesMap.get(r.idrubrotc) ?? ""}
+                            onChange={(e) =>
+                              handleGradeChange(
+                                al.alumno_matricula,
+                                r.idrubrotc,
+                                e.target.value,
+                              )
+                            }
+                            displayEmpty
+                            variant="standard"
+                            disableUnderline
+                            sx={{
+                              width: "100%",
+                              fontSize: "0.9rem",
+                              textAlign: "center",
+                              "& .MuiSelect-select": {
+                                py: 1.5,
+                                textAlign: "center",
+                              },
+                            }}
+                          >
+                            <MenuItem value="">
+                              <em style={{ color: "#ccc" }}>-</em>
+                            </MenuItem>
+                            <MenuItem value="Si" sx={{ color: "success.main" }}>
+                              Si (1.0)
+                            </MenuItem>
+                            <MenuItem value="No" sx={{ color: "error.main" }}>
+                              No (0)
+                            </MenuItem>
+                            <MenuItem value="J" sx={{ color: "warning.main" }}>
+                              J (1.0)
+                            </MenuItem>
+                            <MenuItem value="R" sx={{ color: "info.main" }}>
+                              R ({Number(r.ponderacion)})
+                            </MenuItem>
+                            <MenuItem
+                              value="I"
+                              sx={{ color: "text.secondary" }}
+                            >
+                              I ({Number(r.ponderacioninsuficiente)})
+                            </MenuItem>
+                          </Select>
+                        ) : (
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              py: 1.5,
+                              color:
+                                al.calificacionesMap.get(r.idrubrotc) === "Si"
+                                  ? "success.main"
+                                  : al.calificacionesMap.get(r.idrubrotc) ===
+                                      "No"
+                                    ? "error.light"
+                                    : "text.primary",
+                              fontWeight: al.calificacionesMap.get(r.idrubrotc)
+                                ? "500"
+                                : "400",
+                            }}
+                          >
+                            {al.calificacionesMap.get(r.idrubrotc) ?? "-"}
+                          </Typography>
+                        )}
+                      </TableCell>
+                    ))}
+
+                    <TableCell
+                      align="center"
+                      sx={{
+                        fontWeight: "bold",
+                        right: 0,
+                        position: "sticky",
+                        bgcolor: index % 2 === 0 ? "#f9f9f9" : "#f0f0f0",
+                        borderLeft: "1px solid #e0e0e0",
+                        zIndex: 99,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "inline-flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          width: 40,
+                          height: 28,
+                          borderRadius: 1,
+                          bgcolor:
+                            al.promedio >= 6 ? "success.light" : "error.light",
+                          color: "white",
+                          opacity: 0.9,
+                          fontSize: "0.85rem",
+                        }}
+                      >
+                        {al.promedio.toFixed(1)}
+                      </Box>
+                    </TableCell>
+
+                    {isDirector && (
+                      <TableCell align="center">
+                        <Chip
+                          label={`${ContadorCalificacionesPorAlumno[al.alumno_matricula] || 0} / ${totalRubros}`}
+                          size="small"
+                          variant="outlined"
+                          sx={{ fontSize: "0.7rem", height: 20 }}
+                        />
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+
+      {/* MODALES (MISMOS QUE ANTES) */}
       {modalAbierto && (
         <GestionTrabajos
           open={modalAbierto}

@@ -1,17 +1,22 @@
 const apiUrl = import.meta.env.VITE_API_URL;
 
 // 1. Obtener Rubros (Agregamos idGrupo y yearAcademico)
-export const fetchRubrosMateriaGet = async (materia, idGrupo, yearAcademico, token) => {
+export const fetchRubrosMateriaGet = async (
+  materia,
+  idGrupo,
+  yearAcademico,
+  token,
+) => {
   try {
     // Usamos Query Strings para pasar los parámetros de filtro
     const url = `${apiUrl}/rubro/${materia}?idGrupo=${idGrupo}&yearAcademico=${yearAcademico}`;
-    
+
     const resRubros = await fetch(url, {
       headers: {
         "x-auth-token": token,
       },
     });
-    
+
     if (!resRubros.ok) throw new Error("Error al cargar los rubros");
     const rubros = await resRubros.json();
     return { rubros: rubros || [] };
@@ -32,10 +37,12 @@ export const fetchRubrosUpdate = async (datos, token) => {
       },
       body: JSON.stringify(datos), // datos: { materiaClave, idGrupo, yearAcademico, rubros }
     });
-    
+
     if (!resRubros.ok) {
       const errorData = await resRubros.json();
-      throw new Error(errorData.message || "Error del servidor al guardar rubros");
+      throw new Error(
+        errorData.message || "Error del servidor al guardar rubros",
+      );
     }
     return await resRubros.json();
   } catch (error) {
@@ -85,7 +92,9 @@ export const syncCalificaciones_service = async (batchData, token) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Error al sincronizar las calificaciones");
+      throw new Error(
+        errorData.message || "Error al sincronizar las calificaciones",
+      );
     }
 
     return await response.json();
@@ -202,7 +211,7 @@ export const syncCalificacionesTC_service = async (batchData, token) => {
       "x-auth-token": token,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(batchData), 
+    body: JSON.stringify(batchData),
   });
 
   if (!response.ok) {
@@ -239,7 +248,6 @@ export const copyRubrosTC_service = async (datos, token) => {
 
 //Conteo de datos
 export const conteoEntregasTc_service = async (datos, token) => {
-
   const response = await fetch(`${apiUrl}/rubro/conteo-entregas-tc`, {
     method: "POST",
     headers: {
@@ -251,15 +259,12 @@ export const conteoEntregasTc_service = async (datos, token) => {
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(
-      errorData.message || "Error al contar las entregas de TC",
-    );
+    throw new Error(errorData.message || "Error al contar las entregas de TC");
   }
   return response.json();
 };
 
 export const conteoTrabajosTc_service = async (datos, token) => {
-
   const response = await fetch(`${apiUrl}/rubro/conteoTc`, {
     method: "POST",
     headers: {
@@ -271,8 +276,25 @@ export const conteoTrabajosTc_service = async (datos, token) => {
 
   if (!response.ok) {
     const errorData = await response.json();
+    throw new Error(errorData.message || "Error al contar los trabajos de TC");
+  }
+  return response.json();
+};
+
+//Promedios TC Materia_Clave, igrupo, parcial, yearC
+export const fetchPromediosTc_service = async (datos, token) => {
+  const response = await fetch(`${apiUrl}/rubro/promediosTC`, {
+    method: "POST",
+    headers: {
+      "x-auth-token": token,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(datos),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
     throw new Error(
-      errorData.message || "Error al contar los trabajos de TC",
+      errorData.message || "Error al calcular los promedios de TC",
     );
   }
   return response.json();
