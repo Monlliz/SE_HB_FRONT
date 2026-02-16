@@ -41,17 +41,20 @@ import {
   IconButton,
   Divider,
   Chip,
+  TextField, // NUEVO
+  InputAdornment, // NUEVO
 } from "@mui/material";
 
 // Iconos
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
-import CloseIcon from "@mui/icons-material/Close"; // Más limpio para cancelar
+import CloseIcon from "@mui/icons-material/Close";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import SchoolIcon from "@mui/icons-material/School";
 import AssignmentIcon from "@mui/icons-material/Assignment";
+import SearchIcon from "@mui/icons-material/Search"; // NUEVO
 
 const currentYear = new Date().getFullYear();
 
@@ -84,6 +87,9 @@ const TrabajoCotidiano = () => {
   const [alumnos, setAlumnos] = useState([]);
   const [calificaciones, setCalificaciones] = useState([]);
   const [originalCalificaciones, setOriginalCalificaciones] = useState([]);
+  
+  // NUEVO: Estado para el buscador
+  const [searchTerm, setSearchTerm] = useState("");
 
   // --- FILTROS ---
   const [parcial, setParcial] = useState(1);
@@ -285,11 +291,28 @@ const TrabajoCotidiano = () => {
           puntos = Number(rubro.ponderacioninsuficiente);
         sumaPuntos += puntos;
       });
+      // Cálculo del promedio
       const promedio =
         rubros.length > 0 ? (sumaPuntos / rubros.length) * 10 : 0;
+      
       return { ...alumno, calificacionesMap: susCalificaciones, promedio };
     });
   }, [alumnos, calificaciones, rubros]);
+
+  // -----------------------------------------------------------------------
+  // FILTRADO (NUEVO)
+  // -----------------------------------------------------------------------
+  // Creamos una lista derivada que filtra los datosTabla ya calculados
+  const datosFiltrados = useMemo(() => {
+    if (!searchTerm) return datosTabla;
+    const lowerTerm = searchTerm.toLowerCase();
+    
+    return datosTabla.filter((al) => {
+      const nombreCompleto = `${al.nombres} ${al.apellidop} ${al.apellidom}`.toLowerCase();
+      return nombreCompleto.includes(lowerTerm);
+    });
+  }, [datosTabla, searchTerm]);
+
 
   // -----------------------------------------------------------------------
   // MANEJADORES
@@ -446,6 +469,34 @@ const TrabajoCotidiano = () => {
             </Select>
           </FormControl>
         </Stack>
+
+        {/* --- CENTRO: BUSCADOR (NUEVO) --- */}
+        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', px: 4 }}>
+          <TextField
+            placeholder="Buscar alumno..."
+            variant="outlined"
+            size="small"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            disabled={isEssentialLoading}
+            sx={{ 
+              width: '100%', 
+              maxWidth: 400,
+              bgcolor: 'white',
+              borderRadius: 1,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2, // Bordes redondeados
+              }
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
 
         {/* DERECHA: ACCIONES */}
         <Stack direction="row" spacing={1} alignItems="center">
@@ -679,7 +730,8 @@ const TrabajoCotidiano = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                datosTabla.map((al, index) => (
+                /* AQUÍ USAMOS LA LISTA FILTRADA EN VEZ DE 'datosTabla' */
+                datosFiltrados.map((al, index) => (
                   <TableRow
                     key={al.alumno_matricula}
                     hover
@@ -797,7 +849,7 @@ const TrabajoCotidiano = () => {
                           fontSize: "0.85rem",
                         }}
                       >
-                        {al.promedio.toFixed(1)}
+                        {al.promedio.toFixed(2)}
                       </Box>
                     </TableCell>
 

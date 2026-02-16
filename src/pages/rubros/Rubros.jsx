@@ -42,16 +42,18 @@ import {
   Tooltip,
   IconButton,
   Divider,
-  Chip
+  Chip,
+  InputAdornment // Importante para el icono de lupa
 } from "@mui/material";
 
 // Iconos
 import SettingsIcon from "@mui/icons-material/Settings";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
-import CloseIcon from "@mui/icons-material/Close"; // Icono más limpio para cancelar
-import FileDownloadIcon from "@mui/icons-material/FileDownload"; // Icono más standard
+import CloseIcon from "@mui/icons-material/Close"; 
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import SchoolIcon from '@mui/icons-material/School';
+import SearchIcon from "@mui/icons-material/Search"; // Icono de lupa
 
 const currentYear = new Date().getFullYear();
 
@@ -76,6 +78,9 @@ const GestionarRubros = () => {
   const [originalCalificaciones, setOriginalCalificaciones] = useState([]);
   const [promediosTc, setPromediosTc] = useState([]);
 
+  // --- ESTADO DEL BUSCADOR ---
+  const [searchTerm, setSearchTerm] = useState("");
+
   // --- ESTADOS DE FILTROS ---
   const [parcial, setParcial] = useState(1);
   const [selectedYear, setSelectedYear] = useState(initialYear || currentYear);
@@ -94,11 +99,7 @@ const GestionarRubros = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
 
-  // ... (TODA TU LÓGICA DE CARGA CARGAR_RUBROS, CARGAR_ALUMNOS, CARGAR_CALIFICACIONES SE MANTIENE IGUAL) ...
-  // COPIA AQUÍ TUS USE_EFFECT DE CARGA ORIGINALES O MANTENLOS SI YA ESTÁN EN EL ARCHIVO
-  // (Para brevedad, asumo que la lógica de fetch y useEffects está aquí tal cual tu código anterior)
-  
-  // --- REPLICA DE LA LÓGICA DE CARGA (Simplificada para el ejemplo visual, asegurate de tenerla) ---
+  // --- CARGA DE DATOS ---
   const cargarRubros = useCallback(async () => {
      if (!materiaClave || !grupoId) return;
      setLoadingRubros(true);
@@ -143,7 +144,7 @@ const GestionarRubros = () => {
   }, [materiaClave, parcial, selectedYear, grupoId, token, loadingRubros, loadingAlumnos]);
 
 
-  // --- COMBINACIÓN DE DATOS (CON LA CORRECCIÓN DEL PROMEDIO) ---
+  // --- COMBINACIÓN DE DATOS ---
   const datosTabla = useMemo(() => {
     const califMap = new Map();
     calificaciones.forEach((calif) => {
@@ -183,6 +184,17 @@ const GestionarRubros = () => {
       };
     });
   }, [alumnos, calificaciones, rubros, promediosTc]);
+
+  // --- FILTRADO POR BUSCADOR ---
+  const datosFiltrados = useMemo(() => {
+    if (!searchTerm) return datosTabla;
+    const lowerTerm = searchTerm.toLowerCase();
+    return datosTabla.filter((al) => {
+      const nombreCompleto = `${al.nombres} ${al.apellidop} ${al.apellidom}`.toLowerCase();
+      // Buscamos por nombre completo o por matrícula
+      return nombreCompleto.includes(lowerTerm) || String(al.alumno_matricula).includes(lowerTerm);
+    });
+  }, [datosTabla, searchTerm]);
 
   // --- LOGICA EXPORT ---
   const transformarDatosParaExportar = useCallback(() => {
@@ -254,7 +266,7 @@ const GestionarRubros = () => {
     <Box sx={{ 
       p: 3, 
       height: "calc(100vh - 64px)", 
-      bgcolor: "#f4f6f8", // Fondo gris muy suave para que resalte la tabla blanca
+      bgcolor: "#f4f6f8", 
       display: 'flex',
       flexDirection: 'column'
     }}>
@@ -286,7 +298,6 @@ const GestionarRubros = () => {
           <Divider orientation="vertical" flexItem />
 
           <FormControl variant="standard" sx={{ minWidth: 100 }}>
-            {/* Selector Minimalista */}
             <Select
               value={parcial}
               onChange={(e) => setParcial(e.target.value)}
@@ -301,10 +312,37 @@ const GestionarRubros = () => {
           </FormControl>
         </Stack>
 
-        {/* DERECHA: ACCIONES DISCRETAS */}
+        {/* --- CENTRO: BUSCADOR (NUEVO) --- */}
+        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', px: 4 }}>
+          <TextField
+            placeholder="Buscar alumno..."
+            variant="outlined"
+            size="small"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            disabled={isEssentialLoading}
+            sx={{ 
+              width: '100%', 
+              maxWidth: 400,
+              bgcolor: 'white',
+              borderRadius: 1,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2, 
+              }
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
+
+        {/* DERECHA: ACCIONES */}
         <Stack direction="row" spacing={1} alignItems="center">
           
-          {/* BOTONES SECUNDARIOS (ICONOS) */}
           <Tooltip title="Exportar a Excel">
             <span>
               <IconButton onClick={() => handleExport("xlsx")} disabled={isExportDisabled} size="small">
@@ -327,7 +365,6 @@ const GestionarRubros = () => {
 
           <Divider orientation="vertical" flexItem sx={{ height: 20, alignSelf: 'center' }} />
 
-          {/* BOTÓN PRINCIPAL (CON TEXTO) */}
           {isEditing ? (
             <>
               <Button
@@ -371,7 +408,7 @@ const GestionarRubros = () => {
 
       {saveError && <Alert severity="error" sx={{ mb: 2 }}>{saveError}</Alert>}
 
-      {/* ÁREA DE TABLA PROTAGONISTA */}
+      {/* ÁREA DE TABLA */}
       <Paper 
         elevation={2} 
         sx={{ 
@@ -390,12 +427,12 @@ const GestionarRubros = () => {
                   sx={{ 
                     fontWeight: "bold", 
                     bgcolor: '#fcfcfc', 
-                    color: 'text.secondary',
+                    color: 'text.secondary', 
                     zIndex: 101, 
                     left: 0, 
-                    position: "sticky",
+                    position: "sticky", 
                     borderBottom: '2px solid #e0e0e0',
-                    width: '250px' // Ancho fijo para nombres
+                    width: '250px'
                   }}
                 >
                   ESTUDIANTE
@@ -410,8 +447,8 @@ const GestionarRubros = () => {
                     sx={{ 
                       fontWeight: "bold", 
                       bgcolor: '#fcfcfc', 
-                      color: 'text.secondary',
-                      borderBottom: '2px solid #e0e0e0',
+                      color: 'text.secondary', 
+                      borderBottom: '2px solid #e0e0e0', 
                       minWidth: 100
                     }}
                   >
@@ -420,7 +457,7 @@ const GestionarRubros = () => {
                       <Chip 
                         label={`${(Number(rubro.ponderacion) * 100).toFixed(0)}%`} 
                         size="small" 
-                        variant="outlined"
+                        variant="outlined" 
                         sx={{ height: 16, fontSize: '0.65rem', mt: 0.5, border: 'none', bgcolor: '#eef2f6' }} 
                       />
                     </Box>
@@ -434,7 +471,6 @@ const GestionarRubros = () => {
             </TableHead>
 
             <TableBody>
-              {/* Manejo de estados de carga y error (simplificado visualmente) */}
               {isEssentialLoading || loadingCalificaciones ? (
                 <TableRow>
                    <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
@@ -442,12 +478,11 @@ const GestionarRubros = () => {
                      <Typography variant="caption" display="block" sx={{ mt: 1 }}>Cargando datos...</Typography>
                    </TableCell>
                 </TableRow>
-              ) : datosTabla.map((alumno, index) => (
+              ) : datosFiltrados.map((alumno, index) => ( // USAMOS datosFiltrados AQUÍ
                 <TableRow 
                   key={alumno.alumno_matricula} 
                   hover 
                   sx={{ 
-                    // Alternar colores suavemente (zebra striping)
                     bgcolor: index % 2 === 0 ? 'white' : '#fafafa' 
                   }}
                 >
@@ -458,8 +493,8 @@ const GestionarRubros = () => {
                       left: 0, 
                       position: "sticky", 
                       bgcolor: index % 2 === 0 ? 'white' : '#fafafa', 
-                      zIndex: 100,
-                      borderRight: '1px solid #f0f0f0',
+                      zIndex: 100, 
+                      borderRight: '1px solid #f0f0f0', 
                       fontSize: '0.85rem'
                     }}
                   >
@@ -473,7 +508,6 @@ const GestionarRubros = () => {
                         key={`${alumno.alumno_matricula}-${rubro.id_rubro}`} 
                         align="center"
                         sx={{ 
-                          // Resalte sutil para trabajo cotidiano (borde izquierdo azul)
                           borderLeft: esTrabajoCotidiano ? '3px solid #1976d2' : 'none',
                           bgcolor: esTrabajoCotidiano ? 'rgba(25, 118, 210, 0.04)' : 'inherit',
                           p: 0
@@ -481,7 +515,7 @@ const GestionarRubros = () => {
                       >
                         {esTrabajoCotidiano ? (
                            <Typography variant="body2" color="primary" fontWeight="500" sx={{ fontSize: '0.9rem' }}>
-                              {alumno.promedioTc ? Number(alumno.promedioTc).toFixed(2) : "-"}
+                             {alumno.promedioTc ? Number(alumno.promedioTc).toFixed(2) : "-"}
                            </Typography>
                         ) : isEditing ? (
                           <TextField
@@ -506,18 +540,18 @@ const GestionarRubros = () => {
                   })}
 
                   <TableCell align="center" sx={{ fontWeight: "bold" }}>
-                     <Box sx={{ 
-                       display: 'inline-flex', 
-                       justifyContent: 'center', 
-                       alignItems: 'center',
-                       width: 40, height: 30, 
-                       borderRadius: 1,
-                       bgcolor: alumno.promedio >= 6 ? 'success.light' : 'error.light',
-                       color: 'white',
-                       opacity: 0.8
-                     }}>
+                      <Box sx={{ 
+                        display: 'inline-flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        width: 40, height: 30, 
+                        borderRadius: 1, 
+                        bgcolor: alumno.promedio >= 6 ? 'success.light' : 'error.light',
+                        color: 'white',
+                        opacity: 0.8
+                      }}>
                         {alumno.promedio.toFixed(1)}
-                     </Box>
+                      </Box>
                   </TableCell>
                 </TableRow>
               ))}
@@ -526,7 +560,7 @@ const GestionarRubros = () => {
         </TableContainer>
       </Paper>
 
-      {/* Modal se mantiene igual */}
+      {/* Modal */}
       {modalAbierto && (
         <GestionarRubrosModal
           open={modalAbierto}
