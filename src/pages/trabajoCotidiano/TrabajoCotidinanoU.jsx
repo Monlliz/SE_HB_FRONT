@@ -41,8 +41,8 @@ import {
   IconButton,
   Divider,
   Chip,
-  TextField, // NUEVO
-  InputAdornment, // NUEVO
+  TextField,
+  InputAdornment,
 } from "@mui/material";
 
 // Iconos
@@ -54,7 +54,7 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import SchoolIcon from "@mui/icons-material/School";
 import AssignmentIcon from "@mui/icons-material/Assignment";
-import SearchIcon from "@mui/icons-material/Search"; // NUEVO
+import SearchIcon from "@mui/icons-material/Search";
 
 const currentYear = new Date().getFullYear();
 
@@ -62,7 +62,6 @@ const TrabajoCotidiano = () => {
   const { token, user, isDirector } = useAuth();
   const location = useLocation();
 
-  // 1. DESESTRUCTURACIÓN
   const {
     grupoId,
     materiaClave,
@@ -87,15 +86,11 @@ const TrabajoCotidiano = () => {
   const [alumnos, setAlumnos] = useState([]);
   const [calificaciones, setCalificaciones] = useState([]);
   const [originalCalificaciones, setOriginalCalificaciones] = useState([]);
-  
-  // NUEVO: Estado para el buscador
   const [searchTerm, setSearchTerm] = useState("");
 
-  // --- FILTROS ---
   const [parcial, setParcial] = useState(1);
   const [selectedYear, setSelectedYear] = useState(initialYear || currentYear);
 
-  // --- UI ---
   const [loadingRubros, setLoadingRubros] = useState(true);
   const [errorRubros, setErrorRubros] = useState(null);
   const [loadingAlumnos, setLoadingAlumnos] = useState(true);
@@ -105,7 +100,6 @@ const TrabajoCotidiano = () => {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [modalCopiarAbierto, setModalCopiarAbierto] = useState(false);
 
-  // --- EDICIÓN Y EXPORTACIÓN ---
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
@@ -114,9 +108,7 @@ const TrabajoCotidiano = () => {
   const [ContadorCalificacionesPorAlumno, setContadorCalificacionesPorAlumno] =
     useState({});
 
-  // -----------------------------------------------------------------------
-  // CARGA 1: RÚBROS
-  // -----------------------------------------------------------------------
+  // --- CARGAS DE DATOS ---
   const cargarRubros = useCallback(async () => {
     if (!materiaClave) {
       setErrorRubros("No se proporcionó una clave de materia.");
@@ -151,9 +143,6 @@ const TrabajoCotidiano = () => {
     cargarRubros();
   }, [cargarRubros]);
 
-  // -----------------------------------------------------------------------
-  // CARGA 2: ALUMNOS
-  // -----------------------------------------------------------------------
   useEffect(() => {
     const cargarAlumnos = async () => {
       setLoadingAlumnos(true);
@@ -178,9 +167,7 @@ const TrabajoCotidiano = () => {
     if (token && (grupoId || (idNormalizado && semestre))) cargarAlumnos();
   }, [grupoId, idNormalizado, semestre, token, isPerfilMode]);
 
-  // -----------------------------------------------------------------------
-  // HELPERS
-  // -----------------------------------------------------------------------
+  // --- HELPERS ---
   const getStringFromValor = (valorNumerico, rubro) => {
     if (valorNumerico === null || valorNumerico === undefined) return null;
     const valor = Number(valorNumerico);
@@ -209,9 +196,6 @@ const TrabajoCotidiano = () => {
     }
   };
 
-  // -----------------------------------------------------------------------
-  // CARGA 3: CALIFICACIONES
-  // -----------------------------------------------------------------------
   useEffect(() => {
     const cargarCalificaciones = async () => {
       if (!materiaClave || !parcial || !selectedYear) return;
@@ -267,9 +251,6 @@ const TrabajoCotidiano = () => {
     rubros,
   ]);
 
-  // -----------------------------------------------------------------------
-  // CÁLCULO DE PROMEDIOS
-  // -----------------------------------------------------------------------
   const datosTabla = useMemo(() => {
     const califMap = new Map();
     calificaciones.forEach((c) => {
@@ -291,7 +272,6 @@ const TrabajoCotidiano = () => {
           puntos = Number(rubro.ponderacioninsuficiente);
         sumaPuntos += puntos;
       });
-      // Cálculo del promedio
       const promedio =
         rubros.length > 0 ? (sumaPuntos / rubros.length) * 10 : 0;
       
@@ -299,24 +279,17 @@ const TrabajoCotidiano = () => {
     });
   }, [alumnos, calificaciones, rubros]);
 
-  // -----------------------------------------------------------------------
-  // FILTRADO (NUEVO)
-  // -----------------------------------------------------------------------
-  // Creamos una lista derivada que filtra los datosTabla ya calculados
   const datosFiltrados = useMemo(() => {
     if (!searchTerm) return datosTabla;
     const lowerTerm = searchTerm.toLowerCase();
     
     return datosTabla.filter((al) => {
       const nombreCompleto = `${al.nombres} ${al.apellidop} ${al.apellidom}`.toLowerCase();
-      return nombreCompleto.includes(lowerTerm);
+      return nombreCompleto.includes(lowerTerm) || String(al.alumno_matricula).includes(lowerTerm);
     });
   }, [datosTabla, searchTerm]);
 
-
-  // -----------------------------------------------------------------------
-  // MANEJADORES
-  // -----------------------------------------------------------------------
+  // --- HANDLERS ---
   const handleEdit = () => {
     setIsEditing(true);
     setSaveError(null);
@@ -407,9 +380,6 @@ const TrabajoCotidiano = () => {
     !errorAlumnos &&
     datosTabla.length > 0;
 
-  // -----------------------------------------------------------------------
-  // RENDER UI MEJORADA
-  // -----------------------------------------------------------------------
   return (
     <Box
       sx={{
@@ -420,7 +390,6 @@ const TrabajoCotidiano = () => {
         flexDirection: "column",
       }}
     >
-      {/* HEADER TIPO TARJETA */}
       <Paper
         elevation={0}
         sx={{
@@ -433,7 +402,6 @@ const TrabajoCotidiano = () => {
           border: "1px solid #e0e0e0",
         }}
       >
-        {/* IZQUIERDA: INFORMACIÓN Y SELECTOR */}
         <Stack direction="row" spacing={3} alignItems="center">
           <Box>
             <Typography
@@ -470,7 +438,6 @@ const TrabajoCotidiano = () => {
           </FormControl>
         </Stack>
 
-        {/* --- CENTRO: BUSCADOR (NUEVO) --- */}
         <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', px: 4 }}>
           <TextField
             placeholder="Buscar alumno..."
@@ -485,7 +452,7 @@ const TrabajoCotidiano = () => {
               bgcolor: 'white',
               borderRadius: 1,
               "& .MuiOutlinedInput-root": {
-                borderRadius: 2, // Bordes redondeados
+                borderRadius: 2, 
               }
             }}
             InputProps={{
@@ -498,9 +465,7 @@ const TrabajoCotidiano = () => {
           />
         </Box>
 
-        {/* DERECHA: ACCIONES */}
         <Stack direction="row" spacing={1} alignItems="center">
-          {/* BOTONES ICONOS */}
           {!isPerfilMode && (
             <Tooltip title="Copiar de otro grupo">
               <span>
@@ -546,7 +511,6 @@ const TrabajoCotidiano = () => {
             sx={{ height: 20, alignSelf: "center" }}
           />
 
-          {/* BOTÓN PRINCIPAL */}
           {isEditing ? (
             <>
               <Button
@@ -610,7 +574,6 @@ const TrabajoCotidiano = () => {
         </Alert>
       )}
 
-      {/* ÁREA DE TABLA */}
       <Paper
         elevation={2}
         sx={{
@@ -649,7 +612,12 @@ const TrabajoCotidiano = () => {
                       bgcolor: "#fcfcfc",
                       color: "text.secondary",
                       borderBottom: "2px solid #e0e0e0",
-                      minWidth: 100,
+                      // --- CAMBIOS CLAVE AQUÍ ---
+                      minWidth: 120, // 1. Ancho mínimo cómodo
+                      maxWidth: 150, // 2. Límite máximo para forzar el wrap
+                      whiteSpace: "normal", // 3. Permite saltos de línea
+                      lineHeight: "1.2", // 4. Altura de línea compacta para texto envuelto
+                      px: 1 // Padding horizontal reducido
                     }}
                   >
                     <Box
@@ -657,19 +625,27 @@ const TrabajoCotidiano = () => {
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
+                        width: "100%"
                       }}
                     >
-                      <span
-                        style={{
-                          fontSize: "0.85rem",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 4,
-                        }}
-                      >
-                        <AssignmentIcon sx={{ fontSize: 14, opacity: 0.6 }} />
-                        {r.nombre_rubro}
-                      </span>
+                      {/* Envolvemos el nombre en un Tooltip por si se corta algo, aunque con wrap debería verse todo */}
+                      <Tooltip title={r.nombre_rubro} arrow placement="top">
+                        <span
+                          style={{
+                            fontSize: "0.8rem",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center", // Centrado
+                            gap: 4,
+                            textAlign: "center", // Texto centrado cuando hace wrap
+                            marginBottom: "2px"
+                          }}
+                        >
+                          <AssignmentIcon sx={{ fontSize: 14, opacity: 0.6, flexShrink: 0 }} />
+                          {r.nombre_rubro}
+                        </span>
+                      </Tooltip>
+                      
                       <Typography
                         variant="caption"
                         sx={{ fontSize: "0.65rem", color: "text.disabled" }}
@@ -730,7 +706,6 @@ const TrabajoCotidiano = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                /* AQUÍ USAMOS LA LISTA FILTRADA EN VEZ DE 'datosTabla' */
                 datosFiltrados.map((al, index) => (
                   <TableRow
                     key={al.alumno_matricula}
@@ -871,7 +846,6 @@ const TrabajoCotidiano = () => {
         </TableContainer>
       </Paper>
 
-      {/* MODALES (MISMOS QUE ANTES) */}
       {modalAbierto && (
         <GestionTrabajos
           open={modalAbierto}
