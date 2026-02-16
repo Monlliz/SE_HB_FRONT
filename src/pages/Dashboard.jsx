@@ -42,6 +42,8 @@ import { fetchDocenteGet } from "../services/docenteService.js";
 //tipos de eventos
 import { EVENT_TYPES } from "../data/eventTypes.jsx";
 import CalendarAddButton from "../components/modals/Calendario/CalendarAddButton.jsx";
+
+import BirthdayCelebration from "./BirthdayCelebration.jsx";
 // Importa tu ilustración
 // import MyIllustration from './path/to/your/illustration.png';
 
@@ -685,6 +687,13 @@ function Dashboard() {
           </span>
         }
       />
+      {/* MODAL DE CELEBRACIÓN DE CUMPLEAÑOS */}
+      {user?.birthday !="" && user?.nombres !="" && (
+        <BirthdayCelebration
+          userBirthday={user?.birthday}
+          userName={user?.nombres}
+        /> 
+      )}
     </LocalizationProvider>
   );
 }

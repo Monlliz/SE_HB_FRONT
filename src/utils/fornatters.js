@@ -22,6 +22,17 @@ export function capitalizarCadaPalabra(cadena) {
     )
     .join(' ');             // 4. Unir de nuevo con espacios
 }
+
+// Función auxiliar para limpiar texto (normalizar)
+export const normalizeText = (text) => {
+  if (!text) return ""; // Protección por si viene null o undefined
+  return text
+    .normalize("NFD")                 // 1. Descompone letras: "ü" se convierte en "u" + "¨"
+    .replace(/[\u0300-\u036f]/g, "")  // 2. Borra los adornos (tildes, diéresis, virgulillas)
+    .toLowerCase();                   // 3. Todo a minúsculas
+};
+
+
 //Fechas======================================================================
 export function obtenerFechaFormateada(mesyear = null) {
   const fechaActual = new Date();

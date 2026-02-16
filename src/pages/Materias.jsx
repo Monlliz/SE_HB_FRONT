@@ -1,10 +1,5 @@
-/**
- * @file Materias.jsx
- * @description Tabla minimalista con funcionalidad de selección y hover.
- */
 
 import { useState, useEffect } from "react";
-//import { useNavigate } from "react-router-dom";
 import {
   Box,
   Table,
@@ -16,8 +11,7 @@ import {
   Typography,
   TextField,
   Button,
-  Snackbar,
-  Alert
+  FormControlLabel,
 } from "@mui/material";
 
 // Icons
@@ -25,22 +19,37 @@ import { BookPlus, BookOpen,Trash2,Plus,Pencil} from 'lucide-react';
 
 // Context y servicios
 import { useAuth } from "../context/AuthContext.jsx";
+
+// Servicios
 import { fetchMateriasGet, fetchMateriasPost, fetchMateriasPut, fetchMateriasDeleteLogico } from "../services/materiasService.js";
+
+// Componentes
 import ReusableModal from "../components/modals/ReusableModal.jsx";
 import ConfirmModal from "../components/modals/ConfirmModal.jsx";
 import FiltrosPopover from "../components/FiltrosPopover.jsx";
+import { useNotification } from "../components/modals/NotificationModal.jsx";
+import StatusSwitch from "../components/ui/CustomSwitch.jsx";
+
+// Configuración de campos
 import { camposNuevaMateria, camposEditMateria, headCells } from "../config/camposMateria.jsx";
+
+// Utilerías
+import { normalizeText } from "../utils/fornatters.js";
 
 
 export default function Materias() {
- //const navigate = useNavigate();
+ //estados para la tabla
   const [materiasData, setMateriasData] = useState([]);
   const [search, setSearch] = useState("");
 
-  // 1. ESTADO NUEVO: Para guardar el ID (clave) de la fila seleccionada
+  // ESTADO Para guardar el ID (clave) de la fila seleccionada
   const [selectedClave, setSelectedClave] = useState(null);
 
   const { token, isDirector } = useAuth();
+
+  // Notificaciones
+  const { showNotification, NotificationComponent } = useNotification();
+
   //-----------Busqueda de filtros avanzada------------------//
   // Nuevo estado para los filtros avanzados
   const [advancedFilters, setAdvancedFilters] = useState({
@@ -50,18 +59,22 @@ export default function Materias() {
     year: null
   });
 
-  // Esta función se ejecuta cuando le dan "Aplicar" en el popover
+  // Esta función se ejecuta cuando le dan Aplicar en el popover
   const handleApplyFilters = (filters) => {
     setAdvancedFilters(filters);
     console.log("Filtros recibidos:", filters);
   };
 
+    //------------- Estado para mostrar solo activos o todos (switch)----------------//
+  const [mostrarActivos, setMostrarActivos] = useState(true);
+  //------------- Fin Estado para mostrar solo activos o todos (switch)----------------//
+
   // Lógica de filtrado combinada
   const filteredData = materiasData.filter((materia) => {
-    // 1. Filtro buscador general (el que ya tenías)
+    // 1. Filtro buscador general 
     const matchesGeneralSearch = 
         search === "" || 
-        materia.asignatura.toLowerCase().includes(search.toLowerCase());
+        normalizeText(materia.asignatura).includes(normalizeText(search));
 
     // 2. Filtros Avanzados (Popover)
     const matchesClave = 
@@ -81,23 +94,9 @@ export default function Materias() {
         String(materia.yearm) === String(advancedFilters.year);
 
     // Deben cumplirse TODAS las condiciones
-    return matchesGeneralSearch && matchesClave && matchesSemestre && matchesPerfil && matchesYear;
+    return matchesGeneralSearch && matchesClave && matchesSemestre && matchesPerfil && matchesYear && (mostrarActivos ? materia.activo : !materia.activo);
   });
   //-----------Fin búsqueda de filtros avanzada------------------//
-
-  //----------------------Notificación Snackbar----------------------//
-  // Estado para la notificación
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [alert, setAlert] = useState(false);
-
-  const handleCloseSnackbar = (event, reason) => {
-    if (reason === 'clickaway') {
-      return;
-    }
-    setSnackbarOpen(false);
-  };
-
-  //----------------------Fin notificación Snackbar----------------------//
 
   // Cargar materias al montar el componente
   useEffect(() => {
@@ -113,15 +112,6 @@ export default function Materias() {
     cargarMaterias();
   }, [token]);
 
- /*  //--------------Filtro de búsqueda----------------------//
-  // Filtrar materias según la asignatura
-  const filteredData = materiasData.filter((materia) => {
-    const searchLower = search.toLowerCase();
-    const asignaturaLower = materia.asignatura.toLowerCase();
-    return search === "" || asignaturaLower.includes(searchLower);
-  }); */
-
-  //----------------------Fin filtro de búsqueda----------------------//
 
   //--------------Crear y editar materia--------------//
   // Estados para el modal reutilizable
@@ -150,11 +140,9 @@ export default function Materias() {
         if (!token) throw new Error("No token found");
         const { materias } = await fetchMateriasPost(token, formData);
         setMateriasData((prevMaterias) => [...prevMaterias, materias]);
-        setAlert(true);
-        setSnackbarOpen(true);
+        showNotification("Materia creada con éxito", "success");
       } catch (error) {
-        setAlert(false);
-        setSnackbarOpen(true);
+        showNotification("Error al crear la materia", "error");
         console.error("Error al cargar guardar materias:", error);
       }
     } else if (modalAction === "edit") {
@@ -166,11 +154,9 @@ export default function Materias() {
             materia.clave === materias.clave ? materias : materia
           )
         );
-        setAlert(true);
-        setSnackbarOpen(true);
+        showNotification("Materia editada con éxito", "success");
       } catch (error) {
-        setAlert(false);
-        setSnackbarOpen(true);
+        showNotification("Error al editar la materia", "error");
         console.error("Error al editar la materia:", error);
       }
     }
@@ -193,19 +179,17 @@ export default function Materias() {
       setLoadingDelete(true); // Activa el spinner en el botón rojo
       if (!token) throw new Error("No token found");
       await fetchMateriasDeleteLogico(token, selectedClave);
-
+      
       // 2. Actualización del Estado: Usamos FILTER
       setMateriasData((prevMaterias) =>
         // "Déjame todas las materias EXCEPTO la que tenga la clave que acabo de borrar"
         prevMaterias.filter((materia) => materia.clave !== currentMateria.clave)
       );
-      setAlert(true); //alerta de éxito
-      setSnackbarOpen(true);//abrir snackbar
+      showNotification("Materia eliminada con éxito", "success");
       setConfirmOpen(false);// Cerramos el modal
       setSelectedClave(null); // Desmarcamos la fila eliminada
     } catch (error) {
-      setAlert(false);//alerta de error
-      setSnackbarOpen(true);//abrir snackbar
+      showNotification("Error al eliminar la materia", "error");
       console.error(error);
     } finally {
       setLoadingDelete(false); // Apaga el spinner
@@ -224,25 +208,7 @@ export default function Materias() {
   };
   //----------------------Fin selección de fila----------------------//
 
-  //-------Mensaje de exito/fracaso en creación/edición-------//
-  const getAlertMessage = () => {
-    // Si ocurrió un error (alert es false, asumiendo que alert=true es éxito)
-    if (!alert) {
-      if (modalAction === "create") return "Error al crear la materia";
-      if (modalAction === "edit") return "Error al editar la materia";
-      if (modalAction === "delete") return "Error al eliminar la materia";
-      return "Error desconocido";
-    }
 
-    // Si fue éxito
-    if (modalAction === "create") return "Materia creada con éxito";
-    if (modalAction === "edit") return "Materia editada con éxito";
-    if (modalAction === "delete") return "Materia eliminada con éxito";
-
-    return "";
-  };
-
-  //----------------------Fin mensaje de exito/fracaso----------------------//
 
   return (
     <Box
@@ -311,7 +277,29 @@ export default function Materias() {
 
         {/* --- GRUPO DERECHO: Año Cohorte + Buscador --- */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-
+           
+          <FormControlLabel
+            control={
+              <StatusSwitch
+                // A. CONECTAR EL VISUAL: Si es true, se ve azul/check. Si es false, gris/x.
+                checked={mostrarActivos}
+                
+                // B. CONECTAR LA LÓGICA: Al cambiar, actualizamos el estado
+                onChange={(e) => setMostrarActivos(e.target.checked)}
+              />
+            }
+            // C. ETIQUETA DINÁMICA (Opcional, pero recomendada para UX)
+            label={mostrarActivos ? "Solo Activos" : "Inactivos"} 
+            
+            // Estilos para la etiqueta de texto
+            sx={{ 
+                color: "text.secondary", 
+                mr: 1,
+                // Evita que el texto se seleccione al dar doble click rápido
+                userSelect: "none" 
+            }} 
+          />
+          {/* Buscador general */}
           <TextField
             placeholder="Buscar por asignatura..."
             variant="outlined"
@@ -455,7 +443,7 @@ export default function Materias() {
         }
       />
       {/* NOTIFICACIÓN FLOTANTE */}
-      <Snackbar
+      {/* <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000} // Se cierra solo a los 3 segundos
         onClose={handleCloseSnackbar}
@@ -469,7 +457,8 @@ export default function Materias() {
         >
           {getAlertMessage()}
         </Alert>
-      </Snackbar>
+      </Snackbar> */}
+      {NotificationComponent}
     </Box>
   );
 }
