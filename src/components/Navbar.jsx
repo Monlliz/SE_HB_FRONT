@@ -120,6 +120,7 @@ export default function Navbar({ links = [] }) {
             {/* Logo + Title */}
             {!isMobile && (
               <Box
+                onClick={() => navigate("/inicio")}
                 sx={{
                   display: "flex",
                   alignItems: "center",
@@ -272,6 +273,7 @@ export default function Navbar({ links = [] }) {
         >
           {/* Logo interno*/}
           <Box
+            onClick={() => navigate("/inicio")}
             sx={{
               display: "flex",
               alignItems: "center",
@@ -280,6 +282,7 @@ export default function Navbar({ links = [] }) {
             }}
           >
             <Box
+
               component="img"
               src="/img/herbart-logo.avif"
               sx={{
@@ -303,7 +306,14 @@ export default function Navbar({ links = [] }) {
                 fontSize: 18,
               }}
             >
-              {navLinks.map((item) => (
+              {navLinks.filter((item) => {
+                  // Filtro: Ocultar "GRUPOS" si es docente
+                  return !(isDocente && item.label === "GRUPOS");
+                })
+                .map((item) => {
+                  // 1. Extraemos el componente del icono
+                  const IconComponent = item.icon;
+                  return (
                 <ListItem key={item.label} disablePadding>
                   <ListItemButton
                     component={Link}
@@ -333,12 +343,13 @@ export default function Navbar({ links = [] }) {
                         color: "inherit",
                       }}
                     >
-                      {item.icon}
+                      <IconComponent size={26} />
                     </ListItemIcon>
                     <ListItemText primary={item.label} />
                   </ListItemButton>
                 </ListItem>
-              ))}
+                );
+              })};
             </List>
           )}
         </Box>
