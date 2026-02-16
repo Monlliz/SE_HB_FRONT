@@ -248,7 +248,7 @@ export default function Navbar({ links = [] }) {
                   </ListItemIcon>
                   Gestión de Datos
                 </MenuItem>,
-                 <MenuItem key="data-management" onClick={alert("Función en desarrollo")}>
+                 <MenuItem key="data-management" >
                   <ListItemIcon>
                     <SettingsIcon size={20} />
                   </ListItemIcon>
