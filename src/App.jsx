@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import Login from "./pages/Login.jsx";
 import Docente from "./pages/Docente.jsx";
 
@@ -25,7 +26,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute.jsx";
 
 function App() {
   return (
-    // El Router y el AuthProvider ya no son necesarios aquí
+    <>
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Login />} />
@@ -45,12 +46,12 @@ function App() {
         <Route
           path="/listaAsistenciamateria"
           element={<ListaAsistenciaMateria />}
-        />
+          />
 
         <Route
           path="/listaAsistenciamateriaPerfil"
           element={<ListaAsistenciaMateriaPerfil />}
-        />
+          />
         <Route path="/generaciondecuentas" element={<GeneracionDeCuentas />} />
         <Route path="/Reporte" element={<ReportePDF />} />
         <Route path="/Rubros" element={<Rubros />} />
@@ -61,6 +62,8 @@ function App() {
 
       <Route path="*" element={<NotFound />} />
     </Routes>
+          <Analytics/>
+    </>
   );
 }
 
