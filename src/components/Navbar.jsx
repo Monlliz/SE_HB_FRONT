@@ -74,7 +74,7 @@ export default function Navbar({ links = [] }) {
   // 6.- Ruta a Pase de lista docente
     const handleListaDocente = () => {
     handleUserClose();
-    navigate("/pasedelista");
+    navigate("/listaAsistencia");
   };
 
   // Obtener la ruta actual
