@@ -71,6 +71,12 @@ export default function Navbar({ links = [] }) {
     navigate("/gestiondatos");
   };
 
+  // 6.- Ruta a Pase de lista docente
+    const handleListaDocente = () => {
+    handleUserClose();
+    navigate("/listaAsistencia");
+  };
+
   // Obtener la ruta actual
   const location = useLocation();
   const currentPath = location.pathname;
@@ -247,6 +253,12 @@ export default function Navbar({ links = [] }) {
                     <SettingsIcon size={20} />
                   </ListItemIcon>
                   Gestión de Datos
+                </MenuItem>,
+                 <MenuItem key="data-management" >
+                  <ListItemIcon>
+                    <SettingsIcon size={20} />
+                  </ListItemIcon>
+                  Pase de lista docente
                 </MenuItem>,
               ]}
               <MenuItem onClick={handleLogout} sx={{ color: "error.main" }}>
