@@ -1,6 +1,6 @@
 /**
  * @file ListaAsistenciaUnificada.jsx
- * @description Componente unificado para gestionar asistencias con UI/UX mejorada.
+ * @description Componente unificado y optimizado para gestionar asistencias (Alumnos y Docentes).
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
@@ -32,7 +32,7 @@ import {
   Checkbox,
   IconButton,
   Divider,
-  Alert
+  Alert,
 } from "@mui/material";
 
 // Icons (Lógica de negocio)
@@ -47,10 +47,10 @@ import InfoIcon from "@mui/icons-material/Info";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import TableViewIcon from "@mui/icons-material/TableView";
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import SettingsIcon from '@mui/icons-material/Settings'; // Para el menú de "Más"
-import EmailIcon from '@mui/icons-material/Email';
-import EventAvailableIcon from '@mui/icons-material/EventAvailable';
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import SettingsIcon from "@mui/icons-material/Settings";
+import EmailIcon from "@mui/icons-material/Email";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 
 // Modal y Notificaciones
 import NuevaAsistencia from "../../components/modals/Grupo/NuevaAsistencia";
@@ -63,26 +63,60 @@ import {
   fetchDatosAsistenciaMateria,
   fetchPostAsistenciaMateria,
   fetchDatosAsistenciaMateriaPerfil,
+  fetchDatosAsistenciaDocente,
+  fetchPostAsistenciaDocente,
 } from "../../services/asistenciaService.js";
 
 import { useExport } from "../../utils/useExport.js";
 
-// --- SUBCOMPONENTE DE ÍCONO (INTACTO) ---
-const IconoEstatus = ({ estatus }) => {
+// --- HELPERS (Fuera del componente para evitar recreación) ---
+
+/**
+ * Normaliza y ordena la lista de usuarios (alumnos o docentes).
+ * Crea una estructura común: { uid, nombreCompleto, email, ...datosOriginales }
+ */
+const prepararDatosUsuario = (listaCruda, esDocente) => {
+  if (!listaCruda) return [];
+
+  return listaCruda
+    .map((usuario) => {
+      // Normalización de datos
+      const uid = esDocente ? usuario.iddocente : usuario.matricula;
+      const nombreCompleto = `${usuario.apellidop || ""} ${usuario.apellidom || ""} ${usuario.nombres || ""}`.trim();
+      const email = usuario.correo || "";
+
+      return {
+        ...usuario, // Mantenemos datos originales por si acaso
+        uid,        // ID Unificado para la UI
+        nombreCompleto, // Nombre listo para mostrar
+        email,      // Email listo
+      };
+    })
+    .sort((a, b) => 
+      // Ordenamiento robusto (ignora mayúsculas/tildes)
+      a.nombreCompleto.localeCompare(b.nombreCompleto, 'es', { sensitivity: 'base' })
+    );
+};
+
+// --- SUBCOMPONENTE DE ÍCONO ---
+const IconoEstatus = React.memo(({ estatus }) => {
   switch (estatus) {
     case "asistio":
+    case "Presente":
       return (
         <Tooltip title="Asistió">
           <CheckCircleIcon color="success" />
         </Tooltip>
       );
     case "falta":
+    case "Ausente":
       return (
         <Tooltip title="Faltó">
           <CancelIcon color="error" />
         </Tooltip>
       );
     case "demorado":
+    case "Retardo":
       return (
         <Tooltip title="Demora">
           <AccessTimeFilledIcon color="warning" />
@@ -95,9 +129,13 @@ const IconoEstatus = ({ estatus }) => {
         </Tooltip>
       );
     default:
-      return <Typography variant="caption" color="text.disabled">-</Typography>;
+      return (
+        <Typography variant="caption" color="text.disabled">
+          -
+        </Typography>
+      );
   }
-};
+});
 
 /**
  * Componente Principal Unificado
@@ -120,28 +158,29 @@ const ListaAsistencia = () => {
 
   const isPerfil = Boolean(idNormalizado && semestre && materiaClave);
   const isMateria = Boolean(materiaClave && !isPerfil);
+  const isDocente = Boolean(grupoId === "docente");
 
   // Estados
   const [modalOpen, setModalOpen] = useState(false);
-  const [estudiantes, setEstudiantes] = useState([]);
+  const [estudiantes, setEstudiantes] = useState([]); // Lista normalizada { uid, nombreCompleto, ... }
   const [asistencias, setAsistencias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [correoEnable, setCorreoEnable] = useState(false);
-  
+
   // Estados Menús
   const [anchorElExport, setAnchorElExport] = useState(null);
   const openExportMenu = Boolean(anchorElExport);
   const [anchoDetalles, setAnchoDetalles] = useState(null);
   const openDetallesMenu = Boolean(anchoDetalles);
-  
+
   // Filtros
   const [selectedYear] = useState(initialYear || new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
 
   // -----------------------------------------------------------------------
-  // CARGA DE DATOS
+  // CARGA DE DATOS (OPTIMIZADA)
   // -----------------------------------------------------------------------
   const cargarDatos = useCallback(async () => {
     if (!grupoId) {
@@ -155,24 +194,45 @@ const ListaAsistencia = () => {
     try {
       if (!token) throw new Error("Autorización rechazada.");
 
-      let data;
-      if (isPerfil) {
-        data = await fetchDatosAsistenciaMateriaPerfil(grupoId, idNormalizado, semestre, materiaClave, selectedYear, selectedMonth, token);
+      let listaCruda = [];
+      let asistenciasCrudas = [];
+
+      // Selección de servicio según el caso
+      if (isDocente) {
+        const result = await fetchDatosAsistenciaDocente(selectedYear, selectedMonth, token);
+        listaCruda = (result.docentes || []).filter((d) => d.activo === true);
+        asistenciasCrudas = result.asistencias || [];
+      } else if (isPerfil) {
+        const data = await fetchDatosAsistenciaMateriaPerfil(
+          grupoId, idNormalizado, semestre, materiaClave, selectedYear, selectedMonth, token
+        );
+        listaCruda = data.estudiantes || [];
+        asistenciasCrudas = data.asistencias || [];
       } else if (isMateria) {
-        data = await fetchDatosAsistenciaMateria(grupoId, materiaClave, selectedYear, selectedMonth, token);
+        const data = await fetchDatosAsistenciaMateria(
+          grupoId, materiaClave, selectedYear, selectedMonth, token
+        );
+        listaCruda = data.estudiantes || [];
+        asistenciasCrudas = data.asistencias || [];
       } else {
-        data = await fetchDatosAsistencia(grupoId, selectedYear, selectedMonth, token);
+        const data = await fetchDatosAsistencia(grupoId, selectedYear, selectedMonth, token);
+        listaCruda = data.estudiantes || [];
+        asistenciasCrudas = data.asistencias || [];
       }
 
-      setEstudiantes(data.estudiantes || []);
-      setAsistencias(data.asistencias || []);
+      // Procesamiento unificado (Normaliza y Ordena aquí mismo)
+      const listaProcesada = prepararDatosUsuario(listaCruda, isDocente);
+      
+      setEstudiantes(listaProcesada);
+      setAsistencias(asistenciasCrudas);
+
     } catch (err) {
       console.error("Error al cargar datos:", err);
-      setError(err.message);
+      setError(err.message || "Error al cargar la lista");
     } finally {
       setLoading(false);
     }
-  }, [grupoId, token, selectedYear, selectedMonth, isPerfil, isMateria, materiaClave, idNormalizado, semestre]);
+  }, [grupoId, token, selectedYear, selectedMonth, isPerfil, isMateria, isDocente, materiaClave, idNormalizado, semestre]);
 
   useEffect(() => {
     cargarDatos();
@@ -181,20 +241,46 @@ const ListaAsistencia = () => {
   // -----------------------------------------------------------------------
   // GUARDADO
   // -----------------------------------------------------------------------
-  const handleSaveAsistencia = async (estatusAsistencia) => {
+  const handleSaveAsistencia = async (datosDesdeModal) => {
     setIsSaving(true);
     try {
-      if (isMateria || isPerfil) {
-        await fetchPostAsistenciaMateria(token, grupoId, materiaClave, estatusAsistencia);
+      const fechaParaGuardar = datosDesdeModal.fecha || new Date().toISOString().split("T")[0];
+      const mapaEstados = datosDesdeModal.asistencias || datosDesdeModal;
+
+      if (isDocente) {
+        const registros = Object.entries(mapaEstados).map(([id, estado]) => ({
+          docente_id: parseInt(id),
+          estado: estado,
+        }));
+
+        await fetchPostAsistenciaDocente(token, {
+          fecha: fechaParaGuardar,
+          registros: registros.filter((r) => !isNaN(r.docente_id)),
+        });
       } else {
-        await fetchPostAsistencia(token, grupoId, estatusAsistencia);
+        const registrosAlumnos = Object.entries(mapaEstados).map(([matricula, estatus]) => ({
+          matricula: matricula,
+          estatus: estatus,
+        }));
+
+        const payloadAlumnos = {
+          fecha: fechaParaGuardar,
+          registros: registrosAlumnos,
+        };
+
+        if (isMateria || isPerfil) {
+          await fetchPostAsistenciaMateria(token, grupoId, materiaClave, payloadAlumnos);
+        } else {
+          await fetchPostAsistencia(token, grupoId, payloadAlumnos);
+        }
       }
+
       if (showNotification) showNotification("Asistencia guardada", "success");
       setModalOpen(false);
       cargarDatos();
     } catch (error) {
       console.error("Error saving:", error);
-      if (showNotification) showNotification("Error al guardar", "error");
+      if (showNotification) showNotification("Error al guardar: " + error.message, "error");
     } finally {
       setIsSaving(false);
     }
@@ -207,15 +293,18 @@ const ListaAsistencia = () => {
     const map = {};
     asistencias.forEach((registro) => {
       const fechaKey = new Date(registro.fecha).toISOString().split("T")[0];
+      // Determinar ID según el modo
+      const userId = isDocente ? registro.docente_id : registro.alumno_matricula;
+
       if (!map[fechaKey]) map[fechaKey] = {};
-      map[fechaKey][registro.alumno_matricula] = registro.estado;
+      map[fechaKey][userId] = registro.estado;
     });
     return map;
-  }, [asistencias]);
+  }, [asistencias, isDocente]);
 
   const fechasUnicas = useMemo(
     () => Object.keys(asistenciaMap).sort((a, b) => new Date(a) - new Date(b)),
-    [asistenciaMap],
+    [asistenciaMap]
   );
 
   const [selectedDateToEdit, setSelectedDateToEdit] = useState(null);
@@ -235,19 +324,22 @@ const ListaAsistencia = () => {
   //-------------------------------------------------------------------------
   const handleCopyEmails = () => {
     if (estudiantes.length === 0) return;
-    const correos = estudiantes.map((est) => est.correo).filter((correo) => !!correo).join(", ");
+    const correos = estudiantes
+      .map((est) => est.email) // Usamos la propiedad normalizada
+      .filter((email) => !!email)
+      .join(", ");
 
     if (correos) {
       navigator.clipboard.writeText(correos)
-        .then(() => { if (showNotification) showNotification("Correos copiados al portapapeles", "success"); })
-        .catch(() => { if (showNotification) showNotification("Error al copiar correos", "error"); });
+        .then(() => showNotification && showNotification("Correos copiados", "success"))
+        .catch(() => showNotification && showNotification("Error al copiar", "error"));
     } else {
-      if (showNotification) showNotification("No hay correos para copiar", "info");
+      showNotification && showNotification("No hay correos", "info");
     }
   };
 
   // -----------------------------------------------------------------------
-  // MENÚS
+  // MENÚS Y EXPORTACIÓN
   // -----------------------------------------------------------------------
   const handleMenuDetalles = (event) => setAnchoDetalles(event.currentTarget);
   const handleMenuDetallesClose = () => setAnchoDetalles(null);
@@ -255,25 +347,31 @@ const ListaAsistencia = () => {
   const handleExportClose = () => setAnchorElExport(null);
 
   const getTituloDocumento = () => {
+    if (isDocente) return `Asistencia Docentes - ${selectedYear}`;
     const mat = nombreMateria || materiaClave || "General";
     return `Lista: ${mat} - Grupo: ${grupoId} - ${selectedYear}`;
   };
 
-  // Exportar CON DATOS
+  // Exportar CON DATOS (Simplificado)
   const handleExportData = (format) => {
-    if (estudiantes.length === 0) { alert("No hay estudiantes."); return; }
+    if (estudiantes.length === 0) return alert("Sin datos para exportar.");
+
     const dataExport = estudiantes.map((est) => {
       const row = {
-        Matrícula: est.matricula,
-        "Nombre Completo": `${est.apellidop} ${est.apellidom} ${est.nombres}`,
+        ID: est.uid,
+        "Nombre Completo": est.nombreCompleto,
       };
+      
       fechasUnicas.forEach((fecha) => {
-        const estado = asistenciaMap[fecha]?.[est.matricula];
+        const estado = asistenciaMap[fecha]?.[est.uid];
+        // Normalización visual de estados
         let textoEstado = "-";
-        if (estado === "asistio") textoEstado = "A";
-        if (estado === "falta") textoEstado = "F";
-        if (estado === "demorado") textoEstado = "R";
-        if (estado === "antes") textoEstado = "S.A";
+        const e = estado ? estado.toLowerCase() : "";
+        if (e.includes("asistio") || e.includes("presente")) textoEstado = "A";
+        if (e.includes("falta") || e.includes("ausente")) textoEstado = "F";
+        if (e.includes("demora") || e.includes("retardo")) textoEstado = "R";
+        if (e.includes("antes")) textoEstado = "S.A";
+
         row[fecha] = textoEstado;
       });
       return row;
@@ -282,55 +380,44 @@ const ListaAsistencia = () => {
     handleExportClose();
   };
 
-  // Exportar VACÍA
+  // Exportar VACÍA (Simplificado)
   const handleExportVacia = (format) => {
-    if (estudiantes.length === 0) { alert("No hay estudiantes."); return; }
+    if (estudiantes.length === 0) return alert("Sin datos.");
+
     const dataExport = estudiantes.map((est) => ({
-      Matrícula: est.matricula,
-      "Nombre del Estudiante": `${est.apellidop} ${est.apellidom} ${est.nombres}`,
+      ID: est.uid,
+      Nombre: est.nombreCompleto,
     }));
-    const titulo = `LISTA DE ASISTENCIA - ${nombreMateria || "General"} - Gpo ${grupoId}`;
-    exportar(dataExport, titulo, format);
+    
+    exportar(dataExport, getTituloDocumento(), format);
     handleExportClose();
   };
 
-  // Títulos
-  const getTitulo = () => (isPerfil || isMateria) ? `Asistencia - ${nombreMateria || materiaClave}` : `Asistencia General - Grupo ${grupoId}`;
+  // Títulos UI
+  const getTitulo = () => {
+    if (isDocente) return "Control de Asistencia Docente";
+    return isPerfil || isMateria
+      ? `Asistencia - ${nombreMateria || materiaClave}`
+      : `Asistencia General - Grupo ${grupoId}`;
+  };
+
   const getSubtitulo = () => {
+    if (isDocente) return `Registro de entradas y salidas - ${selectedYear}`;
     if (isPerfil) return `Perfil ${grupoId} (Semestre ${semestre})`;
     if (isMateria) return `Grupo ${grupoId}`;
     return `Vista General`;
   };
 
   // -----------------------------------------------------------------------
-  // RENDER UI ACTUALIZADA
+  // RENDER
   // -----------------------------------------------------------------------
   return (
-    <Box sx={{ 
-      p: 3, 
-      height: "calc(100vh - 64px)", 
-      bgcolor: "#f4f6f8", // Fondo gris suave
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
-      
-      {/* HEADER TIPO TARJETA */}
-      <Paper 
-        elevation={0} 
-        sx={{ 
-          p: 2, 
-          mb: 2, 
-          display: "flex", 
-          justifyContent: "space-between", 
-          alignItems: "center",
-          borderRadius: 2,
-          border: '1px solid #e0e0e0'
-        }}
-      >
-        {/* IZQUIERDA: TÍTULOS E INFO */}
+    <Box sx={{ p: 3, height: "calc(100vh - 64px)", bgcolor: "#f4f6f8", display: "flex", flexDirection: "column" }}>
+      {/* HEADER */}
+      <Paper elevation={0} sx={{ p: 2, mb: 2, display: "flex", justifyContent: "space-between", alignItems: "center", borderRadius: 2, border: "1px solid #e0e0e0" }}>
         <Box>
-          <Typography variant="h6" fontWeight="bold" color="primary.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <CalendarMonthIcon fontSize="small"/> {getTitulo()}
+          <Typography variant="h6" fontWeight="bold" color="primary.main" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <CalendarMonthIcon fontSize="small" /> {getTitulo()}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {getSubtitulo()}
@@ -343,16 +430,14 @@ const ListaAsistencia = () => {
           </Stack>
         </Box>
 
-        {/* DERECHA: ACCIONES Y FILTROS */}
         <Stack direction="row" spacing={2} alignItems="center">
-          
-          {/* Selector de Mes (Estilo minimalista) */}
+          {/* Selector de Mes */}
           <FormControl variant="standard" sx={{ minWidth: 120 }}>
             <Select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
               disableUnderline
-              sx={{ fontWeight: 'bold', color: 'text.primary' }}
+              sx={{ fontWeight: "bold", color: "text.primary" }}
             >
               {Array.from({ length: 12 }, (_, i) => (
                 <MenuItem key={i + 1} value={i + 1}>
@@ -362,9 +447,8 @@ const ListaAsistencia = () => {
             </Select>
           </FormControl>
 
-          <Divider orientation="vertical" flexItem sx={{ height: 20, alignSelf: 'center' }} />
+          <Divider orientation="vertical" flexItem sx={{ height: 20, alignSelf: "center" }} />
 
-          {/* Botones de Icono */}
           <Tooltip title="Configuración de vista">
             <IconButton onClick={handleMenuDetalles} size="small">
               <SettingsIcon />
@@ -377,20 +461,18 @@ const ListaAsistencia = () => {
             </IconButton>
           </Tooltip>
 
-          {/* Botón Principal */}
           <Button
             variant="contained"
             color="primary"
             startIcon={<AddIcon />}
             onClick={() => setModalOpen(true)}
-            sx={{ borderRadius: 2, textTransform: 'none', px: 3, boxShadow: 'none' }}
+            sx={{ borderRadius: 2, textTransform: "none", px: 3, boxShadow: "none" }}
           >
             Nueva Entrada
           </Button>
 
-          {/* --- MENÚS DESPLEGABLES (Ocultos visualmente hasta activarse) --- */}
+          {/* MENÚS */}
           <Menu anchorEl={anchorElExport} open={openExportMenu} onClose={handleExportClose}>
-            <MenuItem disabled><Typography variant="caption">Reporte Actual</Typography></MenuItem>
             <MenuItem onClick={() => handleExportData("xlsx")}>
               <ListItemIcon><TableViewIcon fontSize="small" /></ListItemIcon>
               <ListItemText>Excel (Con Datos)</ListItemText>
@@ -399,11 +481,7 @@ const ListaAsistencia = () => {
               <ListItemIcon><PictureAsPdfIcon fontSize="small" /></ListItemIcon>
               <ListItemText>PDF (Con Datos)</ListItemText>
             </MenuItem>
-            <MenuItem disabled sx={{ mt: 1 }}><Typography variant="caption">Lista en Blanco</Typography></MenuItem>
-            <MenuItem onClick={() => handleExportVacia("pdf")}>
-              <ListItemIcon><PictureAsPdfIcon fontSize="small" /></ListItemIcon>
-              <ListItemText>PDF (Lista Vacía)</ListItemText>
-            </MenuItem>
+            <Divider />
             <MenuItem onClick={() => handleExportVacia("xlsx")}>
               <ListItemIcon><TableViewIcon fontSize="small" /></ListItemIcon>
               <ListItemText>Excel (Lista Vacía)</ListItemText>
@@ -419,52 +497,44 @@ const ListaAsistencia = () => {
         </Stack>
       </Paper>
 
-      {/* ESTADO DE CARGA Y ERROR */}
+      {/* ALERT MODO DOCENTE */}
+      {isDocente && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Estás viendo la lista de asistencias en modo <strong>Docente</strong>.
+        </Alert>
+      )}
+
+      {/* LOADING & ERROR */}
       {loading && (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <CircularProgress />
         </Box>
       )}
-      
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
       )}
 
-      {/* TABLA PRINCIPAL */}
+      {/* TABLA */}
       {!loading && !error && (
         estudiantes.length === 0 ? (
           <Paper sx={{ p: 4, textAlign: "center", borderRadius: 2 }}>
             <InfoIcon color="action" sx={{ fontSize: 40, mb: 1, opacity: 0.5 }} />
             <Typography variant="subtitle1" color="text.secondary">
-              No se encontraron estudiantes en este grupo.
+              No se encontraron registros.
             </Typography>
           </Paper>
         ) : (
-          <Paper 
-            elevation={2} 
-            sx={{ 
-              flexGrow: 1, 
-              overflow: "hidden", 
-              borderRadius: 2, 
-              display: 'flex', 
-              flexDirection: 'column' 
-            }}
-          >
+          <Paper elevation={2} sx={{ flexGrow: 1, overflow: "hidden", borderRadius: 2, display: "flex", flexDirection: "column" }}>
             <TableContainer sx={{ flexGrow: 1 }}>
               <Table stickyHeader size="small">
                 <TableHead>
                   <TableRow>
-                    {/* Columna Correo (Opcional) */}
+                    {/* Columna Correo */}
                     {correoEnable && (
                       <TableCell
-                        sx={{
-                          fontWeight: "bold",
-                          bgcolor: '#f5f5f5',
-                          minWidth: 200,
-                          cursor: "pointer",
-                          borderBottom: '2px solid #e0e0e0',
-                          "&:hover": { backgroundColor: "#eeeeee" },
-                        }}
+                        sx={{ fontWeight: "bold", bgcolor: "#f5f5f5", minWidth: 200, cursor: "pointer" }}
                         onClick={handleCopyEmails}
                       >
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -473,21 +543,11 @@ const ListaAsistencia = () => {
                       </TableCell>
                     )}
 
-                    {/* Columna Nombre (Sticky) */}
+                    {/* Columna Nombre */}
                     <TableCell
-                      sx={{
-                        position: "sticky",
-                        left: 0,
-                        backgroundColor: "#fcfcfc",
-                        zIndex: 101,
-                        fontWeight: "bold",
-                        minWidth: 250,
-                        borderRight: "2px solid #e0e0e0",
-                        borderBottom: '2px solid #e0e0e0',
-                        color: 'text.secondary'
-                      }}
+                      sx={{ position: "sticky", left: 0, bgcolor: "#fcfcfc", zIndex: 101, fontWeight: "bold", minWidth: 250, borderRight: "2px solid #e0e0e0" }}
                     >
-                      ESTUDIANTE
+                      {isDocente ? "DOCENTE" : "ESTUDIANTE"}
                     </TableCell>
 
                     {/* Columnas Fechas */}
@@ -495,23 +555,15 @@ const ListaAsistencia = () => {
                       <TableCell
                         key={fecha}
                         align="center"
-                        sx={{ 
-                          fontWeight: "bold", 
-                          minWidth: 80, 
-                          cursor: "pointer",
-                          bgcolor: '#fcfcfc',
-                          borderBottom: '2px solid #e0e0e0',
-                          color: 'text.secondary',
-                          "&:hover": { bgcolor: "#f0f0f0" }
-                        }}
+                        sx={{ fontWeight: "bold", minWidth: 80, cursor: "pointer", bgcolor: "#fcfcfc", "&:hover": { bgcolor: "#f0f0f0" } }}
                         onClick={() => handleEditAsistencia(fecha)}
                       >
-                        <Tooltip title="Editar asistencia de este día">
-                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <span style={{ fontSize: '0.9rem', color: '#000' }}>
+                        <Tooltip title="Editar asistencia">
+                          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                            <span style={{ fontSize: "0.9rem", color: "#000" }}>
                               {new Date(fecha + "T00:00:00").toLocaleDateString("es-MX", { day: "2-digit" })}
                             </span>
-                            <span style={{ fontSize: '0.65rem', textTransform: 'uppercase' }}>
+                            <span style={{ fontSize: "0.65rem", textTransform: "uppercase" }}>
                               {new Date(fecha + "T00:00:00").toLocaleDateString("es-MX", { month: "short" })}
                             </span>
                           </Box>
@@ -523,40 +575,28 @@ const ListaAsistencia = () => {
 
                 <TableBody>
                   {estudiantes.map((est, index) => (
-                    <TableRow 
-                      key={est.matricula} 
-                      hover
-                      sx={{ bgcolor: index % 2 === 0 ? 'white' : '#fafafa' }}
-                    >
+                    <TableRow key={est.uid} hover sx={{ bgcolor: index % 2 === 0 ? "white" : "#fafafa" }}>
+                      
+                      {/* Celda Correo */}
                       {correoEnable && (
-                        <TableCell sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
-                          {est.correo || "-"}
+                        <TableCell sx={{ fontSize: "0.85rem", color: "text.secondary" }}>
+                          {est.email || "-"}
                         </TableCell>
                       )}
 
+                      {/* Celda Nombre */}
                       <TableCell
                         component="th"
                         scope="row"
-                        sx={{
-                          position: "sticky",
-                          left: 0,
-                          bgcolor: index % 2 === 0 ? 'white' : '#fafafa',
-                          zIndex: 100,
-                          fontWeight: "500",
-                          borderRight: "1px solid #f0f0f0",
-                          fontSize: '0.85rem'
-                        }}
+                        sx={{ position: "sticky", left: 0, bgcolor: index % 2 === 0 ? "white" : "#fafafa", zIndex: 100, fontWeight: "500", borderRight: "1px solid #f0f0f0", fontSize: "0.85rem" }}
                       >
-                        {`${est.apellidop} ${est.apellidom} ${est.nombres}`}
+                        {est.nombreCompleto}
                       </TableCell>
 
+                      {/* Celdas Estados */}
                       {fechasUnicas.map((fecha) => (
-                        <TableCell 
-                          key={`${est.matricula}-${fecha}`} 
-                          align="center"
-                          sx={{ p: 0.5 }}
-                        >
-                          <IconoEstatus estatus={asistenciaMap[fecha]?.[est.matricula]} />
+                        <TableCell key={`${est.uid}-${fecha}`} align="center" sx={{ p: 0.5 }}>
+                          <IconoEstatus estatus={asistenciaMap[fecha]?.[est.uid]} />
                         </TableCell>
                       ))}
                     </TableRow>
@@ -568,15 +608,16 @@ const ListaAsistencia = () => {
         )
       )}
 
-      {/* Modales y Notificaciones */}
+      {/* Modal */}
       <NuevaAsistencia
         open={modalOpen}
         onClose={handleCloseModal}
-        estudiantes={estudiantes}
+        estudiantes={estudiantes} // La lista ya está normalizada, asegúrate que tu modal soporte { uid, nombreCompleto }
         onSave={handleSaveAsistencia}
         editDate={selectedDateToEdit}
         isSaving={isSaving}
         asistenciaActual={selectedDateToEdit ? asistenciaMap[selectedDateToEdit] : {}}
+        isDocente={isDocente}
       />
       {NotificationComponent}
     </Box>

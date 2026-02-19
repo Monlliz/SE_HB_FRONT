@@ -49,10 +49,8 @@ export default function GeneracionDeCuentas() {
   return (
     <div>
       <Box>
-        {docentecorreo.map((item, index) => (
-          <Typography key={index}>{item.label}</Typography>
-        ))}
+      <img src="https://giphy.com/explore/minecraft-build" alt="Logo" width="100" height="100" />
       </Box>
     </div>
-  );
+  )
 }

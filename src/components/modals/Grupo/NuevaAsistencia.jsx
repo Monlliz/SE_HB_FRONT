@@ -8,19 +8,19 @@ import {
   Button,
   Box,
   Typography,
-  Divider,
   Paper,
   Chip,
-  IconButton,
-  Avatar
+  Avatar,
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-// Importa los colores e íconos desde el archivo de configuración
-import { STATUS_COLORS, OPCIONES_ASISTENCIA } from "../../../config/colors&iconsConfig.jsx";
-import { ListChecks} from 'lucide-react';
-// Componente Modal de Nueva Asistencia
+import {
+  STATUS_COLORS,
+  OPCIONES_ASISTENCIA,
+} from "../../../config/colors&iconsConfig.jsx";
+import { ListChecks } from "lucide-react";
+
 const AsistenciaModal = ({
   open,
   onClose,
@@ -28,168 +28,175 @@ const AsistenciaModal = ({
   onSave,
   editDate = null,
   asistenciaActual = null,
+  isDocente = false,
 }) => {
   const [fecha, setFecha] = useState(dayjs());
   const [estatusAsistencia, setEstatusAsistencia] = useState({});
 
-  // ... (Tu useEffect de inicialización se queda IGUAL, no cambia la lógica) ...
+  // 🔥 LÓGICA DE ID (MANTENIDA PARA QUE FUNCIONE)
+  const getId = (persona) => {
+    if (!persona) return null;
+    if (isDocente) {
+      return persona.iddocente || persona.idDocente || persona.id;
+    }
+    // Aseguramos que lea matricula para alumnos
+    return persona.matricula || persona.id;
+  };
+
   useEffect(() => {
     if (open) {
-      if (editDate && asistenciaActual) {
+      if (editDate) {
         setFecha(dayjs(editDate));
-        const editState = {};
-        estudiantes.forEach((est) => {
-          editState[est.matricula] = asistenciaActual[est.matricula] || "asistio";
-        });
-        setEstatusAsistencia(editState);
       } else {
         setFecha(dayjs());
-        const initialState = {};
-        estudiantes.forEach((est) => {
-          initialState[est.matricula] = "asistio";
-        });
-        setEstatusAsistencia(initialState);
       }
-    }
-  }, [open, estudiantes, editDate, asistenciaActual]);
 
-  const handleStatusChange = (matricula, nuevoEstatus) => {
+      const nuevoEstado = {};
+      estudiantes.forEach((persona) => {
+        const id = getId(persona);
+        if (id) {
+          const estadoPrevio = asistenciaActual ? asistenciaActual[id] : null;
+          nuevoEstado[id] = estadoPrevio || "asistio";
+        }
+      });
+      setEstatusAsistencia(nuevoEstado);
+    }
+  }, [open, estudiantes, editDate, asistenciaActual, isDocente]);
+
+  const handleStatusChange = (idUsuario, nuevoEstatus) => {
     setEstatusAsistencia((prev) => ({
       ...prev,
-      [matricula]: nuevoEstatus,
+      [idUsuario]: nuevoEstatus,
     }));
   };
 
   const handleGuardar = () => {
     const datosGuardar = {
       fecha: fecha.format("YYYY-MM-DD"),
-      registros: Object.keys(estatusAsistencia).map((matricula) => ({
-        matricula: matricula,
-        estatus: estatusAsistencia[matricula],
-      })),
+      asistencias: estatusAsistencia,
     };
     onSave(datosGuardar);
     onClose();
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" > {/* Aumenté el ancho a md */}
-
-      {/* TU HEADER PERSONALIZADO */}
-      <DialogTitle sx={{
-        backgroundColor: "primary.main",
-        textAlign: "center",
-        py: 1.5,
-        fontFamily: '"Poppins", sans-serif',
-        color: "white",
-        fontWeight: 600,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        gap: 1
-      }}>
-        <ListChecks size={24} />
-        {editDate ? "EDITAR ASISTENCIA" : "NUEVA ENTRADA DE LISTA"}
-      </DialogTitle>
-
-      <DialogContent sx={{
-        backgroundColor: "#f5f7fa",
-        p: 0,
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden", //Oculta el scroll general del modal
-        height: { xs: "70%", md: "75%" }
-      }}>
-
-        {/* SECCIÓN DE FECHA DESTACADA */}
-        <Box sx={{
-          backgroundColor: "white",
-          px: 3,
-          pt: 3,
-          pb: 2,
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+      {" "}
+      {/* Regresé a 'md' para más espacio */}
+      <DialogTitle
+        sx={{
+          backgroundColor: "primary.main",
+          color: "white",
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
-          borderBottom: "1px solid #e0e0e0",
-          flexShrink: 0
-        }}>
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+          justifyContent: "center",
+          gap: 1,
+        }}
+      >
+        <ListChecks size={24} />
+        {editDate ? "EDITAR ASISTENCIA" : "NUEVA ENTRADA"}
+      </DialogTitle>
+      <DialogContent
+        sx={{
+          backgroundColor: "#f5f7fa",
+          p: 0,
+          height: { xs: "70%", md: "75%" },
+        }}
+      >
+        {/* SECCIÓN FECHA */}
+        <Box
+          sx={{
+            backgroundColor: "white",
+            p: 2,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            borderBottom: "1px solid #e0e0e0",
+          }}
+        >
+          <Typography variant="caption" color="text.secondary" gutterBottom>
             SELECCIONA LA FECHA
           </Typography>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
               value={fecha}
               format="DD/MM/YYYY"
-              onChange={(nuevaFecha) => setFecha(nuevaFecha)}
+              onChange={(nf) => setFecha(nf)}
+              slotProps={{ textField: { size: "small" } }}
               sx={{ width: "100%", maxWidth: "300px" }}
-              slotProps={{ textField: { size: 'small' } }}
             />
           </LocalizationProvider>
         </Box>
-{/* --- NUEVO: LEYENDA DE ESTATUS --- */}
-        <Box sx={{ 
-            display: "flex", 
-            justifyContent: "center", 
-            gap: 2, 
-            py: 1, 
-            backgroundColor: "white", 
-            borderBottom: "1px solid #e0e0e0",
-            flexShrink: 0,
-            flexWrap: "wrap"
-        }}>
-            {OPCIONES_ASISTENCIA.map((opcion) => {
-                const colorConfig = STATUS_COLORS[opcion.colorKey];
-                const Icon = opcion.icon;
 
-                return (
-                    <Box 
-                        key={opcion.value} 
-                        sx={{ 
-                            display: "flex", 
-                            alignItems: "center", 
-                            gap: 0.5 
-                        }}
-                    >
-                        {/* Indicador visual pequeño (Badge) */}
-                        <Box sx={{
-                            width: 18,
-                            height: 18,
-                            borderRadius: "50%",
-                            backgroundColor: colorConfig.light,
-                            color: colorConfig.main,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            border: `1px solid ${colorConfig.main}40` // Borde muy sutil
-                        }}>
-                            <Icon size={10} strokeWidth={3} />
-                        </Box>
-                        
-                        {/* Texto descriptivo */}
-                        <Typography 
-                            variant="caption" 
-                            sx={{ 
-                                fontSize: "0.65rem", 
-                                fontWeight: 600, 
-                                color: "text.secondary",
-                                textTransform: "uppercase"
-                            }}
-                        >
-                            {colorConfig.label}
-                        </Typography>
-                    </Box>
-                );
-            })}
+        {/* LEYENDA DE COLORES (RESTAURADA) */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            gap: 2,
+            py: 1,
+            backgroundColor: "white",
+            borderBottom: "1px solid #e0e0e0",
+            flexWrap: "wrap",
+          }}
+        >
+          {OPCIONES_ASISTENCIA.map((opcion) => {
+            const colorConfig = STATUS_COLORS[opcion.colorKey];
+            const Icon = opcion.icon;
+            return (
+              <Box
+                key={opcion.value}
+                sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+              >
+                <Box
+                  sx={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: "50%",
+                    backgroundColor: colorConfig.light,
+                    color: colorConfig.main,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: `1px solid ${colorConfig.main}40`,
+                  }}
+                >
+                  <Icon size={10} strokeWidth={3} />
+                </Box>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontSize: "0.65rem",
+                    fontWeight: 600,
+                    color: "text.secondary",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {colorConfig.label}
+                </Typography>
+              </Box>
+            );
+          })}
         </Box>
-        {/* LISTA DE ESTUDIANTES TIPO TABLA/TARJETA */}
-        <Box sx={{ p: 2, overflowY: "auto", flex: 1, minHeight: 0 }}> {/* Scroll contenido */}
-          {estudiantes.map((estudiante, index) => {
-            const estadoActual = estatusAsistencia[estudiante.matricula] || "asistio";
-            const colorConfig = STATUS_COLORS[estadoActual] || STATUS_COLORS.asistio;
+
+        {/* LISTA DE ESTUDIANTES */}
+        <Box sx={{ p: 2, overflowY: "auto" }}>
+          {estudiantes.map((persona, index) => {
+            const id = getId(persona);
+            if (!id) return null;
+
+            const estadoActual = estatusAsistencia[id] || "asistio";
+            // Si el estado actual no está en la config, usamos el default (asistio) para evitar crash
+            const colorConfig =
+              STATUS_COLORS[estadoActual] || STATUS_COLORS.asistio;
+
+            const nombre = isDocente
+              ? ` ${persona.apellidop} ${persona.apellidom} ${persona.nombres || ""}`
+              : `${persona.apellidop} ${persona.apellidom} ${persona.nombres}`;
 
             return (
               <Paper
-                key={estudiante.matricula}
+                key={id}
                 elevation={0}
                 sx={{
                   display: "flex",
@@ -198,60 +205,74 @@ const AsistenciaModal = ({
                   p: 2,
                   mb: 1.5,
                   backgroundColor: "white",
-                  border: "1px solid #eee",
                   borderRadius: "1rem",
+                  border: "1px solid #eee",
+                  borderLeft: `5px solid ${colorConfig.main}`, // Borde izquierdo dinámico
                   transition: "all 0.2s",
-                  borderLeft: `5px solid ${colorConfig.main}`, // Borde izquierdo de color según estado
-                  "&:hover": { boxShadow: "0 0.1rem 0.5rem rgba(0,0,0,0.05)" }
                 }}
               >
-                {/* Datos del Estudiante */}
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
-                  <Avatar sx={{ bgcolor: "primary.main", width: "2rem", height: "2rem", fontSize: "0.9rem" }}>
+                {/* Info Persona */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    flex: 1,
+                  }}
+                >
+                  <Avatar
+                    sx={{
+                      bgcolor: "primary.main",
+                      width: 30,
+                      height: 30,
+                      fontSize: "0.8rem",
+                    }}
+                  >
                     {index + 1}
                   </Avatar>
                   <Box>
-                    <Typography variant="subtitle1" fontWeight="600" sx={{ lineHeight: 1.2 }}>
-                      {estudiante.apellidop} {estudiante.apellidom}
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      {nombre}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {estudiante.nombres}
+                    <Typography variant="caption" color="text.secondary">
+                      {isDocente ? "Docente" : persona.matricula}
                     </Typography>
                   </Box>
                 </Box>
 
-                {/* Botones de Acción (Chips Interactivos) */}
-                <Box sx={{ display: "flex", gap: 1 }}>
+                {/* BOTONES DE ACCIÓN (Con Texto Restaurado) */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 1,
+                    flexWrap: "wrap",
+                    justifyContent: "flex-end",
+                  }}
+                >
                   {OPCIONES_ASISTENCIA.map((opcion) => {
                     const isActive = estadoActual === opcion.value;
-                    const colorConfig = STATUS_COLORS[opcion.colorKey];
                     const Icon = opcion.icon;
+                    const btnColor = STATUS_COLORS[opcion.colorKey];
 
                     return (
                       <Chip
                         key={opcion.value}
-                        label={opcion.label}
+                        label={opcion.label} // <--- TEXTO RESTAURADO
                         icon={<Icon size={16} />}
-                        onClick={() => handleStatusChange(estudiante.matricula, opcion.value)}
+                        onClick={() => handleStatusChange(id, opcion.value)}
                         sx={{
                           cursor: "pointer",
                           fontWeight: "bold",
-                          // Si está activo usa su color principal, si no transparente
-                          bgcolor: isActive ? colorConfig.main : "transparent",
-                          // Si está activo texto blanco, si no gris
+                          bgcolor: isActive ? btnColor.main : "transparent",
                           color: isActive ? "white" : "text.disabled",
-                          // Borde solo si no está activo
                           border: `1px solid ${isActive ? "transparent" : "#e0e0e0"}`,
 
-                          // Heredar color para el icono
                           "& .MuiChip-icon": { color: "inherit" },
-
-                          // Hover con el color light
                           "&:hover": {
-                            bgcolor: colorConfig.light,
-                            color: colorConfig.main,
-                            borderColor: colorConfig.main
-                          }
+                            bgcolor: btnColor.light,
+                            color: btnColor.main,
+                            borderColor: btnColor.main,
+                          },
                         }}
                       />
                     );
@@ -261,24 +282,17 @@ const AsistenciaModal = ({
             );
           })}
         </Box>
-
       </DialogContent>
-
-      <DialogActions sx={{ p: 2, borderTop: "1px solid #eee", backgroundColor: "white" }}>
-        <Button onClick={onClose} color="inherit" sx={{ textTransform: "none" }}>Cancelar</Button>
+      <DialogActions sx={{ p: 2, borderTop: "1px solid #eee" }}>
+        <Button onClick={onClose} color="inherit">
+          Cancelar
+        </Button>
         <Button
           onClick={handleGuardar}
           variant="contained"
-          sx={{
-            px: 2,
-            borderRadius: "0.7rem",
-            textTransform: "none",
-            fontWeight: "bold",
-            boxShadow: "none"
-          }}
-
+          sx={{ borderRadius: 2 }}
         >
-          Guardar Asistencia
+          Guardar
         </Button>
       </DialogActions>
     </Dialog>

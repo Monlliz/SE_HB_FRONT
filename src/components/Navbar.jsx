@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { appLinks } from "../config/NavConfig.jsx";
+
 import {
   AppBar,
   Toolbar,
@@ -31,6 +32,7 @@ import {
   LogOut as LogoutIcon, // Icono para "Salir"
   Settings as SettingsIcon, // Icono para "Gestión de Datos" (o ajustes)
   KeyRound as AccountIcon, // Icono para "Generar Cuentas"
+  FileUser as PaseListaIcon, // Icono para "Pase de lista docente"  
 } from "lucide-react";
 
 export default function Navbar({ links = [] }) {
@@ -72,9 +74,10 @@ export default function Navbar({ links = [] }) {
   };
 
   // 6.- Ruta a Pase de lista docente
-    const handleListaDocente = () => {
+  const handleListaDocente = () => {
     handleUserClose();
-    navigate("/listaAsistencia");
+    
+    navigate("/listaAsistencia", { state: { grupoId: "docente" } });
   };
 
   // Obtener la ruta actual
@@ -254,9 +257,9 @@ export default function Navbar({ links = [] }) {
                   </ListItemIcon>
                   Gestión de Datos
                 </MenuItem>,
-                 <MenuItem key="data-management" >
+                <MenuItem key="data-management" onClick={handleListaDocente}>
                   <ListItemIcon>
-                    <SettingsIcon size={20} />
+                    <PaseListaIcon size={20} />
                   </ListItemIcon>
                   Pase de lista docente
                 </MenuItem>,
@@ -294,7 +297,6 @@ export default function Navbar({ links = [] }) {
             }}
           >
             <Box
-
               component="img"
               src="/img/herbart-logo.avif"
               sx={{
@@ -318,7 +320,8 @@ export default function Navbar({ links = [] }) {
                 fontSize: 18,
               }}
             >
-              {navLinks.filter((item) => {
+              {navLinks
+                .filter((item) => {
                   // Filtro: Ocultar "GRUPOS" si es docente
                   return !(isDocente && item.label === "GRUPOS");
                 })
@@ -326,42 +329,43 @@ export default function Navbar({ links = [] }) {
                   // 1. Extraemos el componente del icono
                   const IconComponent = item.icon;
                   return (
-                <ListItem key={item.label} disablePadding>
-                  <ListItemButton
-                    component={Link}
-                    to={item.href}
-                    sx={{
-                      //borders
-                      borderWidth: 1,
-                      borderColor: "primary.light",
-                      borderStyle: "solid",
-                      //spacing
-                      p: { xs: 0.5, sm: 1 },
-                      paddingLeft: { xs: 2, sm: 4 },
-                      borderRadius: 5,
-                      //size
-                      margin: { xs: "2%", sm: "2.5%" },
-                      marginX: { xs: "8%", sm: "10%" },
-                      //Colores
-                      ...(currentPath === item.href && {
-                        bgcolor: "primary.main",
-                        color: "background.paper",
-                      }),
-                    }}
-                  >
-                    <ListItemIcon
-                      sx={{
-                        // Esto hace que el icono herede el color del texto (blanco cuando está activo)
-                        color: "inherit",
-                      }}
-                    >
-                      <IconComponent size={26} />
-                    </ListItemIcon>
-                    <ListItemText primary={item.label} />
-                  </ListItemButton>
-                </ListItem>
-                );
-              })};
+                    <ListItem key={item.label} disablePadding>
+                      <ListItemButton
+                        component={Link}
+                        to={item.href}
+                        sx={{
+                          //borders
+                          borderWidth: 1,
+                          borderColor: "primary.light",
+                          borderStyle: "solid",
+                          //spacing
+                          p: { xs: 0.5, sm: 1 },
+                          paddingLeft: { xs: 2, sm: 4 },
+                          borderRadius: 5,
+                          //size
+                          margin: { xs: "2%", sm: "2.5%" },
+                          marginX: { xs: "8%", sm: "10%" },
+                          //Colores
+                          ...(currentPath === item.href && {
+                            bgcolor: "primary.main",
+                            color: "background.paper",
+                          }),
+                        }}
+                      >
+                        <ListItemIcon
+                          sx={{
+                            // Esto hace que el icono herede el color del texto (blanco cuando está activo)
+                            color: "inherit",
+                          }}
+                        >
+                          <IconComponent size={26} />
+                        </ListItemIcon>
+                        <ListItemText primary={item.label} />
+                      </ListItemButton>
+                    </ListItem>
+                  );
+                })}
+              ;
             </List>
           )}
         </Box>
