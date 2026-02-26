@@ -32,7 +32,7 @@ import {
   LogOut as LogoutIcon, // Icono para "Salir"
   Settings as SettingsIcon, // Icono para "Gestión de Datos" (o ajustes)
   KeyRound as AccountIcon, // Icono para "Generar Cuentas"
-  FileUser as PaseListaIcon, // Icono para "Pase de lista docente"  
+  FileUser as PaseListaIcon, // Icono para "Pase de lista docente"
 } from "lucide-react";
 
 export default function Navbar({ links = [] }) {
@@ -73,10 +73,16 @@ export default function Navbar({ links = [] }) {
     navigate("/gestiondatos");
   };
 
+  // 6. Mi cuenta
+  const handleMiCuenta = () => {
+    handleUserClose();
+    navigate("/micuenta");
+  };
+
   // 6.- Ruta a Pase de lista docente
   const handleListaDocente = () => {
     handleUserClose();
-    
+
     navigate("/listaAsistencia", { state: { grupoId: "docente" } });
   };
 
@@ -190,7 +196,7 @@ export default function Navbar({ links = [] }) {
                           color: "background.paper",
                           bgcolor: "primary.main",
                         },
-                        // Resaltar el botón si la ruta coincide con el href
+
                         ...(currentPath === link.href && {
                           bgcolor: "primary.main",
                           color: "background.paper",
@@ -244,6 +250,12 @@ export default function Navbar({ links = [] }) {
               transformOrigin={{ horizontal: "right", vertical: "top" }}
               anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
             >
+              <MenuItem key="generate" onClick={handleMiCuenta}>
+                <ListItemIcon>
+                  <UserIcon size={20} />
+                </ListItemIcon>
+                Mi cuenta
+              </MenuItem>
               {isAdminOrDirector && [
                 <MenuItem key="generate" onClick={handleGenerateAccounts}>
                   <ListItemIcon>
