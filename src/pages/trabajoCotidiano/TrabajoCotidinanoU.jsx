@@ -131,6 +131,7 @@ const TrabajoCotidiano = () => {
         return fechaB - fechaA;
       });
       setRubros(rubrosOrdenados);
+      console.log("Rubros cargados:", rubrosOrdenados);
       setTotalRubros(rubrosOrdenados.length);
     } catch (err) {
       setErrorRubros(err.message);
@@ -262,20 +263,39 @@ const TrabajoCotidiano = () => {
     return alumnos.map((alumno) => {
       const susCalificaciones =
         califMap.get(alumno.alumno_matricula) || new Map();
-      let sumaPuntos = 0;
+      
+      let sumaPuntosTC = 0;
+      let countTC = 0;
+      let sumaPuntosTI = 0;
+      let countTI = 0;
+
       rubros.forEach((rubro) => {
         const valString = susCalificaciones.get(rubro.idrubrotc);
         let puntos = 0;
+        
         if (valString === "Si" || valString === "J") puntos = 1.0;
         else if (valString === "R") puntos = Number(rubro.ponderacion);
-        else if (valString === "I")
-          puntos = Number(rubro.ponderacioninsuficiente);
-        sumaPuntos += puntos;
+        else if (valString === "I") puntos = Number(rubro.ponderacioninsuficiente);
+        
+        // Separar lógica por tipo de rubro
+        if (rubro.tipo_rubro === 'TC') {
+          sumaPuntosTC += puntos;
+          countTC++;
+        } else if (rubro.tipo_rubro === 'TI') {
+          sumaPuntosTI += puntos;
+          countTI++;
+        }
       });
-      const promedio =
-        rubros.length > 0 ? (sumaPuntos / rubros.length) * 10 : 0;
+
+      const promedioTC = countTC > 0 ? (sumaPuntosTC / countTC) * 10 : 0;
+      const promedioTI = countTI > 0 ? (sumaPuntosTI / countTI) * 10 : 0;
       
-      return { ...alumno, calificacionesMap: susCalificaciones, promedio };
+      return { 
+        ...alumno, 
+        calificacionesMap: susCalificaciones, 
+        promedioTC, 
+        promedioTI 
+      };
     });
   }, [alumnos, calificaciones, rubros]);
 
@@ -343,7 +363,7 @@ const TrabajoCotidiano = () => {
     }
   };
 
-  const handleExport = useCallback(() => {
+const handleExport = useCallback(() => {
     if (!datosTabla.length) return;
     const headers = [
       "Matrícula",
@@ -351,7 +371,8 @@ const TrabajoCotidiano = () => {
       "Segundo Apellido",
       "Nombres",
       ...rubros.map((r) => `${r.nombre_rubro}`),
-      "Promedio Final",
+      "Promedio TC",
+      "Promedio TI",
     ];
     const data = datosTabla.map((al) => {
       const row = {
@@ -363,12 +384,13 @@ const TrabajoCotidiano = () => {
       rubros.forEach((r, i) => {
         row[headers[i + 4]] = al.calificacionesMap.get(r.idrubrotc) || "-";
       });
-      row["Promedio Final"] = al.promedio.toFixed(2);
+      row["Promedio TC"] = al.promedioTC.toFixed(2);
+      row["Promedio TI"] = al.promedioTI.toFixed(2);
       return row;
     });
     exportar(
       data,
-      `TC_${materiaClave}_${isPerfilMode ? "Perfil" : "Gpo"}_${parcial}`,
+      `Actividades_${materiaClave}_${isPerfilMode ? "Perfil" : "Gpo"}_${parcial}`,
       "xlsx",
     );
   }, [datosTabla, rubros, materiaClave, parcial, isPerfilMode, exportar]);
@@ -414,8 +436,8 @@ const TrabajoCotidiano = () => {
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {isPerfilMode
-                ? `Trabajo Cotidiano - Perfil ${grupoId}`
-                : `Trabajo Cotidiano - Grupo ${grupoId}`}
+                ? `Actividades - Perfil ${grupoId}`
+                : `Actividades - Grupo ${grupoId}`}
             </Typography>
           </Box>
 
@@ -605,6 +627,7 @@ const TrabajoCotidiano = () => {
 
                 {rubros.map((r) => (
                   <TableCell
+                  
                     key={r.idrubrotc}
                     align="center"
                     sx={{
@@ -656,6 +679,23 @@ const TrabajoCotidiano = () => {
                   </TableCell>
                 ))}
 
+               {/* Reemplazar el TableCell de PROMEDIO por estos dos: */}
+                <TableCell
+                  align="center"
+                  sx={{
+                    fontWeight: "bold",
+                    bgcolor: "#fcfcfc",
+                    borderBottom: "2px solid #e0e0e0",
+                    width: 80,
+                    right: 80, // Se mueve para dejar espacio al Promedio TI
+                    position: "sticky",
+                    zIndex: 101,
+                    borderLeft: "1px solid #e0e0e0",
+                  }}
+                >
+                  PROMEDIO TC
+                </TableCell>
+
                 <TableCell
                   align="center"
                   sx={{
@@ -669,7 +709,7 @@ const TrabajoCotidiano = () => {
                     borderLeft: "1px solid #e0e0e0",
                   }}
                 >
-                  PROMEDIO
+                  PROMEDIO TI
                 </TableCell>
 
                 {isDirector && (
@@ -798,11 +838,12 @@ const TrabajoCotidiano = () => {
                       </TableCell>
                     ))}
 
+                   {/* Reemplazar el TableCell de al.promedio por estos dos: */}
                     <TableCell
                       align="center"
                       sx={{
                         fontWeight: "bold",
-                        right: 0,
+                        right: 80, // Mismo valor right que el header TC
                         position: "sticky",
                         bgcolor: index % 2 === 0 ? "#f9f9f9" : "#f0f0f0",
                         borderLeft: "1px solid #e0e0e0",
@@ -817,14 +858,42 @@ const TrabajoCotidiano = () => {
                           width: 40,
                           height: 28,
                           borderRadius: 1,
-                          bgcolor:
-                            al.promedio >= 6 ? "success.light" : "error.light",
+                          bgcolor: al.promedioTC >= 6 ? "success.light" : "error.light",
                           color: "white",
                           opacity: 0.9,
                           fontSize: "0.85rem",
                         }}
                       >
-                        {al.promedio.toFixed(2)}
+                        {al.promedioTC.toFixed(2)}
+                      </Box>
+                    </TableCell>
+
+                    <TableCell
+                      align="center"
+                      sx={{
+                        fontWeight: "bold",
+                        right: 0, // Mismo valor right que el header TI
+                        position: "sticky",
+                        bgcolor: index % 2 === 0 ? "#f9f9f9" : "#f0f0f0",
+                        borderLeft: "1px solid #e0e0e0",
+                        zIndex: 99,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "inline-flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          width: 40,
+                          height: 28,
+                          borderRadius: 1,
+                          bgcolor: al.promedioTI >= 6 ? "success.light" : "error.light",
+                          color: "white",
+                          opacity: 0.9,
+                          fontSize: "0.85rem",
+                        }}
+                      >
+                        {al.promedioTI.toFixed(2)}
                       </Box>
                     </TableCell>
 

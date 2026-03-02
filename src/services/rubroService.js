@@ -299,3 +299,25 @@ export const fetchPromediosTc_service = async (datos, token) => {
   }
   return response.json();
 };
+
+//Promedio TI Materia_Clave, igrupo, parcial, yearC
+export const fetchPromediosTi_service = async (datos, token) => {
+  // Asegúrate de que esta ruta coincida con la que definiste en tu router de Express
+  const response = await fetch(`${apiUrl}/rubro/promediosTI`, {
+    method: "POST",
+    headers: {
+      "x-auth-token": token,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(datos),
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(
+      errorData.message || "Error al calcular los promedios de TI",
+    );
+  }
+  
+  return response.json();
+};
