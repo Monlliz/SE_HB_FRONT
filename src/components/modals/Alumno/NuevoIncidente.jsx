@@ -15,9 +15,12 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Paper,
+  Typography
 } from "@mui/material";
+import { AlertCircle } from "lucide-react"; // Importamos un ícono acorde al contexto
 
-//necesito una archvivo para esto
+// Nota: Puedes mover esta función a un archivo utils.js e importarla
 const toTitleCase = (str) => {
   return str
     .toLowerCase()
@@ -30,7 +33,7 @@ const toTitleCase = (str) => {
     .join(" "); // Cámbialo a "" si lo quieres sin espacios
 };
 
-//Datos por default
+// Datos por default
 const datosInicialesFormulario = {
   solicitante: "",
   motivo_incidencia: "",
@@ -40,13 +43,12 @@ const datosInicialesFormulario = {
 };
 
 function NuevoIncidente({ open, onClose, onAccept, matricula, numero_strike }) {
-  console.log("numero" + numero_strike);
   const { token, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [apiError, setApiError] = useState(null); // Estado para errores de API
+  const [apiError, setApiError] = useState(null);
   const [formulario, setFormulario] = useState(datosInicialesFormulario);
-  const [errors, setErrors] = useState({}); // Estado para los errores de validación
+  const [errors, setErrors] = useState({});
 
   if (user.nombres != null) {
     const nombre_Completo = `${user.nombres} ${user.apellidop} ${user.apellidom}`;
@@ -55,16 +57,15 @@ function NuevoIncidente({ open, onClose, onAccept, matricula, numero_strike }) {
     datosInicialesFormulario.solicitante = user.username;
   }
   datosInicialesFormulario.numero_strike = numero_strike + 1;
-  //Limpiar formulario
+
+  // Limpiar formulario
   useEffect(() => {
-    // Si la prop 'open' es false (es decir, el modal se está cerrando)
     if (!open) {
-      // Resetea el estado del formulario y de los errores a su valor inicial
       setFormulario(datosInicialesFormulario);
       setApiError(null);
       setErrors({});
     }
-  }, [open]); // Este efecto se ejecutará cada vez que el valor de 'open' cambie
+  }, [open]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -72,7 +73,6 @@ function NuevoIncidente({ open, onClose, onAccept, matricula, numero_strike }) {
       ...prevState,
       [name]: value,
     }));
-    // Limpiar el error del campo cuando el usuario empieza a escribir en él
     if (errors[name]) {
       setErrors((prevErrors) => ({
         ...prevErrors,
@@ -83,70 +83,24 @@ function NuevoIncidente({ open, onClose, onAccept, matricula, numero_strike }) {
 
   const opcionesSelect = {
     motivo_incidencia: [
-      {
-        value: "Conducta inapropiada dentro del aula",
-        label: "Conducta inapropiada dentro del aula",
-      },
-      {
-        value: "Interrupciones inadecuadas durante la clase",
-        label: "Interrupciones inadecuadas durante la clase",
-      },
-      {
-        value: "Agresion fisica hacia otra(s) persona(s)",
-        label: "Agresion fisica hacia otra(s) persona(s)",
-      },
-      {
-        value: "Salida del aula sin permiso",
-        label: "Salida del aula sin permiso",
-      },
-      {
-        value: "Llegada a clases con retardo",
-        label: "Llegada a clases con retardo",
-      },
-      {
-        value: "Agresion Verbal hacia otra(s) persona(s)",
-        label: "Agresion Verbal hacia otra(s) persona(s)",
-      },
-      {
-        value: "Ausentismo durante la clase",
-        label: "Ausentismo durante la clase",
-      },
-      {
-        value: "Uso de lenguaje inapropiado",
-        label: "Uso de lenguaje inapropiado",
-      },
-      {
-        value: "Uso indebido de dispositivos electronicos",
-        label: "Uso indebido de dispositivos electronicos",
-      },
-      {
-        value: "Incumplimiento del uniforme escolar",
-        label: "Incumplimiento del uniforme escolar",
-      },
-      {
-        value: "No cuenta con los recursos didacticos solicitados",
-        label: "No cuenta con los recursos didacticos solicitados",
-      },
-      {
-        value: "Vandalizacion de las instalaciones",
-        label: "Vandalizacion de las instalaciones",
-      },
-      {
-        value: "Plagio de actividades academicas",
-        label: "Plagio de actividades academicas",
-      },
-      {
-        value: "Acciones indebidas durante el examen",
-        label: "Acciones indebidas durante el examen",
-      },
-      {
-        value: "Otro",
-        label: "Otro",
-      },
+      { value: "Conducta inapropiada dentro del aula", label: "Conducta inapropiada dentro del aula" },
+      { value: "Interrupciones inadecuadas durante la clase", label: "Interrupciones inadecuadas durante la clase" },
+      { value: "Agresion fisica hacia otra(s) persona(s)", label: "Agresion fisica hacia otra(s) persona(s)" },
+      { value: "Salida del aula sin permiso", label: "Salida del aula sin permiso" },
+      { value: "Llegada a clases con retardo", label: "Llegada a clases con retardo" },
+      { value: "Agresion Verbal hacia otra(s) persona(s)", label: "Agresion Verbal hacia otra(s) persona(s)" },
+      { value: "Ausentismo durante la clase", label: "Ausentismo durante la clase" },
+      { value: "Uso de lenguaje inapropiado", label: "Uso de lenguaje inapropiado" },
+      { value: "Uso indebido de dispositivos electronicos", label: "Uso indebido de dispositivos electronicos" },
+      { value: "Incumplimiento del uniforme escolar", label: "Incumplimiento del uniforme escolar" },
+      { value: "No cuenta con los recursos didacticos solicitados", label: "No cuenta con los recursos didacticos solicitados" },
+      { value: "Vandalizacion de las instalaciones", label: "Vandalizacion de las instalaciones" },
+      { value: "Plagio de actividades academicas", label: "Plagio de actividades academicas" },
+      { value: "Acciones indebidas durante el examen", label: "Acciones indebidas durante el examen" },
+      { value: "Otro", label: "Otro" },
     ],
   };
 
-  //  Función de validación reutilizable
   const validateForm = () => {
     const newErrors = {};
     const requiredFields = [
@@ -157,33 +111,26 @@ function NuevoIncidente({ open, onClose, onAccept, matricula, numero_strike }) {
     ];
     requiredFields.forEach((field) => {
       if (!formulario[field] || formulario[field].trim() === "") {
-        // Asignamos un mensaje de error para cada campo vacío
         newErrors[field] = "Este campo es requerido";
       }
     });
 
     setErrors(newErrors);
-    // La función devuelve `true` si no hay errores, y `false` si los hay.
     return Object.keys(newErrors).length === 0;
-  }; //Fin de funcion de validación
+  };
 
   const handleUpdate = async () => {
     if (!validateForm()) {
-      return; // Detiene el envío si el formulario no es válido
+      return;
     }
 
     setIsSubmitting(true);
-    setApiError(null); // Limpiar errores de API previos
-    //Obtener tiempos
-    // Obtén la fecha y hora actual justo antes de enviar los datos
+    setApiError(null);
+    
     const ahora = new Date();
-
-    // Formatea la fecha a "YYYY-MM-DD"
     const fechaActual = ahora.toISOString().split("T")[0];
-
-    // Formatea la hora a "HH:MM:SS" para la zona horaria local
     const horaActual = ahora.toLocaleTimeString("es-MX", {
-      hour12: false, // Formato de 24 horas
+      hour12: false,
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
@@ -197,8 +144,8 @@ function NuevoIncidente({ open, onClose, onAccept, matricula, numero_strike }) {
         solicitante: formulario.solicitante,
         motivo_incidencia: formulario.motivo_incidencia,
         descripcion: formulario.descripcion,
-        fecha: formulario.fecha, //"2025-10-09"
-        numero_strike: formulario.numero_strike,
+        fecha: formulario.fecha,
+        numero_strike: null,
         creado_por_user: user.username,
         creado_fecha: fechaActual,
         creado_hora: horaActual,
@@ -206,7 +153,6 @@ function NuevoIncidente({ open, onClose, onAccept, matricula, numero_strike }) {
 
       await fetchIncidentePost(token, matricula, datosParaEnviar);
 
-      alert("Incidente ingresado con éxito");
       onAccept();
     } catch (err) {
       alert(`Error: ${err.message}`);
@@ -219,89 +165,122 @@ function NuevoIncidente({ open, onClose, onAccept, matricula, numero_strike }) {
   const renderContent = () => {
     if (loading) {
       return (
-        <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", my: 4 }}>
           <CircularProgress />
         </Box>
       );
     }
-    if (apiError) {
-      return <Box sx={{ color: "red", my: 2 }}>Error: {apiError}</Box>;
-    }
+    
     return (
-      <Stack spacing={3} sx={{ pt: 1 }}>
-        <TextField
-          required
-          name="solicitante"
-          label="Solicitante"
-          value={formulario.solicitante || ""}
-          onChange={handleChange}
-          error={!!errors.solicitante} // `true` si hay un error para este campo
-          helperText={errors.solicitante || ""} // Muestra el mensaje de error
-        />
-        <FormControl fullWidth>
-          <InputLabel>Motivo del Incidente</InputLabel>
-          <Select
-            name="motivo_incidencia"
-            value={formulario.motivo_incidencia || ""}
-            label="Motivo del Incidente"
-            onChange={handleChange}
-          >
-            {opcionesSelect.motivo_incidencia.map((opcion) => (
-              <MenuItem key={opcion.value} value={opcion.value}>
-                {opcion.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <TextField
-          name="descripcion"
-          label="descripcion"
-          value={formulario.descripcion || ""}
-          onChange={handleChange}
-          error={!!errors.descripcion} // `true` si hay un error para este campo
-          helperText={errors.descripcion || "Máximo 100 caracteres"} // Muestra el mensaje de error
-          multiline
-          rows={4} // Altura inicial de 4 líneas
-          placeholder="Escribe tu texto aquí..."
-          variant="outlined"
-          fullWidth
-          // Propiedades para el input interno
-          inputProps={{
-            maxLength: 100, // Límite de 100 caracteres
+      <Box sx={{ p: 2 }}>
+        {apiError && (
+          <Paper sx={{ p: 2, mb: 2, bgcolor: "#ffebee", color: "#c62828", border: "1px solid #ef9a9a" }}>
+            <Typography variant="body2">Error: {apiError}</Typography>
+          </Paper>
+        )}
+
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            backgroundColor: "white",
+            borderRadius: "1rem",
+            border: "1px solid #eee",
           }}
-        />
-        <TextField
-          name="fecha"
-          label="Fecha del Incidente"
-          type="date"
-          fullWidth
-          value={formulario.fecha || ""} // El valor debe ser el formato "YYYY-MM-DD"
-          onChange={handleChange} // Tu función handleChange existente funciona perfectamente
-          // Esto es IMPORTANTE para que el label no se superponga con el formato de la fecha
-          InputLabelProps={{
-            shrink: true,
-          }}
-        />
-        <TextField
-          disabled
-          name="numero_strike"
-          label="numero_strike"
-          type="number"
-          value={formulario.numero_strike || ""}
-          onChange={handleChange}
-          error={!!errors.numero_strike}
-          helperText={errors.numero_strike || ""}
-        />
-      </Stack>
+        >
+          <Stack spacing={3}>
+            <TextField
+              required
+              name="solicitante"
+              label="Solicitante"
+              size="small"
+              value={formulario.solicitante || ""}
+              onChange={handleChange}
+              error={!!errors.solicitante}
+              helperText={errors.solicitante || ""}
+            />
+            <FormControl fullWidth size="small" error={!!errors.motivo_incidencia}>
+              <InputLabel>Motivo del Incidente</InputLabel>
+              <Select
+                name="motivo_incidencia"
+                value={formulario.motivo_incidencia || ""}
+                label="Motivo del Incidente"
+                onChange={handleChange}
+              >
+                {opcionesSelect.motivo_incidencia.map((opcion) => (
+                  <MenuItem key={opcion.value} value={opcion.value}>
+                    {opcion.label}
+                  </MenuItem>
+                ))}
+              </Select>
+              {errors.motivo_incidencia && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                  {errors.motivo_incidencia}
+                </Typography>
+              )}
+            </FormControl>
+            <TextField
+              name="descripcion"
+              label="Descripción"
+              value={formulario.descripcion || ""}
+              onChange={handleChange}
+              error={!!errors.descripcion}
+              helperText={errors.descripcion || "Máximo 100 caracteres"}
+              multiline
+              rows={4}
+              placeholder="Escribe tu texto aquí..."
+              variant="outlined"
+              fullWidth
+              inputProps={{ maxLength: 100 }}
+            />
+            <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+              <TextField
+                name="fecha"
+                label="Fecha del Incidente"
+                type="date"
+                size="small"
+                fullWidth
+                value={formulario.fecha || ""}
+                onChange={handleChange}
+                InputLabelProps={{ shrink: true }}
+                error={!!errors.fecha}
+                helperText={errors.fecha || ""}
+              />
+             
+            </Box>
+          </Stack>
+        </Paper>
+      </Box>
     );
   };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Nuevo Incidente</DialogTitle>
-      <DialogContent>{renderContent()}</DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={isSubmitting}>
+      <DialogTitle
+        sx={{
+          backgroundColor: "primary.main",
+          color: "white",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 1,
+        }}
+      >
+        <AlertCircle size={24} />
+        NUEVO INCIDENTE
+      </DialogTitle>
+      
+      <DialogContent
+        sx={{
+          backgroundColor: "#f5f7fa",
+          p: 0, // Quitamos el padding por defecto para que el fondo gris cubra todo
+        }}
+      >
+        {renderContent()}
+      </DialogContent>
+
+      <DialogActions sx={{ p: 2, borderTop: "1px solid #eee", backgroundColor: "#fff" }}>
+        <Button onClick={onClose} disabled={isSubmitting} color="inherit">
           Cancelar
         </Button>
         <Button
@@ -309,6 +288,7 @@ function NuevoIncidente({ open, onClose, onAccept, matricula, numero_strike }) {
           variant="contained"
           disabled={loading || isSubmitting}
           type="button"
+          sx={{ borderRadius: 2 }}
         >
           {isSubmitting ? (
             <CircularProgress size={24} color="inherit" />
