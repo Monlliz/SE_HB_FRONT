@@ -15,10 +15,15 @@ import CategoryRoundedIcon from "@mui/icons-material/CategoryRounded";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import AutoStoriesIcon from "@mui/icons-material/AutoStories";
+import EventNoteIcon from "@mui/icons-material/EventNote"; // <-- NUEVO ICONO
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx"; // <-- IMPORTANTE: Necesitamos el usuario para saber su ID
 
 const MisMaterias = ({ items = [], role = "Docente" }) => {
   const navigate = useNavigate();
+  // Traemos el usuario para saber quién es el docente logueado
+  const { user } = useAuth(); 
+  
   // --- CONFIGURACIÓN SEGÚN ROL ---
   const isPrefecto = role === "Prefecto";
 
@@ -67,7 +72,6 @@ const MisMaterias = ({ items = [], role = "Docente" }) => {
 
   // Manejadores de Click (Docente)
   const handleNavigateToLista = (item) => {
-    // Si es prefecto, usamos la general, si es docente, la específica
     if (isPrefecto) {
       handleNavigateToListaGeneral(item);
     } else {
@@ -81,6 +85,19 @@ const MisMaterias = ({ items = [], role = "Docente" }) => {
 
   const handleNavigateToActividades = (item) => {
     procesarNavegacionDocente(item, "/trabajo", "/trabajo");
+  };
+
+
+  const handleNavigateToPlaneacion = (item) => {
+    // Como es el Dashboard del docente, usamos sus propios datos
+    navigate("/planeacion", {
+      state: {
+        accesoDirecto: true,
+        docenteSeleccionadoId: user?.idDocente || user?.iddocente,
+        docenteInfo: `${user?.nombres} ${user?.apellidop} ${user?.apellidom || ""}`.trim(),
+        materiaSeleccionada: item 
+      }
+    });
   };
 
   // --- ESTILOS BASE ---
@@ -152,7 +169,7 @@ const MisMaterias = ({ items = [], role = "Docente" }) => {
             <Grid item xs={12} key={item.id || index} width={"100%"}>
               <Paper
                 onClick={() => {
-                  // SOLO si es prefecto, navega al hacer click en el icono
+                  // SOLO si es prefecto, navega al hacer click en el icono (tarjeta entera)
                   if (isPrefecto) handleNavigateToListaGeneral(item);
                 }}
                 elevation={3}
@@ -169,34 +186,25 @@ const MisMaterias = ({ items = [], role = "Docente" }) => {
                   "&:hover": {
                     transform: "translateY(-2px)",
                     boxShadow: "0 0.6rem 0.8rem rgba(0,0,0,0.2)",
-                    //estilos prefecto
-                    cursor: isPrefecto ? "pointer" : "default",
                     transition: "background-color 0.2s",
-                    "&:hover": isPrefecto ? {
-                      backgroundColor: "primary.light", // Efecto visual al pasar mouse
-                    } : {}
+                    ...(isPrefecto && { backgroundColor: "primary.light" }),
                   },
                 }}
               >
-                {/* 1. ICONO IZQUIERDO (TRIGGER PARA PREFECTO) 
-                    Aquí aplicamos la lógica que pediste
-                */}
-                
-                  <Box
-                    sx={{
-                      backgroundColor: "rgba(255,255,255,0.1)",
-                      borderRadius: "0.5rem",
-                      padding: "0.6rem",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                  
-                    }}
-                  >
-                    <config.MainIcon size={24} color="white" />
-                  </Box>
-
+                {/* 1. ICONO IZQUIERDO */}
+                <Box
+                  sx={{
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    borderRadius: "0.5rem",
+                    padding: "0.6rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <config.MainIcon size={24} color="white" />
+                </Box>
 
                 {/* 2. NOMBRE CENTRAL */}
                 <Typography
@@ -216,7 +224,6 @@ const MisMaterias = ({ items = [], role = "Docente" }) => {
 
                 {/* 3. ACCIONES DERECHA */}
                 <Box sx={{ display: "flex", alignItems: "center", gap: 4 }}>
-
                   {/* Subtexto Grupo (Solo Docente) */}
                   {!isPrefecto && (
                     <Box sx={{ textAlign: "center", minWidth: "80px", display: { xs: "none", sm: "block" } }}>
@@ -232,7 +239,18 @@ const MisMaterias = ({ items = [], role = "Docente" }) => {
                   {/* Botones Extras (Solo Docente) */}
                   {!isPrefecto && (
                     <>
-                      {/* Botón Lista */}
+                      {/* <-- NUEVO BOTÓN: PLANEACIÓN SEMANAL --> */}
+                      <Tooltip title="Mi Planeación Semanal">
+                        <IconButton
+                          aria-label="planeacion"
+                          size="small"
+                          sx={{ color: "#00e5ff" }} // Un color azul brillante para que destaque en fondo oscuro
+                          onClick={() => handleNavigateToPlaneacion(item)}
+                        >
+                          <EventNoteIcon />
+                        </IconButton>
+                      </Tooltip>
+
                       <Tooltip title="Lista de asistencia por materia">
                         <IconButton
                           aria-label="lista"

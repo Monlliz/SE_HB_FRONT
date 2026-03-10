@@ -10,24 +10,26 @@ import BorrarMateria from "../modals/Docente/BorrarMateria.jsx";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import AutoStoriesIcon from "@mui/icons-material/AutoStories";
+import EventNoteIcon from "@mui/icons-material/EventNote"; // <-- NUEVO ICONO PARA PLANEACIÓN
 import { Trash2, Plus, Pencil } from "lucide-react";
 
-
 //import servicio
-
 import {
   fetchDocenteGetOne,
   fetchDocenteMaterias,
   fetchDocenteActualizar,
-  fetchDocenteDesactivar
+  fetchDocenteDesactivar,
 } from "../../services/docenteService.js";
 
 import { useAuth } from "../../context/AuthContext.jsx";
-import { camposNuevoDocente } from "../../config/camposDocente.jsx"
+import { camposNuevoDocente } from "../../config/camposDocente.jsx";
 import { useNotification } from "../../components/modals/NotificationModal.jsx";
 
-//formatear fecha 
-import { formatearFechaISO,obtenerFechaYYYYMMDD } from "../../utils/fornatters.js";
+//formatear fecha
+import {
+  formatearFechaISO,
+  obtenerFechaYYYYMMDD,
+} from "../../utils/fornatters.js";
 import {
   Box,
   Button,
@@ -40,187 +42,144 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { is } from "date-fns/locale";
-
 
 //Funcion principal (El id es del docente)
 export default function UserDocente({ id }) {
-  //Todos los estados necesarios
   const [docente, setDocente] = useState(null);
   const [materias, setMaterias] = useState([]);
   const [selectedMateriaClave, setSelectedMateriaClave] = useState(null);
-  //idMateriaDocente
   const [idMateriaDocente, setIdMateriaDocente] = useState(null);
   const [modalMateriaOpen, setModalMateriaOpen] = useState(false);
   const [modalEditOpen, setModalEditOpen] = useState(false);
   const [modalBorrarMateriaOpen, setModalBorrarMateriaOpen] = useState(false);
   const navigate = useNavigate();
   const { showNotification, NotificationComponent } = useNotification();
-  //URL de la API
   const apiUrl = import.meta.env.VITE_API_URL;
   const { token, isDirector } = useAuth();
-  //la Api pa' materias
+
   const fetchMaterias = useCallback(async () => {
     if (!id) return;
     try {
-      if (!token) {
+      if (!token)
         throw new Error("Autorización rechazada. No se encontró el token.");
-      }
       setSelectedMateriaClave(null);
-
       const { materias } = await fetchDocenteMaterias(token, id);
-
       setMaterias(materias.materias || []);
     } catch (err) {
       console.error(err);
-      setMaterias([]); // En caso de error, asegurar que materias es un array vacío
+      setMaterias([]);
     }
-  }, [id]);
+  }, [id, token]);
 
-  // la Api pa' docentes
   const fetchDocente = useCallback(async () => {
     if (!id) return;
-
     const fetchInitialData = async () => {
       try {
-        if (!token) {
+        if (!token)
           throw new Error("Autorización rechazada. No se encontró el token.");
-        }
-        //LLamamos al servicio
         const { docente } = await fetchDocenteGetOne(token, id);
-        const {birthday, ...dataRes} = docente;
+        const { birthday, ...dataRes } = docente;
         const newData = {
-          birthday: obtenerFechaYYYYMMDD(birthday) ,
-          ...dataRes
-        }
+          birthday: obtenerFechaYYYYMMDD(birthday),
+          ...dataRes,
+        };
         setDocente(newData);
-        // Llamamos a la función que obtiene las materias
         fetchMaterias();
       } catch (err) {
         console.error(err);
       }
     };
-
     fetchInitialData();
-  }, [id, apiUrl, fetchMaterias]);
+  }, [id, apiUrl, fetchMaterias, token]);
 
-  //El renderizado inicial
   useEffect(() => {
     fetchDocente();
     fetchMaterias();
   }, [fetchDocente, fetchMaterias]);
 
-  //------------Editar docente--------
-
-
-  // 3. Función para guardar (onSubmit del modal)
   const handleUpdateDocente = async (formData) => {
     try {
       const { activo, iddocente, ...datosParaEnviar } = formData;
-
       await fetchDocenteActualizar(token, id, datosParaEnviar);
       setModalEditOpen(false);
       showNotification("Docente actualizado con éxito", "success");
-      handleAcceptEdit(); // función de refresco 
-
+      handleAcceptEdit();
     } catch (error) {
       showNotification(`Error al guardar ${error.message}`, "error");
-
     }
   };
 
-  //Fin editar docente---------------------------------------------------
-
-  //Funciones aceptar modales
-
-  //Función para manejar el "Aceptar" del modal de agregar materia y borrar materia
   const handleAcceptMateria = () => {
-    setModalMateriaOpen(false); // Cierra el modal
-    fetchMaterias(); // Vuelve a cargar las materias para que aparezca la nueva
+    setModalMateriaOpen(false);
+    fetchMaterias();
   };
-  //La uso tambien para desactivar docente.
+
   const handleAcceptEdit = () => {
-    setModalEditOpen(false); // Cierra el modal
+    setModalEditOpen(false);
     fetchDocente();
   };
-  //fin 
-  //Desactivar docente--------------------------------------------------------------
 
   const [loadingDelete, setLoadingDelete] = useState(false);
   const [modalDeleteOpen, setModalDeleteOpen] = useState(false);
 
-
-  // Función que ejecuta la desactivación
   const handleConfirmDesactivar = async () => {
     setLoadingDelete(true);
     try {
       if (!token) throw new Error("No token found");
-
-      // Usamos el ID del docente seleccionado
-
       await fetchDocenteDesactivar(token, id);
       setModalDeleteOpen(false);
-
       showNotification("Docente desactivado con éxito", "success");
-      // Cerramos modal y recargamos tabla
-
-      handleAcceptEdit(); // Reutilizamos tu función de refrescar tabla
-
+      handleAcceptEdit();
     } catch (err) {
       showNotification(`Error al desactivar ${err.message}`, "error");
     } finally {
       setLoadingDelete(false);
     }
   };
-  //Fin desactivar docente----------------------------------------------------
-  //----------------------------------------------------------------------------
+
   if (!docente) {
     return <Typography>Cargando docente...</Typography>;
   }
-  //-----------------------------------------------------------------------------
 
-
-
-  //Navegacion a otras rutas
-
+  // Navegacion a otras rutas
   const procesarNavegacion = (materia, rutaSimple, rutaPerfil) => {
-    // Datos base que siempre van
     const baseData = {
       grupoId: materia.grupo,
       materiaClave: materia.clave,
       year: new Date().getFullYear(),
       nombreMateria: materia.nombre || materia.asignatura,
     };
-
     if (materia.grupo.length < 3) {
       navigate(rutaSimple, { state: baseData });
     } else {
-      const [semestre, idNormalizado] = materia.grupo.split("-"); // Desestructuración limpia
-
+      const [semestre, idNormalizado] = materia.grupo.split("-");
       const perfilData = {
         ...baseData,
         semestre: semestre,
         idNormalizado: idNormalizado,
       };
-
       navigate(rutaPerfil, { state: perfilData });
     }
   };
 
-  const handleNavigateToListaMateria = (materia) => {
-    procesarNavegacion(
-      materia,
-      "/listaAsistencia",
-      "/listaAsistencia",
-    );
-  };
-
-  const handleNavigateToCalifacacionesParcilaes = (materia) => {
+  const handleNavigateToListaMateria = (materia) =>
+    procesarNavegacion(materia, "/listaAsistencia", "/listaAsistencia");
+  const handleNavigateToCalifacacionesParcilaes = (materia) =>
     procesarNavegacion(materia, "/rubros", "/rubros");
-  };
-
-  const handleNavigateToActividades = (materia) => {
+  const handleNavigateToActividades = (materia) =>
     procesarNavegacion(materia, "/trabajo", "/trabajo");
+
+  // <-- NUEVA FUNCIÓN DE NAVEGACIÓN A PLANEACIÓN -->
+  const handleNavigateToPlaneacion = (materia) => {
+   
+    navigate("/planeacion", {
+      state: {
+        accesoDirecto: true,
+        docenteSeleccionadoId: id,
+        docenteInfo: `${docente.nombres} ${docente.apellidop} ${docente.apellidom}`,
+        materiaSeleccionada: materia,
+      },
+    });
   };
 
   return (
@@ -232,7 +191,7 @@ export default function UserDocente({ id }) {
         height: "100%",
       }}
     >
-      {/* Caja de arriba: Datos del docente */}
+      {/* ... (Tu código de la Caja de Arriba se queda exactamente igual) ... */}
       <Box
         sx={{
           display: "flex",
@@ -262,16 +221,21 @@ export default function UserDocente({ id }) {
         >
           {`${docente.nombres[0]}${docente.apellidop[0]}`}
         </Box>
-
         <Box sx={{ ml: 3, flexGrow: 1 }}>
           <Typography variant="h5" fontWeight="bold">
             {docente.nombres} {docente.apellidop} {docente.apellidom}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            <Box component="span" fontWeight="bold">Correo:</Box> {docente.correo}
+            <Box component="span" fontWeight="bold">
+              Correo:
+            </Box>{" "}
+            {docente.correo}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            <Box component="span" fontWeight="bold">Fecha de nacimiento:</Box> {formatearFechaISO(docente.birthday)}
+            <Box component="span" fontWeight="bold">
+              Fecha de nacimiento:
+            </Box>{" "}
+            {formatearFechaISO(docente.birthday)}
           </Typography>
           <Typography
             sx={{
@@ -283,7 +247,6 @@ export default function UserDocente({ id }) {
             {docente.activo ? "Activo" : "Inactivo"}
           </Typography>
         </Box>
-        {/*SOLO DIRECTOR   */}
         {isDirector && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             <Button
@@ -299,15 +262,12 @@ export default function UserDocente({ id }) {
             <ReusableModal
               open={modalEditOpen}
               onClose={() => setModalEditOpen(false)}
-              iconEntity={Pencil} // Icono de edición
+              iconEntity={Pencil}
               title="Editar Docente"
               fields={camposNuevoDocente}
               initialValues={docente}
-              // Para validar duplicados (opcional, pasa tu lista completa de docentes)
-              //existingData={docentesData}
               onSubmit={handleUpdateDocente}
             />
-
             <Button
               variant="outlined"
               color="error"
@@ -325,7 +285,11 @@ export default function UserDocente({ id }) {
               title="DESACTIVAR DOCENTE"
               message={
                 <span>
-                  ¿Está seguro de desactivar al docente <strong>{docente.nombres} {docente.apellidop} {docente.apellidom}</strong>?
+                  ¿Está seguro de desactivar al docente{" "}
+                  <strong>
+                    {docente.nombres} {docente.apellidop} {docente.apellidom}
+                  </strong>
+                  ?
                 </span>
               }
             />
@@ -342,8 +306,6 @@ export default function UserDocente({ id }) {
           flexDirection: "column",
         }}
       >
-        {/*Caja de arriba Materias*/}
-
         <Box
           sx={{
             display: "flex",
@@ -367,8 +329,8 @@ export default function UserDocente({ id }) {
               onClick={() => setModalMateriaOpen(true)}
             >
               Agregar
-            </Button>)}
-
+            </Button>
+          )}
           <NuevaMateriaDocente
             open={modalMateriaOpen}
             onClose={() => setModalMateriaOpen(false)}
@@ -384,8 +346,8 @@ export default function UserDocente({ id }) {
               onClick={() => setModalBorrarMateriaOpen(true)}
             >
               Eliminar
-            </Button>)}
-
+            </Button>
+          )}
           <BorrarMateria
             open={modalBorrarMateriaOpen}
             onClose={() => setModalBorrarMateriaOpen(false)}
@@ -407,12 +369,12 @@ export default function UserDocente({ id }) {
             idMateriaDocente={idMateriaDocente}
           />
         </Box>
+
         <Box
           sx={{
             display: "flex",
             height: "100%",
             width: "100%",
-
             flexDirection: "column",
             mt: 1,
             borderRadius: 2,
@@ -426,10 +388,7 @@ export default function UserDocente({ id }) {
                 <TableCell>Clave</TableCell>
                 <TableCell>Nombre</TableCell>
                 <TableCell>Grupo</TableCell>
-                {/* 1. Nueva columna de encabezado solo para director */}
-                {isDirector && (
-                  <TableCell align="center">Acciones</TableCell>
-                )}
+                {isDirector && <TableCell align="center">Acciones</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -437,7 +396,6 @@ export default function UserDocente({ id }) {
                 <TableRow
                   key={m.iddm}
                   hover
-                  // Puedes mantener la selección visual si quieres, pero ya no es estricta para los botones
                   selected={m.iddm === idMateriaDocente}
                   onClick={() => {
                     (setSelectedMateriaClave(m.clave),
@@ -449,10 +407,8 @@ export default function UserDocente({ id }) {
                   <TableCell>{m.nombre}</TableCell>
                   <TableCell>{m.grupo}</TableCell>
 
-                  {/* 2. Nueva celda con los botones agrupados */}
                   {isDirector && (
                     <TableCell align="center">
-                      {/*stopPropagation evita que al hacer click en el botón se seleccione la fila entera*/}
                       <div
                         onClick={(e) => e.stopPropagation()}
                         style={{
@@ -461,10 +417,22 @@ export default function UserDocente({ id }) {
                           justifyContent: "center",
                         }}
                       >
+                        {/* <-- NUEVO BOTÓN: PLANEACIÓN SEMANAL --> */}
+                        <Tooltip title="Planeación Semanal">
+                          <IconButton
+                            aria-label="planeacion"
+                            size="small"
+                            color="info" 
+                            onClick={() => handleNavigateToPlaneacion(m)}
+                          >
+                            <EventNoteIcon />
+                          </IconButton>
+                        </Tooltip>
+
                         <Tooltip title="Lista de asistencia por materia">
                           <IconButton
                             aria-label="lista"
-                            size="small" // Recomiendo small para que no ensanche mucho la tabla
+                            size="small"
                             color="primary"
                             onClick={() => handleNavigateToListaMateria(m)}
                           >

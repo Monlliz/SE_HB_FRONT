@@ -190,3 +190,65 @@ export const fetchDocenteImport = async (token, formData) => {
         throw error;
     }
 };
+
+
+// ==========================================
+// SERVICIOS PARA LA PLANEACIÓN SEMANAL
+// ==========================================
+
+// Obtener arreglo de las semanas que ya fueron planeadas
+export const fetchSemanasPlaneadas = async (token, docenteId, materiaClave, idGrupo) => {
+  try {
+    const response = await fetch(`${apiUrl}/docente/planeacion/semanas/${docenteId}/${materiaClave}/${idGrupo}`, {
+      headers: {
+        "x-auth-token": token,
+      },
+    });
+    if (!response.ok) throw new Error("Error al cargar las semanas planeadas");
+    
+    // Retorna el arreglo de semanas, ej: [1, 2]
+    return await response.json(); 
+  } catch (error) {
+    console.error("Error en fetchSemanasPlaneadas:", error.message);
+    throw error;
+  }
+};
+
+// Obtener todo el detalle (cabecera + sesiones) de una semana específica
+export const fetchPlaneacionPorSemana = async (token, docenteId, materiaClave, idGrupo, numeroSemana) => {
+  try {
+    const response = await fetch(`${apiUrl}/docente/planeacion/detalle/${docenteId}/${materiaClave}/${idGrupo}/${numeroSemana}`, {
+      headers: {
+        "x-auth-token": token,
+      },
+    });
+    if (!response.ok) throw new Error("Error al cargar el detalle de la planeación");
+    
+    // Puede retornar null si no existe, o el objeto con { cabecera, sesiones }
+    return await response.json(); 
+  } catch (error) {
+    console.error("Error en fetchPlaneacionPorSemana:", error.message);
+    throw error;
+  }
+};
+
+// Crear o Actualizar una planeación completa
+export const fetchGuardarPlaneacion = async (token, payload) => {
+  try {
+    const response = await fetch(`${apiUrl}/docente/planeacion/guardar`, {
+      method: "POST", // Usamos POST porque nuestro backend hace un UPSERT automático
+      headers: {
+        "Content-Type": "application/json",
+        "x-auth-token": token,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) throw new Error("Error al guardar la planeación");
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Error en fetchGuardarPlaneacion:", error.message);
+    throw error;
+  }
+};

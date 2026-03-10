@@ -49,25 +49,25 @@ export default function Navbar({ links = [] }) {
 
   const handleDrawerToggle = () => setDrawerOpen((v) => !v);
 
-  // 2. **MODIFICAR handleUserClick** - Ahora solo abre el menú
+  // 2. - Ahora solo abre el menú
   const handleUserClick = (e) => {
     setAnchorEl(e.currentTarget);
   };
   const handleUserClose = () => setAnchorEl(null);
 
-  // 3. **NUEVA FUNCIÓN PARA LOGOUT** - Cierra el menú y luego desloguea
+  // 3. - Cierra el menú y luego desloguea
   const handleLogout = () => {
     handleUserClose(); // Cierra el menú
     logout(); // Ejecuta la función de logout
   };
 
-  // 4. **FUNCIÓN PARA "GENERAR CUENTAS" (EJEMPLO)**
+  //4 generar cuenats
   const handleGenerateAccounts = () => {
     handleUserClose();
     navigate("/generaciondecuentas");
   };
 
-  // 5. **FUNCIÓN PARA "GESTIÓN DE DATOS" (EJEMPLO)**
+  // 5. gestion de datos
   const handleDataManagement = () => {
     handleUserClose();
     navigate("/gestiondatos");
@@ -79,7 +79,7 @@ export default function Navbar({ links = [] }) {
     navigate("/micuenta");
   };
 
-  // 6.- Ruta a Pase de lista docente
+  // 7.- Ruta a Pase de lista docente
   const handleListaDocente = () => {
     handleUserClose();
 

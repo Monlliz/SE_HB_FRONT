@@ -23,6 +23,7 @@ import TrabajoCotidianoP from "./pages/trabajoCotidiano/TrabajoCotidianoPerfil.j
 import GestionData from "./pages/GestionData.jsx";
 import GeneracionDeCuentas from "./pages/GeneracionDeCuentas.jsx";
 import { ProtectedRoute } from "./components/ProtectedRoute.jsx";
+import ModuloPlaneacion from "./pages/ModuloPlaneacion.jsx";
 import User from "./pages/User.jsx"
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
         <Route path="/resumenTC" element={<ResumenTC />} />
         <Route path="/reporte-tc" element={<ReportePDFTC />} />
         <Route path="/micuenta" element={<User />} />
+        <Route path="/planeacion" element={<ModuloPlaneacion />} />
         <Route
           path="/listaAsistenciamateria"
           element={<ListaAsistenciaMateria />}
