@@ -7,10 +7,7 @@ import {
   Grid,
   Tooltip,
 } from "@mui/material";
-import {
-  BookOpenText as SubjectIcon,
-  Users as GroupIcon
-} from "lucide-react";
+import { BookOpenText as SubjectIcon, Users as GroupIcon } from "lucide-react";
 import CategoryRoundedIcon from "@mui/icons-material/CategoryRounded";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import ChecklistIcon from "@mui/icons-material/Checklist";
@@ -22,8 +19,8 @@ import { useAuth } from "../context/AuthContext.jsx"; // <-- IMPORTANTE: Necesit
 const MisMaterias = ({ items = [], role = "Docente" }) => {
   const navigate = useNavigate();
   // Traemos el usuario para saber quién es el docente logueado
-  const { user } = useAuth(); 
-  
+  const { user } = useAuth();
+
   // --- CONFIGURACIÓN SEGÚN ROL ---
   const isPrefecto = role === "Prefecto";
 
@@ -87,16 +84,16 @@ const MisMaterias = ({ items = [], role = "Docente" }) => {
     procesarNavegacionDocente(item, "/trabajo", "/trabajo");
   };
 
-
   const handleNavigateToPlaneacion = (item) => {
     // Como es el Dashboard del docente, usamos sus propios datos
     navigate("/planeacion", {
       state: {
         accesoDirecto: true,
         docenteSeleccionadoId: user?.idDocente || user?.iddocente,
-        docenteInfo: `${user?.nombres} ${user?.apellidop} ${user?.apellidom || ""}`.trim(),
-        materiaSeleccionada: item 
-      }
+        docenteInfo:
+          `${user?.nombres} ${user?.apellidop} ${user?.apellidom || ""}`.trim(),
+        materiaSeleccionada: item,
+      },
     });
   };
 
@@ -136,8 +133,19 @@ const MisMaterias = ({ items = [], role = "Docente" }) => {
             opacity: 0.8,
           }}
         >
-          <CategoryRoundedIcon sx={{ fontSize: 80, color: "primary.main", mb: 2 }} />
-          <Typography variant="h3" sx={{ color: "secondary.contrastText", fontWeight: 600, fontSize: "1.5rem", textTransform: "uppercase", textAlign: "center" }}>
+          <CategoryRoundedIcon
+            sx={{ fontSize: 80, color: "primary.main", mb: 2 }}
+          />
+          <Typography
+            variant="h3"
+            sx={{
+              color: "secondary.contrastText",
+              fontWeight: 600,
+              fontSize: "1.5rem",
+              textTransform: "uppercase",
+              textAlign: "center",
+            }}
+          >
             {config.emptyMessage}
           </Typography>
         </Box>
@@ -213,7 +221,10 @@ const MisMaterias = ({ items = [], role = "Docente" }) => {
                     fontWeight: "bold",
                     textTransform: "uppercase",
                     letterSpacing: "0.065rem",
-                    fontSize: { xs: isPrefecto ? "1.5rem" : "0.9rem", md: !isPrefecto ? "1.1rem" : "1.38rem" },
+                    fontSize: {
+                      xs: isPrefecto ? "1.5rem" : "0.9rem",
+                      md: !isPrefecto ? "1.1rem" : "1.38rem",
+                    },
                     flexGrow: 1,
                     textAlign: "center",
                     px: 2,
@@ -226,8 +237,18 @@ const MisMaterias = ({ items = [], role = "Docente" }) => {
                 <Box sx={{ display: "flex", alignItems: "center", gap: 4 }}>
                   {/* Subtexto Grupo (Solo Docente) */}
                   {!isPrefecto && (
-                    <Box sx={{ textAlign: "center", minWidth: "80px", display: { xs: "none", sm: "block" } }}>
-                      <Typography variant="caption" display="block" sx={{ opacity: 0.7, fontSize: "0.7rem", lineHeight: 1 }}>
+                    <Box
+                      sx={{
+                        textAlign: "center",
+                        minWidth: "80px",
+                        display: { xs: "none", sm: "block" },
+                      }}
+                    >
+                      <Typography
+                        variant="caption"
+                        display="block"
+                        sx={{ opacity: 0.7, fontSize: "0.7rem", lineHeight: 1 }}
+                      >
                         GRUPO/PERFIL
                       </Typography>
                       <Typography variant="body1" fontWeight="bold">
@@ -239,7 +260,7 @@ const MisMaterias = ({ items = [], role = "Docente" }) => {
                   {/* Botones Extras (Solo Docente) */}
                   {!isPrefecto && (
                     <>
-                      {/* <-- NUEVO BOTÓN: PLANEACIÓN SEMANAL --> */}
+                      {/*
                       <Tooltip title="Mi Planeación Semanal">
                         <IconButton
                           aria-label="planeacion"
@@ -250,7 +271,7 @@ const MisMaterias = ({ items = [], role = "Docente" }) => {
                           <EventNoteIcon />
                         </IconButton>
                       </Tooltip>
-
+ */}
                       <Tooltip title="Lista de asistencia por materia">
                         <IconButton
                           aria-label="lista"

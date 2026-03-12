@@ -14,5 +14,5 @@ export const appLinks = [
   { label: "GRUPOS", href: "/grupos", icon: Users },
   { label: "MATERIAS", href: "/materias", icon: BookOpenText },
   { label: "DOCENTES", href: "/docentes", icon: Presentation },
-  { label: "PLANEACIONES", href: "/planeacion", icon: Notebook },
+  //{ label: "PLANEACIONES", href: "/planeacion", icon: Notebook },
 ];
