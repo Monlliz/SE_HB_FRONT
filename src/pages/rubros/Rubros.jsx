@@ -139,8 +139,9 @@ const GestionarRubros = () => {
         const nombreLower = nombre.toLowerCase();
         if (nombreLower.includes("examen")) return 10; // Prioridad 1: Extremo izquierdo
         if (nombreLower.includes("trabajo cotidiano")) return 1; // Prioridad 100: Penúltimo
-        if (nombreLower.includes("trabajo integrador")) return 2; // Prioridad 101: Extremo derecho
-        return 50; // Rubros estándar van al medio
+        if (nombreLower.includes("trabajo integrador")) return 3; // Prioridad 101: Extremo derecho
+        if (nombreLower.includes("formacion actitudinal")) return 2; // Prioridad 101: Extremo derecho
+        return 5; // Rubros estándar van al medio
       };
 
       // Ordenar ascendente basado en el peso calculado
