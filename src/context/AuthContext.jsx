@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
 
   //refresh del token
   const [showExtendModal, setShowExtendModal] = useState(false);
-
+//perdi un dia
   const [token, setToken] = useState(localStorage.getItem("token") || null);
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
